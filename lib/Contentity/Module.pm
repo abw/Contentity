@@ -10,13 +10,15 @@ use Contentity::Class
 
 sub init {
     my ($self, $config) = @_;
+    my $project = delete $config->{ project }
+        || return $self->error_msg( missing => 'project' );
 
     $self->debug(
         "initialising $config->{ module } module: ", 
         $self->dump_data($config)
     ) if DEBUG;
 
-    $self->{ project } = delete $config->{ project };
+    $self->{ project } = $project;
     $self->{ module  } = $config->{ module  };
     $self->{ config  } = $config;
 

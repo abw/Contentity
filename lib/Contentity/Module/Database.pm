@@ -6,12 +6,12 @@ use Contentity::Class
     base        => 'Contentity::Module';
 
 
-
 sub init_module {
     my ($self, $config) = @_;
     $self->debug("Database module init_module()") if DEBUG;
     return $self;
 }
+
 
 1;
 

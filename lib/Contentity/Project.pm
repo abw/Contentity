@@ -145,7 +145,7 @@ sub config_filename {
 sub config_file {
     my $self = shift;
     return @_
-        ? $self->{ config_dir  }->file(@_)->must_exist
+        ? $self->{ config_dir  }->file(@_)
         : $self->{ config_file };
 }
 
@@ -197,11 +197,11 @@ sub resource_dir {
 
 
 sub resource_file {
-    my ($self, $type, @file) = @_;
+    my ($self, $type, $name) = @_;
 
     return $self
         ->resource_dir($type)
-        ->file(@file)
+        ->file( $self->config_filename($name) )
         ->must_exist;
 }
 
@@ -256,8 +256,8 @@ sub module_config {
     my $master   = $self->{ config }->{ $type };
     my $merged   = extend({ module => $type }, $module, $master, $params);
     my $cfg_file = $merged->{ config_file } || $self->config_filename($type);
-    my $cfg_data = $self->config_file($cfg_file)->data;
-
+    my $cfg_fobj = $self->config_file($cfg_file);
+    my $cfg_data = $cfg_fobj->exists ? $cfg_fobj->data : undef;
     my $config   = extend($cfg_data, $merged);
 
     $self->debug(

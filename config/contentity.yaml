@@ -5,14 +5,16 @@ resources:
     - forms
     - apps
     - entities
+modules:            database entities
+
 #modules:           database
 #module_path:       Wibble::Module
-database:
-    even_more_args: 33
-    username:       newer_username
-
-modules:
-    database:
-        extra_args: 22
-        username:   new_username
-    frusset: 1 
+#database:
+#    even_more_args: 33
+#    username:       newer_username
+#
+#modules:
+#    database:
+#        extra_args: 22
+#        username:   new_username
+#    frusset: 1 
