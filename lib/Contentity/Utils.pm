@@ -12,11 +12,31 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Badger::Utils',
-    constants => 'HASH',
+    constants => 'ARRAY HASH DELIMITER',
     exports   => {
-        any => 'Timestamp Now URL File debug_caller extend join_uri resolve_uri'
+        any => q{
+            Timestamp Now URL File 
+            debug_caller 
+            split_to_list extend
+            join_uri resolve_uri 
+        }
     };
 
+#-----------------------------------------------------------------------------
+# List utilities
+#-----------------------------------------------------------------------------
+
+sub split_to_list {
+    my $list = shift;
+    $list = [ split(DELIMITER, $list) ]
+        unless ref $list eq ARRAY;
+    return $list;
+}
+
+
+#-----------------------------------------------------------------------------
+# Hash utilities
+#-----------------------------------------------------------------------------
 
 sub extend {
     my $hash = shift;
@@ -41,6 +61,10 @@ sub extend {
     return $hash;
 }
 
+
+#-----------------------------------------------------------------------------
+# URI utilities
+#-----------------------------------------------------------------------------
 
 sub join_uri {
     my $uri = join('/', @_);

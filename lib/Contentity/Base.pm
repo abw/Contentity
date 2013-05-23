@@ -1,6 +1,6 @@
 package Contentity::Base;
 
-use Badger::Debug 'debugf :dump';
+use Badger::Debug ':all';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,

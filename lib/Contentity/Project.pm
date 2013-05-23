@@ -9,7 +9,7 @@ use Contentity::Class
     utils       => 'params extend weaken resolve_uri',
     filesystem  => 'Dir VFS',
     accessors   => 'root config',
-    auto_can    => 'auto_can',
+    autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config',
     constants   => ':config DOT DELIMITER HASH ARRAY',
     constant    => {
         COMPONENT_FACTORY => 'Contentity::Components',
@@ -61,6 +61,8 @@ sub init {
 
     my $cfg_data = $self->config_data($cfg_file);
 
+    # TODO: handle base projects?
+
     $config = $self->{ config } = extend(
         # Merge contentity defaults with config file parameters and finally
         # the configuration parameters.  Values defined in successive 
@@ -78,7 +80,6 @@ sub init {
         ->init_components($config)
         ->init_resources($config)
 }
-
 
 sub init_project {
     my ($self, $config) = @_;
@@ -173,19 +174,19 @@ sub prepare_components {
 # General purpose methods
 #-----------------------------------------------------------------------------
 
+sub uri {
+    my $self = shift;
+    return @_
+        ? resolve_uri($self->{ uri }, @_)
+        : $self->{ uri };
+}
+
 sub dir {
     my $self = shift;
 
     return @_
         ? $self->root->dir(@_)
         : $self->root;
-}
-
-sub uri {
-    my $self = shift;
-    return @_
-        ? resolve_uri($self->{ uri }, @_)
-        : $self->{ uri };
 }
 
 
@@ -232,11 +233,6 @@ sub config_filespec {
         : { %$defaults };
 }
 
-sub config_uri_tree {
-    my ($self, $name) = @_;
-    return $self->config_tree($name, $self->can('uri_binder'));
-}
-
 sub config_tree {
     my ($self, $name, $binder) = @_;
     my $confdir = $self->config_dir;
@@ -273,9 +269,9 @@ sub config_tree {
 
     return $data;
 
-#    return $each_fn
-#        ? hash_each($data, $each_fn)
-#        : $data;
+    # return $each_fn
+    #    ? hash_each($data, $each_fn)
+    #    : $data;
 }
 
 sub scan_config_dir {
@@ -320,6 +316,11 @@ sub scan_config_file {
     }
 }
 
+sub config_uri_tree {
+    my ($self, $name) = @_;
+    return $self->config_tree($name, $self->can('uri_binder'));
+}
+
 sub uri_binder {
     my ($self, $data, $base, $meta) = @_;
 
@@ -331,6 +332,73 @@ sub uri_binder {
         ) if DEBUG;
     }
 }
+
+#-----------------------------------------------------------------------------
+# Methods for loading component modules
+#-----------------------------------------------------------------------------
+
+sub component {
+    my $self = shift;
+    my $type = shift;
+
+    return  $self->{ component }->{ $type }
+        ||= $self->load_component( $type => @_ );
+}
+
+sub has_component {
+    my $self = shift;
+    my $type = shift;
+    return $self->{ components }->{ $type };
+}
+
+sub load_component {
+    my $self    = shift;
+    my $type    = shift;
+    my $config  = $self->component_config( $type => @_ );
+    my $factory = $self->component_factory;
+
+    return $factory->item(
+        $type => $config
+    );
+}
+
+sub component_config {
+    my $self     = shift;
+    my $type     = shift;
+    my $params   = params(@_);
+    my $component = $self->{ components }->{ $type }
+        || return $self->error_msg( invalid => component => $type );
+    my $master   = $self->{ config }->{ $type };
+    my $merged   = extend({ _component_ => $type }, $component, $master, $params);
+    my $cfg_file = $merged->{ config_file } || $self->config_filename($type);
+    my $cfg_fobj = $self->config_file($cfg_file);
+    my $cfg_data = $cfg_fobj->exists ? $cfg_fobj->data : undef;
+    my $config   = extend($cfg_data, $merged);
+
+    $self->debug(
+        "config for component $type:\n",
+        "- component config ($self->{ config_file }/components/$type): ", $self->dump_data($component), "\n",
+        "- Master config ($type): ", $self->dump_data($master), "\n",
+        "- Local params (component_config(...)): ", $self->dump_data($params), "\n",
+        "= Merged config ({} < component < master < local): ", $self->dump_data($merged), "\n",
+        "- Config file ($cfg_file): ", $self->dump_data($cfg_file), "\n",
+        "= Fully merged (file < merged): ", $self->dump_data($config), "\n",
+    ) if DEBUG;
+
+    $config->{_project_} = $self;
+
+    return $config;
+}
+
+sub component_factory {
+    my $self = shift;
+
+    return  $self->{ component_factory }
+        ||= $self->COMPONENT_FACTORY->new(
+                path => $self->{ config }->{ component_path }
+            );
+}
+
 
 #-----------------------------------------------------------------------------
 # Methods for loading resources
@@ -385,72 +453,6 @@ sub resource_data {
 }
 
 
-#-----------------------------------------------------------------------------
-# Methods for loading component modules
-#-----------------------------------------------------------------------------
-
-sub component {
-    my $self = shift;
-    my $type = shift;
-
-    return  $self->{ component }->{ $type }
-        ||= $self->load_component( $type => @_ );
-}
-
-sub has_component {
-    my $self = shift;
-    my $type = shift;
-    return $self->{ components }->{ $type };
-}
-
-sub load_component {
-    my $self    = shift;
-    my $type    = shift;
-    my $config  = $self->component_config( $type => @_ );
-    my $factory = $self->component_factory;
-
-    return $factory->item(
-        $type => $config
-    );
-}
-
-sub component_config {
-    my $self     = shift;
-    my $type     = shift;
-    my $params   = params(@_);
-    my $component   = $self->{ components }->{ $type }
-        || return $self->error_msg( invalid => component => $type );
-    my $master   = $self->{ config }->{ $type };
-    my $merged   = extend({ _component_ => $type }, $component, $master, $params);
-    my $cfg_file = $merged->{ config_file } || $self->config_filename($type);
-    my $cfg_fobj = $self->config_file($cfg_file);
-    my $cfg_data = $cfg_fobj->exists ? $cfg_fobj->data : undef;
-    my $config   = extend($cfg_data, $merged);
-
-    $self->debug(
-        "config for component $type:\n",
-        "- component config ($self->{ config_file }/components/$type): ", $self->dump_data($component), "\n",
-        "- Master config ($type): ", $self->dump_data($master), "\n",
-        "- Local params (component_config(...)): ", $self->dump_data($params), "\n",
-        "= Merged config ({} < component < master < local): ", $self->dump_data($merged), "\n",
-        "- Config file ($cfg_file): ", $self->dump_data($cfg_file), "\n",
-        "= Fully merged (file < merged): ", $self->dump_data($config), "\n",
-    ) if DEBUG;
-
-    $config->{_project_} = $self;
-
-    return $config;
-}
-
-sub component_factory {
-    my $self = shift;
-
-    return  $self->{ component_factory }
-        ||= $self->COMPONENT_FACTORY->new(
-                path => $self->{ config }->{ component_path }
-            );
-}
-
 
 #-----------------------------------------------------------------------------
 # Delegates
@@ -483,7 +485,7 @@ sub has_delegate {
 
 # TODO: replace this with AUTOLOAD
 
-sub auto_can {
+sub OLD_auto_can {
     my ($self, $name) = @_;
     my ($pair);
 
@@ -519,6 +521,44 @@ sub auto_can {
     return undef;
 }
 
+#-----------------------------------------------------------------------------
+# Let's try something a bit better
+#-----------------------------------------------------------------------------
+
+sub autoload_component {
+    my ($self, $name, @args) = @_;
+    $self->debug("autoload_component($name)") if DEBUG;
+    return $self->has_component($name)
+        && $self->component($name, @_);
+}
+
+sub autoload_resource {
+    my ($self, $name, @args) = @_;
+    $self->debug("autoload_resource($name)") if DEBUG;
+    return $self->has_resource($name)
+        && $self->resource($name, @_);
+}
+
+sub autoload_delegate {
+    my ($self, $name, @args) = @_;
+    $self->debug("autoload_delegate($name)") if DEBUG;
+    my $pair = $self->has_delegate($name) || return;
+    my ($component, $method) = @$pair;
+    $self->debug("project has [$component,$method] delegate") if DEBUG;
+    return $self->component($component)->$method(@args);
+}
+
+sub autoload_config {
+    my ($self, $name, @args) = @_;
+    $self->debug("autoload_config($name)") if DEBUG;
+    my $config = $self->config;
+
+    return  exists $config->{ $name }
+        ?   $config->{ $name }
+        :   undef;
+}
+
+
 
 #-----------------------------------------------------------------------------
 # Cleanup methods
@@ -540,20 +580,82 @@ sub DESTROY {
 
 __END__
 
-=head1 INITIALISATION METHODS
+=head1 NAME
 
-These methods are used internally to initialise the C<Contentity::Project>
-object.
+Contentity::Project - an object representing a project
 
-=head2 init(\%config)
+=head1 DESCRIPTION
 
-=head2 init_project(\%merged_config)
+This module implements an object for representing a Contentity project.
+A project is comprised of a root directory, a master configuration
+file and perhaps other configuration files, resource files and other 
+bits and pieces.  A C<Contentity::Project> object is a central manager
+for such a collection of data.
 
-=head2 init_modules(\%merged_config)
+=head1 CLASS METHODS
 
-=head1 PUBLIC METHODS
+=head2 new(\%config)
 
-These methods are provided for general purpose use.
+This is the constructor method to create a new C<Contentity::Project> object.
+
+    use Contentity::Project;
+    
+    my $project = Contentity::Project->new(
+        root => '/path/to/project'
+    );
+
+=head3 CONFIGURATION OPTIONS
+
+=head4 root
+
+This mandatory parameter must be provided to indicate the filesystem path
+to the project directory.
+
+=head4 config_dir
+
+This optional parameter can be used to specify the name of the configuration
+direction under the L<root> project directory.  The default configuration 
+directory name is C<config>.
+
+=head4 config_file
+
+This optional parameter can be used to specify the name of the main 
+configuration file (without file extension) that should reside in the 
+L<config_dir> directory under the C<root> project directory.  The default 
+configuration file name is C<contentity>.
+
+=head4 config_codec
+
+This optional parameter can be used to specify an alternate data codec 
+for reading the data in the configuration files.  By default, Contentity
+used YAML for configuration files.  Thus, the default C<config_codec>
+value is C<yaml>.
+
+=head4 config_extension
+
+This optional parameter can be used to specify the file extension on 
+configuration files.  It defaults to the value in C<config_code>.  
+Assuming you don't change that value, all configuration files will be 
+expected to have a C<.yaml> file extension.
+
+=head4 config_encoding
+
+This optional parameter can be used to specify the character encoding
+of configuration files.  The default value is C<utf8>.
+
+=head1 GENERAL PURPOSE OBJECT METHODS
+
+=head2 uri($path)
+
+When called without any arguments this method returns the base URI for the 
+project.
+
+    print $project->uri;            # e.g. foo
+
+When called with a relative URI path as an argument, it returns the URI
+resolved relative to the project base URI. 
+
+    print $project->uri;
 
 =head2 dir($path)
 
@@ -587,13 +689,197 @@ This should generally be used in preference to L<resources_dir()>.
 
     my $forms = $project->resource_dir('forms');
 
+=head1 OBJECT METHODS FOR READING CONFIGURATION FILES
+
+=head2 config_dir($path)
+
+When called without any arguments this returns a L<Badger::Filesystem::Directory>
+object representing the configuration directory for the project.
+
+    my $dir = $project->config_dir;
+
+When called with a relative directory path as argument it returns a 
+L<Badger::Filesystem::Directory> representing the directory relative to
+configuration directory. 
+
+    my $dir = $project->config_dir('forms');
+
+=head2 config_filename($name)
+
+This method is used to construct the name of configuration files under the 
+configuration directory.  It automatically appends the correct file extension.
+
+    my $filename = $project->config_filename('foo');
+
 =head2 config_filespec($params)
 
 Returns a reference to a hash array containing appropriate initialisation
-parameters for L<Badger::Filesystem::File> objects created to read  general
+parameters for L<Badger::Filesystem::File> objects created to read general
 and resource-specific configuration files.  The parameters are  constructed
 from the C<config_codec> (default: C<yaml>) and C<config_encoding> (default:
 C<utf8>) configuration options.  These can be overridden or augmented by extra
 parameters passed as arguments.
 
+=head2 config_file($name)
 
+This method returns a L<Badger::Filesystem::File> object representing a 
+configuration file in the configuration directory.  It will automatically
+have the correct filename extension added (via a call to L<config_filename>)
+and the correct C<codec> and C<encoding> parameters set (via a call to 
+L<config_filespec>) so that the data in the configuration file can be 
+automatically loaded (see L<config_data($name)>).
+
+EDIT: Hmmm... it appear it doesn't add the filename extension, etc.  You 
+have to do that via an additional call to L<config_filename()>.  This may
+get changed RSN.  Watch this space.
+
+=head2 config_data($name)
+
+This method fetches a configuration file via a call to L<config_file()>
+and then returns the data contained therein.
+
+=head2 config_tree($name)
+
+This method constructs a tree of configuration data from one or more 
+configuration files under the configuration directory.  For example,
+suppose there are F<config/urls.yaml> and F<config/urls/admin.yaml>
+files that look like this:
+
+Example F<config/urls.yaml>
+
+    foo: /path/to/foo
+
+Example F<config/urls/admin.yaml>
+
+    bar: /path/to/bar
+
+Then call the C<config_tree()> method like so:
+
+    my $tree = $project->config_tree('urls');
+
+The returned tree will contain the items defined in both files:
+
+    {
+        foo   => '/path/to/foo',
+        admin => {
+            bar => '/path/to/bar',
+        }
+    }
+
+=head2 config_uri_tree($name)
+
+This method works in a similar way to L<config_tree> but it merges nested
+configuration files into a flat structure, using the file name (without the
+file extension) as an intermediate URI component.  Consider the following
+configuration files:
+
+Example F<config/urls.yaml>
+
+    foo: /path/to/foo
+
+Example F<config/urls/admin.yaml>
+
+    bar:  /path/to/bar
+    /baz: /path/to/baz
+
+Calling the C<config_uri_tree()> method like so:
+
+    my $tree = $project->config_uri_tree('urls');
+
+Will return a hash array like this:
+
+    {
+        foo         => '/path/to/foo',
+        /admin/bar  => '/path/to/bar',
+        /baz        => '/path/to/baz',
+    }
+
+Note that relative URIs (e.g. C<bar>) in nested files get appended to the 
+file basename (e.g. C</admin/bar>) whereas those that are absolute (starting
+with a C</> do not).  At present all resultant URIs from nested files are
+absolute (i.e. C</admin/bar> instead of C<admin/bar>).  I'm not sure that's
+necessarily correct but that's how it is for now.
+
+=head2 scan_config_dir()
+
+This method is used internally by L<config_tree()> to scan the files in a 
+configuration directory.
+
+=head2 scan_config_file()
+
+This method is used internally by L<config_tree()> to load an individual 
+files in a configuration directory.
+
+=head2 uri_binder()
+
+This method is used internally by L<config_uri_tree()> for resolving for 
+constructing composite URIs.
+
+=head1 OBJECT METHODS FOR LOADING COMPONENTS
+
+Components are one-off (singleton) objects that can be loaded into a contentity
+project.  For example, a database can be implemented as a component.  You 
+generally only ever need to load one database component into a project and 
+all other internal components and external code using the project can share it.
+
+=head2 component($name)
+
+Returns a cached instance of a named component or loads (and caches) it via
+a call to L<load_component()>.
+
+=head2 has_component($name)
+
+Return a boolean value to indicate if this project has a named component
+
+=head2 load_component($name)
+
+=head2 component_config($name)
+
+=head2 component_factory()
+
+
+
+=head1 OBJECT METHODS FOR LOADING RESOURCES
+
+=head1 INITIALISATION METHODS
+
+These methods are used internally to initialise the C<Contentity::Project>
+object.
+
+=head2 init(\%config)
+
+This is the main initialisation method.  It performs some object initalisation,
+sets sensible defaults for any missing values in the C<\%config> parameters 
+and loads the configuration data defined in the main configuration file.  It 
+then calls each of the following initialisation methods passing a reference 
+to a hash array of merged configuration parameters.
+
+=head2 init_project(\%merged_config)
+
+This doesn't do anything much at present but is provided as a stub for 
+future expansion.
+
+=head2 init_components(\%merged_config)
+
+This calls the L<prepare_components()> method to initialise all C<components>
+defined in the merged configuration.
+
+=head2 init_resources(\%merged_config)
+
+This calls the L<prepare_components()> method to initialise all C<resources>
+defined in the merged configuration.
+
+=head2 prepare_components(\%components)
+
+This initialises the configuration data for a set of plugin components.
+
+
+=head1 AUTHOR
+
+Andy Wardley E<lt>abw@wardley.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (C) 2008-2013 Andy Wardley.  All Rights Reserved.
+
+=cut

@@ -1,0 +1,7 @@
+---
+greeting:       hello world!
+components:     wibble frusset
+resources:
+    - forms
+    - apps
+    - entities

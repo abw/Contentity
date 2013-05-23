@@ -4,25 +4,114 @@
 #
 # Test project loading functionality.
 #
-# Written by Andy Wardley, October 2012
+# Written by Andy Wardley, October 2012, May 2013
 #
 #========================================================================
 
 use Badger
-    lib        => '../lib',
-    Filesystem => 'Bin';
+    lib        => '../lib lib',
+    Filesystem => 'Bin',
+    Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 7,
+    tests => 26,
     debug => 'Contentity::Project',
     args  => \@ARGV;
 
 use Contentity::Project;
 
-my $root    = Bin->parent;
-my $project = Contentity::Project->new( root => $root );
+
+#-----------------------------------------------------------------------------
+# Instantiate project object
+#-----------------------------------------------------------------------------
+
+my $root    = Bin->parent->dir( t => projects => 'alpha' );
+my $project = Contentity::Project->new( 
+    root        => $root,
+    component_path => 'Wibble::Component',
+);
 ok( $project, "created contentity project: $project" );
 
+
+#-----------------------------------------------------------------------------
+# URIs
+#-----------------------------------------------------------------------------
+
+my $uri  = $project->uri;
+is( $project->uri, 'alpha', 'project uri is alpha' );
+is( $project->uri('wibble'), 'alpha/wibble', 'project relative uri is alpha/wibble' );
+is( $project->uri('/wobble'), '/wobble', 'project absolute uri is /wobble' );
+
+
+#-----------------------------------------------------------------------------
+# Directories
+#-----------------------------------------------------------------------------
+
+my $dir = $project->dir;
+is( $dir, $root, 'project root directory is ' . $root );
+
+my $ptmp = $project->dir('tmp');
+my $rtmp = $root->dir('tmp');
+is( $ptmp, $rtmp, 'project tmp directory is ' . $rtmp );
+
+
+#-----------------------------------------------------------------------------
+# Config files
+#-----------------------------------------------------------------------------
+
+my $master = $project->config_file;
+is( $master, 'contentity', 'got master config file: ' . $master );
+
+my $filename = $project->config_filename('urls');
+is( $filename, 'urls.yaml', 'got config filename: ' . $filename );
+
+my $file = $project->config_file($filename);
+ok( $file->exists, 'got config file: ' . $file->name );
+
+my $urls = $project->config_data('urls');
+ok( $urls, 'got config urls' );
+is( $urls->{ foo }, '/path/to/foo', 'got foo url: ' . $urls->{ foo });
+is( $urls->{ bar }, '/path/to/bar', 'got bar url: ' . $urls->{ bar });
+ok( ! $urls->{ baz }, 'no baz url');
+ok( ! $urls->{'admin/user' }, 'no admin/user url');
+#print "urls: ", main->dump_data($urls), "\n";
+
+my $tree = $project->config_tree('urls');
+ok( $tree, 'got config urls tree' );
+is( $tree->{ foo }, '/path/to/foo', 'got foo url in tree: ' . $tree->{ foo });
+is( $tree->{ bar }, '/path/to/bar', 'got bar url in tree: ' . $tree->{ bar });
+is( $tree->{ admin }->{'/baz'}, '/path/to/baz', 'got admin/baz url in tree: ' . $tree->{ admin }->{'/baz'});
+is( $tree->{ admin }->{ user }, '/path/to/user/admin', 'got admin/user url in tree: ' . $tree->{ admin }->{ user });
+#print "urls: ", main->dump_data($tree), "\n";
+
+$tree = $project->config_uri_tree('urls');
+ok( $tree, 'got config urls uri tree' );
+is( $tree->{ foo }, '/path/to/foo', 'got foo url in uri tree: ' . $tree->{ foo });
+is( $tree->{ bar }, '/path/to/bar', 'got bar url in uri tree: ' . $tree->{ bar });
+is( $tree->{'/baz'}, '/path/to/baz', 'got /baz url in tree: ' . $tree->{'/baz'});
+is( $tree->{'/admin/user'}, '/path/to/user/admin', 'got admin/user url in tree: ' . $tree->{'/admin/user'});
+#print "urls: ", main->dump_data($tree), "\n";
+
+
+#-----------------------------------------------------------------------------
+# General config data
+#-----------------------------------------------------------------------------
+
+is( $project->greeting, "hello world!", 'Project config greeting' );
+
+
+#-----------------------------------------------------------------------------
+# Components
+#-----------------------------------------------------------------------------
+
+#my $wibble1 = $project->component('wibble');
+my $frusset = $project->frusset;
+ok( $frusset, 'You have pleasantly wibbled my frusset pouch' );
+#my $frusset = $project->component('frusset');
+#print "frusset: $frusset\n";
+
+
+__END__
 my $form = $project->resource_data( 
     forms => 'wibble.yaml' 
 );
