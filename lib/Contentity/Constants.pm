@@ -17,13 +17,13 @@ use Badger::Class
     base     => 'Badger::Constants',
     import   => 'class',
     constant => {
-        CONFIG_MODULE       => 'Contentity::Config',
+        UTF8                => 'utf8',
         CONFIG_DIR          => 'config',
-        CONFIG_FILE         => 'contentity.yaml',
+        CONFIG_FILE         => 'contentity',
         CONFIG_CODEC        => 'yaml',
         CONFIG_ENCODING     => 'utf8',
+        CONFIG_EXTENSION    => undef,   # defaults to CONFIG_CODEC
         RESOURCES_DIR       => 'resources',
-        UTF8                => 'utf8',
  
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
@@ -32,8 +32,8 @@ use Badger::Class
     exports  => {
         tags => {
             status  => \@status,
-            config  => 'CONFIG_MODULE CONFIG_DIR CONFIG_FILE CONFIG_CODEC 
-                        CONFIG_ENCODING RESOURCES_DIR',
+            config  => 'CONFIG_DIR CONFIG_FILE CONFIG_CODEC 
+                        CONFIG_EXTENSION CONFIG_ENCODING RESOURCES_DIR',
         },
         any         => 'UTF8',
     };

@@ -14,7 +14,7 @@ use Contentity::Class
     base      => 'Badger::Utils',
     constants => 'HASH',
     exports   => {
-        any => 'Timestamp Now URL File debug_caller extend'
+        any => 'Timestamp Now URL File debug_caller extend join_uri resolve_uri'
     };
 
 
@@ -39,6 +39,22 @@ sub extend {
     }
     
     return $hash;
+}
+
+
+sub join_uri {
+    my $uri = join('/', @_);
+    $uri =~ s{/+}{/}g;
+    return $uri;
+}
+
+
+sub resolve_uri {
+    my $base = shift;
+    my $rel  = join_uri(@_);
+    return ($rel =~ m{^/})
+        ? $rel
+        : join_uri($base, $rel);
 }
 
 
