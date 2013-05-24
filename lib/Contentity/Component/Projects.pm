@@ -9,8 +9,20 @@ use Contentity::Class
 
 sub return_resource {
     my ($self, $data) = @_;
-    $self->debug("created sub-project") if DEBUG;
-    return $self->project->slave($data);
+    my $project = $self->project;
+    my $base    = delete $data->{ base };
+
+    $self->debug(
+        "sub-project is $data->{ uri }",
+        "parent project is $project->{ uri }\n",
+    ) if DEBUG;
+
+    # attach project to intermediary base class if there is one specified
+    $project = $project->project($base)
+        if $base;
+
+    # create a new slave hanging off the master, either main project or base
+    return $project->slave($data);
 }
 
 

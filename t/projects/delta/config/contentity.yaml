@@ -1,0 +1,4 @@
+---
+greeting:      Delta greeting
+resources:
+    - entities

@@ -32,19 +32,43 @@ sub init_resource {
         "Entities component init_resource() [$resource] [$resources]"
     ) if DEBUG;
 
-    $self->{ resource  } = $resource;
-    $self->{ resources } = $resources;
+    $self->{ resource        } = $resource;
+    $self->{ resources       } = $resources;
+    $self->{ cache_instances } = $config->{ cache_instances };
 
     return $self;
 }
+
+
+#-----------------------------------------------------------------------------
+# resource($name) is the public-facing API method
+# lookup_resource($name) is the cache-aware method
+# fetch_resource($name) always fetches the resource
+#-----------------------------------------------------------------------------
 
 sub resource {
     my $self = shift;
 
     return @_
-        ? $self->fetch_resource(@_)
+        ? $self->lookup_resource(@_)
         : $self->{ resource };
 }
+
+sub lookup_resource {
+    my $self = shift;
+
+    # Cache-aware resource fetcher
+
+    if ($self->{ cache_instances }) {
+        my $name  = shift;
+        my $cache = $self->{ instance_cache } ||= { };
+        return  $cache->{ $name } 
+            ||= $self->fetch_resource($name, @_);
+    }
+
+    return $self->fetch_resource(@_);
+}
+
 
 sub fetch_resource {
     my $self   = shift;

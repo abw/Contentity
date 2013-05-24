@@ -14,7 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 16,
+    tests => 21,
     debug => 'Contentity::Project',
     args  => \@ARGV;
 
@@ -69,13 +69,28 @@ is( $tree->{'/admin/bravo2'}, '/path/to/admin/bravo2', 'got /admin/bravo2 url in
 # Fetch another sub-project
 #-----------------------------------------------------------------------------
 
-my $chas = $sub->project('charlie');
+my $chas = $project->project('charlie');
 ok( $chas, 'got charlie project' );
-is( $chas->greeting, 'Charlie greeting' );
+is( $chas->greeting, 'Charlie greeting', 'got charlie greeeting' );
 
 my $harry = $chas->entity('harry');
 ok( $harry, 'got harry entity' );
 
 my $barry = $chas->entity('barry');
 ok( $barry, 'got barry entity' );
+
+is( $chas->mastermsg, 'The master message', 'chas got alpha message' );
+
+
+#-----------------------------------------------------------------------------
+# Fetch a sub-project that declares that it's based on another project
+#-----------------------------------------------------------------------------
+
+my $delta = $project->project('delta');
+ok( $delta, 'got delta project' );
+is( $delta->greeting, 'Delta greeting', 'got delta greeeting' );
+
+is( $delta->mastermsg, 'The master message', 'delta got alpha message' );
+is( $delta->charliemsg, 'Charlie says hi!', 'got charlie message' );
+
 

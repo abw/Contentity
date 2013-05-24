@@ -1,6 +1,6 @@
 ---
 greeting:       hello world!
-mastermsg:      The master message       
+mastermsg:      The master message    
 components:     
     - database 
     - entities 
@@ -10,4 +10,6 @@ resources:
     - apps
     - entities
     - projects
+projects:
+    cache_instances:    1
 

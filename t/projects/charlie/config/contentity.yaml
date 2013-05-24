@@ -1,4 +1,5 @@
 ---
-greeting:      Charlie greeting
+greeting:       Charlie greeting
+charliemsg:     Charlie says hi!
 resources:
     - entities

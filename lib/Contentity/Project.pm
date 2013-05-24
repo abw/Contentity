@@ -560,6 +560,7 @@ sub slave {
     my $class = ref $self;
     $params->{_project_} = $self;
     $params->{ root    } = $self->dir( $params->{ root } ) if $params->{ root };
+    $self->debug_data("slave initialising new params: ", $params) if DEBUG;
     return $class->new($params);
 }
 
@@ -626,21 +627,21 @@ sub OLD_auto_can {
 
 sub autoload_component {
     my ($self, $name, @args) = @_;
-    $self->debug("autoload_component($name)") if DEBUG;
+    $self->debug("$self->{uri}: autoload_component($name)") if DEBUG;
     return $self->has_component($name)
         && $self->component($name, @args);
 }
 
 sub autoload_resource {
     my ($self, $name, @args) = @_;
-    $self->debug("autoload_resource($name)") if DEBUG;
+    $self->debug("$self->{uri}: autoload_resource($name)") if DEBUG;
     return $self->has_resource($name)
         && $self->resource($name, @args);
 }
 
 sub autoload_delegate {
     my ($self, $name, @args) = @_;
-    $self->debug("autoload_delegate($name)") if DEBUG;
+    $self->debug("$self->{uri}: autoload_delegate($name)") if DEBUG;
     my $pair = $self->has_delegate($name) || return;
     my ($component, $method) = @$pair;
     $self->debug("project has [$component,$method] delegate") if DEBUG;
@@ -649,7 +650,7 @@ sub autoload_delegate {
 
 sub autoload_config {
     my ($self, $name, @args) = @_;
-    $self->debug("autoload_config($name)") if DEBUG;
+    $self->debug("$self->{uri}: autoload_config($name)") if DEBUG;
     my $config = $self->config;
 
     return  exists $config->{ $name }
@@ -659,7 +660,7 @@ sub autoload_config {
 
 sub autoload_master {
     my ($self, $name, @args) = @_;
-    $self->debug("autoload_master($name)") if DEBUG;
+    $self->debug("$self->{uri}: autoload_master($name)") if DEBUG;
     my $master = $self->master || return;
     return $master->$name(@args);
 }

@@ -8,6 +8,29 @@ use Contentity::Class
     base      => 'Badger::Base';
 
 
+sub dump_data_depth {
+    my ($self, $data, $depth) = @_;
+    local $Badger::Debug::MAX_DEPTH = $depth;
+    $self->dump_data($data);
+}
+
+sub dump_data1 {
+    shift->dump_data_depth(shift, 1);
+}
+
+sub dump_data2 {
+    shift->dump_data_depth(shift, 2);
+}
+
+sub debug_data {
+    my $self = shift;
+    local $Badger::Debug::CALLER_UP = 1;
+    $self->debug(
+        map { ref $_ ? $self->dump_data($_) : $_ }
+        @_
+    );
+}
+
 sub attach_project {
     my ($self, $config) = @_;
 
@@ -36,10 +59,12 @@ L<Badger::Base>.
 
 =head1 METHODS
 
-All methods are inherited from the L<Badger::base> base class.
+All methods are inherited from the L<Badger::Base> base class.
 
 It also imports the C<debugf> method and C<:dump> methods from 
 L<Badger::Debug>.
+
+TODO: attach_project
 
 =head1 AUTHOR
 
