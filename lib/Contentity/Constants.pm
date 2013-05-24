@@ -24,18 +24,31 @@ use Badger::Class
         CONFIG_ENCODING     => 'utf8',
         CONFIG_EXTENSION    => undef,   # defaults to CONFIG_CODEC
         RESOURCES_DIR       => 'resources',
+
+        # Timestamp handling
+        NULL_DATE           => '0000-00-00',
+        NULL_TIME           => '00:00:00',
+        NULL_STAMP          => '0000-00-00 00:00:00',
+        LAST_TIME           => '23:59:59',
  
+        # Date formats
+        SHORT_DATE          => '%d-%b-%Y',
+        MEDIUM_DATE         => '<ord> %B %Y',
+        LONG_DATE           => '%A <ord> %B %Y',
+
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
         @status,
     },
     exports  => {
+        any  => 'UTF8',
         tags => {
-            status  => \@status,
-            config  => 'CONFIG_DIR CONFIG_FILE CONFIG_CODEC 
-                        CONFIG_EXTENSION CONFIG_ENCODING RESOURCES_DIR',
+            status          => \@status,
+            config          => 'CONFIG_DIR CONFIG_FILE CONFIG_CODEC
+                                CONFIG_EXTENSION CONFIG_ENCODING RESOURCES_DIR',
+            timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
+            date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
         },
-        any         => 'UTF8',
     };
 
 1;
