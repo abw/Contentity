@@ -560,7 +560,7 @@ sub slave {
     my $class = ref $self;
     $params->{_project_} = $self;
     $params->{ root    } = $self->dir( $params->{ root } ) if $params->{ root };
-    $self->debug_data("slave initialising new params: ", $params) if DEBUG;
+    $self->debug_data("slave $params->{ uri } initialising new params: ", $params) if DEBUG;
     return $class->new($params);
 }
 
@@ -675,7 +675,7 @@ sub destroy {
     my $self = shift;
     delete $self->{ component  };
     delete $self->{ components };
-    $self->debug("project is destroyed") if DEBUG;
+    $self->debug("project $self->{ uri } is destroyed") if DEBUG;
 }
 
 

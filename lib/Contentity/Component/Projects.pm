@@ -13,7 +13,7 @@ sub return_resource {
     my $base    = delete $data->{ base };
 
     $self->debug(
-        "sub-project is $data->{ uri }",
+        "sub-project is $data->{ uri }\n",
         "parent project is $project->{ uri }\n",
     ) if DEBUG;
 
