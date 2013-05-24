@@ -10,8 +10,6 @@ use Contentity::Class
 
 sub init {
     my ($self, $config) = @_;
-    my $project   = delete $config->{_project_}
-        || return $self->error_msg( missing => 'project' );
     my $component = delete $config->{_component_} || 'component';
 
     $self->debug(
@@ -20,13 +18,11 @@ sub init {
     ) if DEBUG;
 
     $self->{ config    } = $config;
-    $self->{ project   } = $project;
     $self->{ component } = $component;
 
-    # avoid circular refs from keeping the project alive
-    weaken $self->{ project };
-
-    return $self->init_component($config);
+    return $self
+        ->attach_project($config)
+        ->init_component($config);
 }
 
 

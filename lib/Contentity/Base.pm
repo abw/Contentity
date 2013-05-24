@@ -4,7 +4,22 @@ use Badger::Debug ':all';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
+    utils     => 'weaken',
     base      => 'Badger::Base';
+
+
+sub attach_project {
+    my ($self, $config) = @_;
+
+    $self->{ project } = delete $config->{_project_}
+        || return $self->error_msg( missing => 'project' );
+
+    # avoid circular refs from keeping the project alive
+    weaken $self->{ project };
+
+    return $self;
+}
+
 
 1;
 

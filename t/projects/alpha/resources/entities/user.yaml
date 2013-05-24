@@ -1,3 +1,4 @@
+# Just trying out some ideas....
 ---
 table:              user
 id:                 id
@@ -19,7 +20,7 @@ field_sets:
     add:            @default -registered -status -sort_name
     edit:           @default # hmmm.... what about ID?
 
-record:             LFH::Record::User
+record:             Cog::Record::User
 
 relations:
     -               account+            # one or many

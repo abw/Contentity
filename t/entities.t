@@ -14,7 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 4,
+    tests => 9,
     debug => 'Contentity::Component::Entities Contentity::Component::Resource',
     args  => \@ARGV;
 
@@ -46,4 +46,18 @@ ok( $entities, "loaded entities" );
 
 my $user = $entities->resource('tom');
 ok( $user, 'fetched tom' );
-is( $user->{ email }, 'tom@example.com', 'got email address' );
+is( $user->{ email }, 'tom@example.com', "got Tom's email address" );
+
+
+#-----------------------------------------------------------------------------
+# All in one
+#-----------------------------------------------------------------------------
+
+my $dick = $project->resource( entity => 'dick' );
+ok( $dick, 'fetched dick' );
+is( $dick->{ email }, 'dick@example.com', "got Dick's address" );
+
+my $harry = $project->entity( harry => { surname => 'Smith' } );
+ok( $harry, 'fetched harry' );
+is( $harry->{ email }, 'harry@example.com', "got Harry's address" );
+is( $harry->{ surname }, 'Smith', "got Harry's surname" );

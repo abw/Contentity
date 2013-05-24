@@ -1,5 +1,6 @@
 ---
 greeting:       hello world!
+mastermsg:      The master message       
 components:     
     - database 
     - entities 
@@ -8,3 +9,5 @@ resources:
     - forms
     - apps
     - entities
+    - projects
+

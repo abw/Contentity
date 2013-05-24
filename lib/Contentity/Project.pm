@@ -6,10 +6,10 @@ use Contentity::Class
     debug       => 0,
     base        => 'Contentity::Base',
     import      => 'class',
-    utils       => 'params extend weaken resolve_uri',
+    utils       => 'params extend weaken resolve_uri self_params',
     filesystem  => 'Dir VFS',
     accessors   => 'root config',
-    autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config',
+    autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config autoload_master',
     constants   => ':config DOT DELIMITER HASH ARRAY',
     constant    => {
         COMPONENT_FACTORY => 'Contentity::Components',
@@ -58,6 +58,17 @@ sub init {
     $self->{ config_filespec  } = $cfg_filespec;
     $self->{ config_extension } = $cfg_ext;
     $self->{ config_match_ext } = $ext_re;
+
+    # Hmmm... should this be "master" or simply "project" in keeping with
+    # components?
+    if ($config->{_project_}) {
+        $self->attach_project($config);
+        $self->debugf(
+            "attaching slave project [%s] to master project [%s]",
+            $self->uri,
+            $self->master->uri
+        ) if DEBUG;
+    }
 
     my $cfg_data = $self->config_data($cfg_file);
 
@@ -218,6 +229,10 @@ sub config_data {
     my ($self, $name) = @_;
     my $path = $self->config_filename($name);
     my $file = $self->config_file($path);
+
+    if (! $file->exists && $self->master) {
+        return $self->master->config_data($name);
+    }
     my $data = $file->try->data;
     return $@
         ? $self->error_msg( load_fail => $file => $@ )
@@ -234,20 +249,37 @@ sub config_filespec {
 }
 
 sub config_tree {
-    my ($self, $name, $binder) = @_;
+    my ($self, $name, $binder, $slave) = @_;
     my $confdir = $self->config_dir;
     my $file    = $self->config_file( $self->config_filename($name) );
     my $dir     = $confdir->dir($name);
-    my $data;
+    my $master  = $self->master;
+    my $data    = $master 
+        ? $master->config_tree($name, $binder, $self) 
+        : { };
 
     if ($file->exists) {
-        $data = $file->try->data;
+        # we're expecting to find a $name.yaml file...
+        my $more = $file->try->data;
         return $self->error_msg( load_fail => $file => $@ ) if $@;
+        @$data{ keys %$more } = values %$more;
     }
     elsif ($dir->exists) {
-        $data = { };
+        # ...or perhaps a $name directory with XXX.yaml files in it
+        # we'll handle that below
+    }
+    elsif ($slave) {
+        # If we're being called as the master of some slave then we don't
+        # need to report any missing files/dirs as errors as it's up to the
+        # slave to take care of that
+        return $data;
+    }
+    elsif ($master && %$data) {
+        # If we're a slave and the master returned some data then we're good
+        return $data;
     }
     else {
+        # There's nobody else to blame
         return $self->error_msg( no_config => $name );
     }
 
@@ -260,6 +292,8 @@ sub config_tree {
     if ($dir->exists) {
         # create a virtual file system rooted on the metadata directory
         # so that all file paths are resolved relative to it
+
+        # TODO: add in multiple roots where project has a parent project
         my $vfs = VFS->new( root => $dir );
         $self->debug("Reading metadata from dir: ", $dir->name) if DEBUG;
         $self->scan_config_dir($vfs->root, $data, $binder);
@@ -272,6 +306,7 @@ sub config_tree {
     # return $each_fn
     #    ? hash_each($data, $each_fn)
     #    : $data;
+
 }
 
 sub scan_config_dir {
@@ -415,6 +450,22 @@ sub component_factory {
 # Methods for loading resources
 #-----------------------------------------------------------------------------
 
+
+sub resources {
+    my ($self, $type) = @_;
+
+    return $self->{ resources }->{ $type }
+        || $self->{ resource  }->{ $type }
+        || return $self->error_msg( invalid => resources => $type );
+}
+
+sub resource {
+    my ($self, $type, $name, @args) = @_;
+
+    return $self->resources($type)->resource($name, @args)
+        || return $self->error_msg( invalid => $type => $name );
+}
+
 sub has_resource {
     my $self = shift;
     my $type = shift;
@@ -451,10 +502,23 @@ sub resource_dir {
 sub resource_file {
     my ($self, $type, $name) = @_;
 
-    return $self
+    # look for the resource file in the local project directory
+    my $file = $self
         ->resource_dir($type)
-        ->file( $self->config_filename($name) )
-        ->must_exist;
+        ->file( $self->config_filename($name) );
+
+    if ($file->exists) {
+        return $file;
+    }
+
+    # delegate to any master project
+    my $master = $self->master;
+    if ($master) {
+        return $master->resource_file($type, $name);
+    }
+
+    # trigger exception
+    return $file->must_exist;
 }
 
 sub resource_data {
@@ -464,7 +528,6 @@ sub resource_data {
 }
 
 
-
 #-----------------------------------------------------------------------------
 # Delegates
 #-----------------------------------------------------------------------------
@@ -472,7 +535,7 @@ sub resource_data {
 sub has_delegate {
     my $self   = shift;
     my $name   = shift                          || return $self->decline_msg( missing => 'delegate'  );
-    my $delegs = $self->config->{ delegates }   || return $self->decline_msg( missing => 'delegates' );
+    my $delegs = $self->{ config }->{ delegates }   || return $self->decline_msg( missing => 'delegates' );
     my $deleg  = $delegs->{ $name }             || return $self->decline_msg( invalid => delegate => $name );
     my ($component, $method) = split(':', $deleg, 2);
 
@@ -483,6 +546,31 @@ sub has_delegate {
 
     return [$component, $method];
 }
+
+#-----------------------------------------------------------------------------
+# Sub-projects
+#-----------------------------------------------------------------------------
+
+sub master {
+    shift->{ project };
+}
+
+sub slave {
+    my ($self, $params) = self_params(@_);
+    my $class = ref $self;
+    $params->{_project_} = $self;
+    $params->{ root    } = $self->dir( $params->{ root } ) if $params->{ root };
+    return $class->new($params);
+}
+
+sub roots {
+    my $self   = shift;
+    my $master = $self->master;
+    my $roots  = $master ? $master->roots : [ ];
+    push(@$roots, $self->root);
+    return $roots;
+}
+
 
 #-----------------------------------------------------------------------------
 # The auto_can method is called when an unknown method is called.  It looks
@@ -567,6 +655,13 @@ sub autoload_config {
     return  exists $config->{ $name }
         ?   $config->{ $name }
         :   undef;
+}
+
+sub autoload_master {
+    my ($self, $name, @args) = @_;
+    $self->debug("autoload_master($name)") if DEBUG;
+    my $master = $self->master || return;
+    return $master->$name(@args);
 }
 
 
