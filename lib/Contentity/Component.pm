@@ -58,6 +58,26 @@ sub dir {
 
 
 #-----------------------------------------------------------------------------
+# Autoload methods, applied by 'autolook' hook to Contentity::Class above
+#-----------------------------------------------------------------------------
+
+sub autoload_config {
+    my ($self, $name, @args) = @_;
+    $self->debug("autoload_config($name)") if DEBUG;
+    my $config = $self->{ config };
+
+    return  exists $config->{ $name }
+        ?   $config->{ $name }
+        :   undef;
+}
+
+sub autoload_project {
+    my ($self, $name, @args) = @_;
+    $self->debug("autoload_project($name)") if DEBUG;
+    return $self->project->$name(@args);
+}
+
+#-----------------------------------------------------------------------------
 # Cleanup methods
 #-----------------------------------------------------------------------------
 

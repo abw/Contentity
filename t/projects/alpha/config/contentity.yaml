@@ -1,6 +1,9 @@
 ---
 greeting:       hello world!
-components:     wibble frusset
+components:     
+    - database 
+    - entities 
+    - frusset
 resources:
     - forms
     - apps

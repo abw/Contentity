@@ -3,6 +3,7 @@ package Wibble::Component::Frusset;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
+    autolook    => 'autoload_config autoload_project',
     base        => 'Contentity::Component';
 
 sub init_component {

@@ -341,6 +341,17 @@ sub component {
     my $self = shift;
     my $type = shift;
 
+    # Always create a new instance if arguments are specified
+    if (@_) {
+        $self->debug(
+            "Creating custom $type component with config: ", 
+            $self->dump_data(\@_)
+        ) if DEBUG;
+
+        return $self->load_component( $type => @_ );
+    }
+
+    # Otherwise create and cache a component using the project config defaults
     return  $self->{ component }->{ $type }
         ||= $self->load_component( $type => @_ );
 }
@@ -529,14 +540,14 @@ sub autoload_component {
     my ($self, $name, @args) = @_;
     $self->debug("autoload_component($name)") if DEBUG;
     return $self->has_component($name)
-        && $self->component($name, @_);
+        && $self->component($name, @args);
 }
 
 sub autoload_resource {
     my ($self, $name, @args) = @_;
     $self->debug("autoload_resource($name)") if DEBUG;
     return $self->has_resource($name)
-        && $self->resource($name, @_);
+        && $self->resource($name, @args);
 }
 
 sub autoload_delegate {
