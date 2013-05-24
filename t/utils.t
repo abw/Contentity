@@ -13,7 +13,7 @@ use Badger
     Debug => [import => ':all'];
 
 use Badger::Test
-    tests => 4,
+    tests => 8,
     debug => 'Contentity::Utils',
     args  => \@ARGV;
 
@@ -59,6 +59,10 @@ is(
 # HTML generation
 #-----------------------------------------------------------------------------
 
+is( H('br'), '<br>', 'empty element' );
+
+is( H( img => { src => 'foo.gif' } ), '<img src="foo.gif">', 'img tag' );
+
 my $html = H(
     h1 => 'Hello World'
 );
@@ -76,4 +80,10 @@ is(
     'html menu generation' 
 );
 
+is (
+    H('i.icon', 'foo'), '<i class="icon">foo</i>', 'HTML shortcut for .class'
+);
+is (
+    H('i#icon', 'foo'), '<i id="icon">foo</i>', 'HTML shortcut for #id'
+);
 
