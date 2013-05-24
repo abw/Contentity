@@ -69,7 +69,7 @@ This module is a subclass of the L<Badger::Constants> module.  It defines
 various constants used in other Contentity module in addition to all
 the constants inherited from the L<Badger::Constants> module.
 
-=head1 CONSTANTS
+=head1 CONFIGURATION CONSTANTS
 
 =head2 CONFIG_MODULE
 
@@ -88,12 +88,30 @@ directory: C<contentity.yaml>.
 
 The default data encoding for configuration files: C<yaml>.
 
+=head1 TIMESTAMP CONSTANTS
+
+=head2 NULL_DATE
+
+The NULL date: C<0000-00-00>
+
+=head2 NULL_TIME
+
+The NULL date: C<00:00:00>
+
+=head2 NULL_STAMP
+
+The NULL timestamp: C<0000-00-00 00:00:00>
+
+=head2 LAST_TIME
+
+The last second of the last hour of the day: C<23:59:59>
+
 =head1 AUTHOR
 
 Andy Wardley E<lt>abw@wardley.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2008-2012 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2008-2013 Andy Wardley.  All Rights Reserved.
 
 =cut
