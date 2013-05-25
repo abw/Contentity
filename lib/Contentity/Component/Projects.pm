@@ -4,7 +4,10 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     component => 'resource',
-    resource  => 'project';
+    resource  => 'project',
+    constant  => {
+        CACHE_INSTANCES => 1,
+    };
 
 
 sub return_resource {

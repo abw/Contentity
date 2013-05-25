@@ -7,8 +7,9 @@ use Contentity::Class
     accessors => 'resources',
     utils     => 'extend params plural',
     constant  => {
-        RESOURCE  => undef,
-        RESOURCES => undef,
+        RESOURCE        => undef,
+        RESOURCES       => undef,
+        CACHE_INSTANCES => 1,
     };
 
 
@@ -34,7 +35,8 @@ sub init_resource {
 
     $self->{ resource        } = $resource;
     $self->{ resources       } = $resources;
-    $self->{ cache_instances } = $config->{ cache_instances };
+    $self->{ cache_instances } = $config->{ cache_instances } 
+                             //= $self->CACHE_INSTANCES;
 
     return $self;
 }

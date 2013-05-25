@@ -10,6 +10,4 @@ resources:
     - apps
     - entities
     - projects
-projects:
-    cache_instances:    1
-
+    - sites

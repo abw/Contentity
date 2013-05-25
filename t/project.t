@@ -60,7 +60,7 @@ is( $ptmp, $rtmp, 'project tmp directory is ' . $rtmp );
 #-----------------------------------------------------------------------------
 
 my $master = $project->config_file;
-is( $master, 'contentity', 'got master config file: ' . $master );
+is( $master, 'project', 'got master config file: ' . $master );
 
 my $filename = $project->config_filename('urls');
 is( $filename, 'urls.yaml', 'got config filename: ' . $filename );

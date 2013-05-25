@@ -19,7 +19,7 @@ use Badger::Class
     constant => {
         UTF8                => 'utf8',
         CONFIG_DIR          => 'config',
-        CONFIG_FILE         => 'contentity',
+        CONFIG_FILE         => 'project',
         CONFIG_CODEC        => 'yaml',
         CONFIG_ENCODING     => 'utf8',
         CONFIG_EXTENSION    => undef,   # defaults to CONFIG_CODEC
