@@ -25,6 +25,7 @@ use Contentity::Class
             self_key self_keys
             H html_elem html_attrs data_attrs
             datestamp today format_date
+            ordinal ordinate plurality inflect commas
             find_program prompt confirm 
         }
     };
