@@ -15,7 +15,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 27,
+    tests => 7,
     debug => 'Contentity::Component::Routes',
     args  => \@ARGV;
 
@@ -54,4 +54,4 @@ ok( $match, 'matched /user/abw' );
 is( $match->{ uri }, 'some.user.info', 'got the /user/abw uri' );
 is( $match->{ id  }, 'abw', 'got the /user/abw user id' );
 
-print $project->router->dump;
+#print $project->router->dump;

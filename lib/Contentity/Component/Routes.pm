@@ -3,7 +3,7 @@ package Contentity::Component::Routes;
 use Contentity::Router;
 use Contentity::Class
     version   => 0.01,
-    debug     => 1,
+    debug     => 0,
     base      => 'Contentity::Component',
     accessors => 'router',
     auto_can  => 'auto_can',
