@@ -106,5 +106,32 @@ sub return_resource {
     return $data;
 }
 
+sub files {
+    my $self = shift;
+
+    return $self->project->resource_files(
+        $self->{ resources }
+    );
+}
+
+sub names {
+    my $self = shift;
+
+    return $self->project->resource_names(
+        $self->{ resources }
+    );
+}
+
+sub all {
+    my $self  = shift;
+    my @names = $self->names;
+    print "NAMES: ", $self->dump_data(\@names), "\n";
+    my @items = map { $self->resource($_) } sort $self->names;
+
+    return wantarray
+        ?  @items
+        : \@items;
+}
+
 1;
 

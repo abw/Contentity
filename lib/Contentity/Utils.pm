@@ -3,6 +3,7 @@ package Contentity::Utils;
 use warnings            qw( FATAL utf8 );
 use open                qw< :std :utf8 >;
 use Carp;
+use Badger::Rainbow     ANSI => 'cyan yellow';
 use Badger::Debug       'debug_caller';
 use Badger::Filesystem  'File';
 use Badger::Timestamp   'TIMESTAMP Timestamp Now';
@@ -402,8 +403,9 @@ sub prompt {
     my ($msg, $def, $yes) = @_;
     my $ans = '';
     $def = '' unless defined $def;
+    my $defprompt = $def ? " [$def]" : "";
 
-    print "$msg [$def] ";
+    print cyan($msg) . yellow($defprompt) . ' ';
 
     if ($yes) {    # accept default
         print "$def\n";

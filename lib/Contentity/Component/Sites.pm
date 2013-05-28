@@ -15,12 +15,14 @@ use Contentity::Class
 sub return_resource {
     my ($self, $data) = @_;
     my $project = $self->project;
-    my $base    = delete $data->{ base };
+    my $base    = $data->{ base };
 
     $self->debug(
         "sub-site is $data->{ uri }\n",
         "parent project is $project->{ uri }\n",
     ) if DEBUG;
+
+    $self->debug("site data: ", $self->dump_data($data)) if DEBUG;
 
     # attach project to intermediary base class if there is one specified
     # (sites are subclasses of projects, so it's safe to cross-breed the two)

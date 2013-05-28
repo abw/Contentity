@@ -521,11 +521,47 @@ sub resource_file {
     return $file->must_exist;
 }
 
+sub resource_vfs {
+    my ($self, $type) = @_;
+
+    return VFS->new( 
+        root => $self->resource_dir($type)
+    );
+}
+
+sub resource_files {
+    my ($self, $type) = @_;
+    my $vfs   = $self->resource_vfs($type);
+    my @files = $vfs->collect( files => 1, in_dirs => 1, dirs => 0 );
+    return wantarray
+        ?  @files
+        : \@files;
+}
+
+sub resource_names {
+    my ($self, $type) = @_;
+    my $files = $self->resource_files($type);
+    my @names = map { $_->basename } @$files;
+    return wantarray
+        ?  @names
+        : \@names;
+}
+
+
 sub resource_data {
     return shift                    # TODO: memcached
         ->resource_file(@_)
         ->data
 }
+
+
+#sub resource_index {
+#    my ($self, $type) = @_;
+
+    # look for the resource file in the local project directory
+#    my $root = $self->resource_dir($type)
+#    my $src_vfs = VFS->new( root => $srcdir );
+#my @files   = $src_vfs->collect( files => 1, in_dirs => 1, dirs => 0 );
 
 
 #-----------------------------------------------------------------------------
@@ -573,56 +609,9 @@ sub roots {
 }
 
 
-#-----------------------------------------------------------------------------
-# The auto_can method is called when an unknown method is called.  It looks
-# to see if the method corresponds to a component module or a method delegated 
-# to a component.
-#-----------------------------------------------------------------------------
-
-# HMM... I don't like this at all.  In a multi-site environment there's 
-# too much potential for auto-generated methods to do different things.
-# I do not want to debug that when it goes wrong.
-
-# TODO: replace this with AUTOLOAD
-
-sub OLD_auto_can {
-    my ($self, $name) = @_;
-    my ($pair);
-
-    if ($self->has_resource($name)) {
-        $self->debug("project has $name resource") if DEBUG;
-        return sub {
-            return shift->{ resource }->{ $name }->resource(@_);
-        }
-    }
-
-    if ($self->has_resources($name)) {
-        $self->debug("project has $name resources") if DEBUG;
-        return sub {
-            return shift->{ resources }->{ $name };
-        }
-    }
-
-    if ($pair = $self->has_delegate($name)) {
-        my ($name, $method) = @$pair;
-        $self->debug("project has [$name,$method] delegate") if DEBUG;
-        return sub {
-            return shift->component($name)->$method(@_);
-        }
-    }
-
-    if ($self->has_component($name)) {
-        $self->debug("project has $name component module") if DEBUG;
-        return sub {
-            return shift->component($name, @_);
-        }
-    }
-
-    return undef;
-}
 
 #-----------------------------------------------------------------------------
-# Let's try something a bit better
+# Autoload methods for looking up components, resources, delegates, etc.
 #-----------------------------------------------------------------------------
 
 sub autoload_component {
@@ -666,7 +655,6 @@ sub autoload_master {
 }
 
 
-
 #-----------------------------------------------------------------------------
 # Cleanup methods
 #-----------------------------------------------------------------------------
@@ -675,6 +663,7 @@ sub destroy {
     my $self = shift;
     delete $self->{ component  };
     delete $self->{ components };
+    delete $self->{ _project_  };
     $self->debug("project $self->{ uri } is destroyed") if DEBUG;
 }
 
