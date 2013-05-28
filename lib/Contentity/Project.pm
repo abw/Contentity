@@ -534,10 +534,10 @@ sub resource_data {
 
 sub has_delegate {
     my $self   = shift;
-    my $name   = shift                          || return $self->decline_msg( missing => 'delegate'  );
+    my $name   = shift                              || return $self->decline_msg( missing => 'delegate'  );
     my $delegs = $self->{ config }->{ delegates }   || return $self->decline_msg( missing => 'delegates' );
-    my $deleg  = $delegs->{ $name }             || return $self->decline_msg( invalid => delegate => $name );
-    my ($component, $method) = split(':', $deleg, 2);
+    my $deleg  = $delegs->{ $name }                 || return $self->decline_msg( invalid => delegate => $name );
+    my ($component, $method) = split(/\W+/, $deleg, 2);
 
     $method ||= $name;
     $self->debug(

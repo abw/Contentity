@@ -4,14 +4,14 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Base',
-    constants   => 'ARRAY',
+    constants   => 'ARRAY HASH',
     accessors   => 'routes',
     constant    => {
         MATCH_MINUS => qr/^(\-)$/,
         MATCH_PLUS  => qr/^(\+)$/,
         MATCH_STAR  => qr/^(\*)$/,
-        MATCH_FIXED => qr/^[\w\-\.]+$/,
-        MATCH_PLACE => qr/^:(\w+)$/,
+        MATCH_FIXED => qr/^([\w\-\.]+)$/,
+        MATCH_PLACE => qr/^(:\w+)$/,
         MATCH_ANGLE => qr/^<(.*)>$/,
     },
     messages => {
@@ -26,6 +26,8 @@ our $TYPES = {
     text => \&match_text,
     path => \&match_path,
 };
+our $DEFAULT_TYPE = 'text';
+our $INDENT_WIDTH = 2;
 
 
 #------------------------------------------------------------------------
@@ -38,6 +40,11 @@ sub init {
 
 sub init_router {
     my ($self, $config) = @_;
+
+    $self->debugf(
+        "init_router(%s)",
+        $self->dump_data($config)
+    ) if DEBUG;
 
     # Fixed routes are static text, e.g. in '/user/list' both 'user' and 'list'
     # are fixed route components.  Matched route components like ':id' 
@@ -73,6 +80,33 @@ sub add_routes {
 
         if (ref $route eq ARRAY) {
             unshift(@routes, @$route);
+            next;
+        }
+        if (ref $route eq HASH) {
+            # The problem with hash arrays is that they're unordered.
+            # We allow a route to be prefixed with digits and whitespace
+            # for the purposes of ordering, e.g. "01 /route/one".  This 
+            # prefix is removed at the point of the route being added back 
+            # into the queue.  Note that this *ONLY* applies to entries in 
+            # hash arrays.
+            unshift(
+                @routes, 
+                map { 
+                    $_->[1], $_->[2]
+                }
+                sort { 
+                    $a->[0] cmp $b->[0] 
+                }
+                map  { 
+                    my $key  = $_;
+                    my $val  = $route->{ $key };
+                    my $sort = $key;
+                    $key =~ s/^\d+\s+//g;
+                    [$sort, $key, $val]
+                }
+                keys %$route
+            );
+            #return $self->error_msg( invalid => route => $route );
             next;
         }
 
@@ -152,36 +186,27 @@ sub add_route_parts {
 
         return $self->add_fixed_route(
             $route, 
-            $head, $parts, 
+            $1, $parts, 
             $endpoint
         );
     }
     elsif ($head =~ MATCH_PLACE) {
         # A standard :name placeholder
         $self->debug("matched placeholder: $1 in $head") if DEBUG;
-        $type = 'text',
-        $name = $1;
 
         return $self->add_matched_route(
             $route, 
-            $head, $parts, 
-            $type, $name, 
+            $1, $parts,
             $endpoint
         );
     }
     elsif ($head =~ MATCH_ANGLE) {
         # An extended <type:name> placeholder
         $self->debug("matched angled placeholder: $1 | $head") if DEBUG;
-        @parts = split(':', $1, 2);
-        ($type, $name) = 
-            @parts == 2 
-                ? @parts 
-                : (text => @parts);
 
         return $self->add_matched_route(
             $route, 
-            $head, $parts, 
-            $type, $name, 
+            $1, $parts, 
             $endpoint
         );
     }
@@ -204,25 +229,40 @@ sub add_fixed_route {
 }
 
 sub add_matched_route {
-    my ($self, $route, $head, $tail, $type, $name, $endpoint) = @_;
+    my ($self, $route, $head, $tail, $endpoint) = @_;
+
+    # $head can be 'foo' or ':foo', both of which are implicitly text types
+    # 'text:foo', or an explicitly typed route part, e.g. int:foo
+    my @parts = split(':', $1, 2);
+    my ($type, $name) = @parts == 2 ? @parts : (text => @parts);
+    $type ||= $DEFAULT_TYPE;
+
+    # The $type must have a basic matcher function defined in $TYPES
     my $matcher = $TYPES->{ $type }
         || return $self->error_msg( invalid => type => $type );
 
-    # We want to share intermediate components, e.g. in /user/:id/foo and
-    # /user/:id/bar we want to use the same dynamic rule matching component
-    # for the middle :id part.
+    # We want to share intermediate component.  For example, with two routes
+    # /user/:id/foo and /user/:id/bar we want to use the same dynamic rule 
+    # matching component for the middle :id part.  We create a canonical
+    # type:name identifier for it to accommodate differences in syntax, e.g.
+    # /user/:id/foo, /user/text:id/bar and /user/<text:id>/baz will all use
+    # the same intermediate text:id component.
     my $canon   = "$type:$name";
     my $subset  = $self->{ matchndx }->{ $canon };
 
+    # We don't already have a route set for this component so create one
     if (! $subset) {
         $self->debug("creating new subset router for [$head]") if DEBUG;
         $subset = $self->{ matchndx }->{ $canon } = $self->new_route_set;
         push(
             @{ $self->{ match } }, 
-            [ $head, $type, $name, $matcher, $subset ]
+            [ $type, $name, $matcher, $subset ]
         );
     }
 
+    # If there's any more of the route left to resolve then hand it over 
+    # to the new nested routeset for further processing.  Otherwise we set
+    # the endpoint data in the current route set and return.
     if (@$tail) {
         $self->debug("adding matched intermediary for [$head]") if DEBUG;
         return $subset->add_route_parts($route, $tail, $endpoint);
@@ -259,6 +299,65 @@ sub add_midpoint {
     }
 
     return $self;
+}
+
+
+#-----------------------------------------------------------------------------
+# matcher
+#-----------------------------------------------------------------------------
+
+sub match {
+    my ($self, $path) = @_;
+    my ($fragment) = ($path =~ s/\#(.*)$//) ? $1 : '';
+    my ($reqparms) = ($path =~ s/\?(.*)$//) ? $1 : '';
+    my @parts      = grep { defined && length } split(qr{/}, $path);
+    my $params     = { };
+    my ($part, $route, $type, $name, $match, $matcher, $subset);
+
+    $self->debug(
+        "matching path: $path => ", 
+        $self->dump_data_inline(\@parts),
+        " [$params] [$fragment]"
+    ) if DEBUG;
+
+    PART: while (@parts) {
+        $part = $parts[0];
+
+        if ($subset = $self->{ fixed }->{ $part }) {
+            $self->debug(
+                "matched fixed part [$part]\n",
+                "selected route subset: ",
+                $self->dump_data($subset)
+            ) if DEBUG;
+            $self = $subset;
+            shift @parts;
+            next PART;
+        }
+
+        foreach $match (@{ $self->{ match } }) {
+            ($type, $name, $matcher, $subset) = @$match;
+            if ($self->$matcher($name, \@parts, $params)) {
+                $self->debug(
+                    "matched dynamic part ($route) [$part]\n",
+                    "selected route subset: ", $self->dump_data($subset)
+                ) if DEBUG;
+                $self = $subset;
+                next PART;
+            }
+        }
+        return $self->error("Invalid path: $path");
+    }
+    continue {
+        # look at endpoint if @parts is empty and midpoint if there's more to come
+        my $collect  = @parts
+            ? $self->{ midpoint }
+            : $self->{ endpoint };
+        if ($collect) {
+            @$params{ keys %$collect } = values %$collect;
+        }
+    }
+
+    return $params;
 }
 
 
@@ -300,63 +399,6 @@ sub match_path {
 }
 
 
-#-----------------------------------------------------------------------------
-# matcher
-#-----------------------------------------------------------------------------
-
-sub match {
-    my ($self, $path) = @_;
-    my ($fragment) = ($path =~ s/\#(.*)$//) ? $1 : '';
-    my ($reqparms) = ($path =~ s/\?(.*)$//) ? $1 : '';
-    my @parts      = grep { defined && length } split(qr{/}, $path);
-    my $params     = { };
-    my ($part, $route, $type, $name, $match, $matcher, $subset);
-
-    $self->debug(
-        "matching path: $path => ", 
-        $self->dump_data_inline(\@parts),
-        " [$params] [$fragment]"
-    ) if DEBUG;
-
-    PART: while (@parts) {
-        $part = $parts[0];
-
-        if ($subset = $self->{ fixed }->{ $part }) {
-            $self->debug(
-                "matched fixed part [$part]\n",
-                "selected route subset: ",
-                $self->dump_data($subset)
-            ) if DEBUG;
-            $self = $subset;
-            shift @parts;
-            next PART;
-        }
-
-        foreach $match (@{ $self->{ match } }) {
-            ($route, $type, $name, $matcher, $subset) = @$match;
-            if ($self->$matcher($name, \@parts, $params)) {
-                $self->debug(
-                    "matched dynamic part ($route) [$part]\n",
-                    "selected route subset: ", $self->dump_data($subset)
-                ) if DEBUG;
-                $self = $subset;
-                next PART;
-            }
-        }
-        return $self->error("Invalid path: $path");
-    }
-    continue {
-        # look at endpoint if @parts is empty and midpoint if there's more to come
-        my $collect  = @parts
-            ? $self->{ midpoint }
-            : $self->{ endpoint };
-        if ($collect) {
-            @$params{ keys %$collect } = values %$collect;
-        }
-    }
-
-    return $params;
-}
 
 1;
 
