@@ -27,6 +27,11 @@ use Contentity::Class
 #-----------------------------------------------------------------------------
 
 sub init {
+    shift->init_project(@_);
+}
+
+
+sub init_project {
     my ($self, $config) = @_;
     my $root_dir     = $config->{ root             } || return $self->error_msg( missing => 'root' );
     my $cfg_dir      = $config->{ config_dir       } || $self->CONFIG_DIR;
@@ -87,15 +92,8 @@ sub init {
     );
 
     return $self
-        ->init_project($config)
         ->init_components($config)
         ->init_resources($config)
-}
-
-sub init_project {
-    my ($self, $config) = @_;
-    $self->debug("init_project() : ", $self->dump_data($config)) if DEBUG;
-    return $self;
 }
 
 sub init_components {
@@ -384,6 +382,11 @@ sub config_uri_tree {
     return $self->config_tree($name, $self->can('uri_binder'));
 }
 
+sub config_underscore_tree {
+    my ($self, $name) = @_;
+    return $self->config_tree($name, $self->can('underscore_binder'));
+}
+
 sub uri_binder {
     my ($self, $data, $base, $meta) = @_;
 
@@ -393,6 +396,20 @@ sub uri_binder {
         $self->debug(
             "loaded metadata for [$base] + [$key] = [$uri]"
         ) if DEBUG;
+    }
+}
+
+sub underscore_binder {
+    my ($self, $data, $base, $meta) = @_;
+
+    while (my ($key, $value) = each %$meta) {
+        my $uri = resolve_uri($base, $key);
+        for ($uri) {
+            s[^/+][]g;
+            s[/+$][]g;
+            s[/+][_]g;
+        }
+        $data->{ $uri } = $value;
     }
 }
 

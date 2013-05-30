@@ -1,0 +1,3 @@
+hotel_california:   /the/hotel/california
+hotel_room:         /hotel/room/:room_no
+
