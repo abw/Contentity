@@ -53,6 +53,7 @@ sub resources {
 #-----------------------------------------------------------------------------
 
 our $AUTOLOAD;
+our $CALLUP = 1;
 
 sub autolook {
     my ($self, $methods) = @_;
@@ -70,11 +71,10 @@ sub autolook {
             foreach my $method (@$methods) {
                 $value = $this->$method($name, @args);
                 #print STDERR "tried $method got ", $value // '<undef>', "\n";
-
                 return $value if defined $value;
             }
 
-            return $this->error_msg( bad_method => $name, ref $this, (caller())[1,2] );
+            return $this->error_msg( bad_method => $name, ref $this, (caller($CALLUP))[1,2] );
         }
     );
 

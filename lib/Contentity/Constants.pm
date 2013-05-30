@@ -36,6 +36,17 @@ use Badger::Class
         MEDIUM_DATE         => '<ord> %B %Y',
         LONG_DATE           => '%A <ord> %B %Y',
 
+        # Colour values
+        RED_SLOT            => 0,
+        GREEN_SLOT          => 1,
+        BLUE_SLOT           => 2,
+        HUE_SLOT            => 0,
+        SAT_SLOT            => 1,
+        VAL_SLOT            => 2,
+        SCHEME_SLOT         => 3,
+        BLACK               => '#000000',
+        WHITE               => '#FFFFFF',
+
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
         @status,
@@ -48,6 +59,8 @@ use Badger::Class
                                 CONFIG_EXTENSION CONFIG_ENCODING RESOURCES_DIR',
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
+            colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
+            colours         => 'BLACK WHITE',
         },
     };
 

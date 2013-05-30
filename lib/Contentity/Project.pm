@@ -679,7 +679,8 @@ sub autoload_master {
     my ($self, $name, @args) = @_;
     $self->debug("$self->{uri}: autoload_master($name)") if DEBUG;
     my $master = $self->master || return;
-    return $master->$name(@args);
+    local $Contentity::Class::CALLUP = $Contentity::Class::CALLUP + 1;
+    return $master->try->$name(@args);
 }
 
 
