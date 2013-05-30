@@ -15,7 +15,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 10,
+    tests => 6,
     debug => 'Contentity::Project Contentity::Component::Templates',
     args  => \@ARGV;
 
@@ -51,13 +51,13 @@ ok( $app_templates, "got site app templates: $app_templates" );
 #-----------------------------------------------------------------------------
 
 my $foo = $app_templates->template_file('foo');
-ok( $foo->exists, 'foo template found: ' . $foo->text );
+ok( $foo->exists, 'foo template found');
 
 my $bar = $app_templates->template_file('bar');
-ok( $bar->exists, 'bar template found: ' . $bar->text );
+ok( $bar->exists, 'bar template found');
 
-print "FOO: ", $app_templates->render('foo');
-print "BAZ: ", $app_templates->render( baz  => { state => 'California' } );
+#print "FOO: ", $app_templates->render('foo');
+#print "BAZ: ", $app_templates->render( baz  => { state => 'California' } );
 
 
 #my $engine = $app_templates->engine;
