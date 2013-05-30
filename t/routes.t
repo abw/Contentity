@@ -21,6 +21,7 @@ use Badger::Test
 
 use Badger::Exception trace => 1;
 use Contentity::Project;
+use Contentity::Site;
 
 
 #-----------------------------------------------------------------------------
@@ -30,26 +31,26 @@ use Contentity::Project;
 my $root = Bin->parent->dir( 
     t => projects => 'golf' 
 );
-
-my $project = Contentity::Project->new( 
+my $site = Contentity::Site->new( 
     root => $root,
 );
-ok( $project, "created contentity project: $project" );
 
-my $routes = $project->routes;
+ok( $site, "created contentity project: $site" );
+
+my $routes = $site->routes;
 ok( $routes, "Got project routes: $routes" );
 
-my $match = $project->match('foo');
+my $match = $site->match_route('foo');
 ok( $match, 'matched foo' );
 is( $match->{ title }, 'The Foo Page', 'got the foo page title' );
 
-$project->add_route(
+$site->add_route(
     '/user/:id' => {
         uri => 'some.user.info'
     }
 );
 
-$match = $project->match('/user/abw');
+$match = $site->match_route('/user/abw');
 ok( $match, 'matched /user/abw' );
 is( $match->{ uri }, 'some.user.info', 'got the /user/abw uri' );
 is( $match->{ id  }, 'abw', 'got the /user/abw user id' );

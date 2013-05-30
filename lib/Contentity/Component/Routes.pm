@@ -1,5 +1,7 @@
 package Contentity::Component::Routes;
 
+die __PACKAGE__, " is deprecated - see routes() method in Contentity::Site\n";
+
 use Contentity::Router;
 use Contentity::Class
     version   => 0.01,

@@ -1,0 +1,16 @@
+foo:
+    title:      The Foo Page
+
+bar/*:
+    title:      The Bar Page
+    section:    The Bar Section
+
+bar/baz:
+    title:      The Baz Page
+
+00 /country/<int:id>:
+    title:      Country by ID
+
+01 /country/<text:code>:
+    title:      Country by Code
+
