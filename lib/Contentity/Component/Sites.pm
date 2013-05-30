@@ -26,7 +26,7 @@ sub return_resource {
 
     # attach project to intermediary base class if there is one specified
     # (sites are subclasses of projects, so it's safe to cross-breed the two)
-    $project = $project->site($base)
+    $project = $project->site( urn => $base )
         if $base;
 
     $data->{_project_} = $project;

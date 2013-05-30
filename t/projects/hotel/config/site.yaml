@@ -1,0 +1,12 @@
+name: The Hotel Project
+
+components:
+    - templates
+    - app_templates
+
+templates:
+    path: templates
+
+# Moved into separate file
+#app_templates:
+#    component:      templates

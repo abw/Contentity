@@ -60,7 +60,7 @@ sub init {
     $self->{ config_match_ext } = $ext_re;
 
     # Hmmm... should this be "master" or simply "project" in keeping with
-    # components?
+    # components?  Or "base" in keeping with sites that have base sites?
     if ($config->{_project_}) {
         $self->attach_project($config);
         $self->debugf(
@@ -200,10 +200,38 @@ sub dir {
         : $self->root;
 }
 
+sub resolve_dir {
+    my ($self, $dir) = @_;
+
+    if ($dir =~ s/^base://g) {
+        my $base = $self->master || $self;
+        return $base->dir($dir);
+    }
+    else {
+        return $self->dir($dir);
+    }
+}
+
 
 #-----------------------------------------------------------------------------
 # Methods for loading configuration files
 #-----------------------------------------------------------------------------
+
+
+sub EX_config {
+    my $self   = shift;
+    my $config = $self->{ config };
+    return $config unless @_;
+
+    my $item = shift;
+    if (exists $config->{ $item }) {
+        return $config->{ $item };
+    }
+    else {
+        return $self->decline_msg("$item is undefined")
+            unless defined $config;
+    }
+}
 
 sub config_dir {
     my $self = shift;
@@ -417,7 +445,7 @@ sub component_config {
     my $master   = $self->{ config }->{ $type };
     my $merged   = extend({ _component_ => $type }, $component, $master, $params);
     my $cfg_file = $merged->{ config_file } || $self->config_filename($type);
-    my $cfg_fobj = $self->config_file($cfg_file);
+    my $cfg_fobj = $self->config_file($cfg_file);                             # TODO: doesn't account for inheritance
     my $cfg_data = $cfg_fobj->exists ? $cfg_fobj->data : undef;
     my $config   = extend($cfg_data, $merged);
 

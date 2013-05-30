@@ -1,0 +1,6 @@
+component: templates
+path:   
+    - templates/app
+    - base:templates/app
+    - templates/lib
+    - base:templates/lib

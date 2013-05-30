@@ -4,7 +4,24 @@ use Badger::Factory::Class
     version => 0.01,
     debug   => 0,
     item    => 'component',
-    path    => 'Contentity(X)::Component';
+    path    => 'Contentity(X)::Component',
+    utils   => 'params';
+
+sub type_args {
+    my $self   = shift;
+    my $type   = shift;
+    my $params = params(@_);
+
+    if ($params->{ component}) {
+        $type = $params->{ component };
+        $self->debug(
+            $params->{_component_}, 
+            " component set type to '$type' from component configuration option"
+        ) if DEBUG;
+    }
+
+    return ($type, $params);
+}
 
 1;
 

@@ -5,7 +5,7 @@ use open                qw< :std :utf8 >;
 use Carp;
 use Badger::Rainbow     ANSI => 'cyan yellow';
 use Badger::Debug       'debug_caller';
-use Badger::Filesystem  'File';
+use Badger::Filesystem  'File Dir VFS';
 use Badger::Timestamp   'TIMESTAMP Timestamp Now';
 use Badger::URL         'URL';
 use Badger::Utils       'params numlike is_object plural permute_fragments xprintf';
@@ -18,7 +18,7 @@ use Contentity::Class
     codecs    => 'html',
     exports   => {
         any => q{
-            Timestamp Now URL File Logic
+            Timestamp Now URL File Dir VFS Logic
             debug_caller 
             list_each split_to_list 
             hash_each extend

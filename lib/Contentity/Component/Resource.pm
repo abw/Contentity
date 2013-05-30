@@ -125,7 +125,6 @@ sub names {
 sub all {
     my $self  = shift;
     my @names = $self->names;
-    print "NAMES: ", $self->dump_data(\@names), "\n";
     my @items = map { $self->resource($_) } sort $self->names;
 
     return wantarray
