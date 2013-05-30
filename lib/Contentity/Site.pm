@@ -5,6 +5,7 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Project',
+    utils       => 'Colour',
     constant    => {
         CONFIG_FILE => 'site',
         ROUTER      => 'Contentity::Router'
@@ -31,8 +32,9 @@ sub urls {
 sub url {
     my $self = shift;
     my $urls = $self->urls;
-    return $urls unless @_;
-    $self->todo("URL lookup");
+    my $name = shift || return $urls;
+    return $urls->{ $name }
+        || $self->decline_msg( invalid => url => $name );
 }
 
 #-----------------------------------------------------------------------------
@@ -59,6 +61,44 @@ sub match_route {
 
 sub add_route {
     shift->router->add_route(@_);
+}
+
+#-----------------------------------------------------------------------------
+# RGB colours
+#-----------------------------------------------------------------------------
+
+sub rgb {
+    my $self = shift;
+    return  $self->{ rgb } 
+        ||= $self->load_rgb;
+}
+
+sub load_rgb {
+    my $self = shift;
+    my $rgb  = $self->config_uri_tree('rgb');
+    foreach my $key (keys %$rgb) {
+        $rgb->{ $key } = Colour($rgb->{ $key });
+    }
+    return $rgb;
+}
+
+
+#-----------------------------------------------------------------------------
+# Font stacks
+#-----------------------------------------------------------------------------
+
+sub fonts {
+    my $self = shift;
+    return  $self->{ fonts } 
+        ||= $self->config_uri_tree('fonts');
+}
+
+sub font {
+    my $self  = shift;
+    my $fonts = $self->fonts;
+    my $name  = shift || return $fonts;
+    return $fonts->{ $name }
+        || $self->decline_msg( invalid => font => $name );
 }
 
 
