@@ -36,7 +36,7 @@ sub init {
     $ttcfg->{ PRE_PROCESS  } = \@pre  if @pre;
     $ttcfg->{ POST_PROCESS } = \@post if @post;
 
-    $self->debug("Template config: ", $self->dump_data($ttcfg));
+    $self->debug("Template config: ", $self->dump_data($ttcfg)) if DEBUG;
 
     $self->{ tt2 } = Template->new($ttcfg)
         || return $self->error_msg( tt_init => Template->error );

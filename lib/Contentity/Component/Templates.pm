@@ -22,7 +22,7 @@ sub init_component {
     $self->debugf(
         'templates init_component(%s)',
         $self->dump_data($config)
-    );
+    ) if DEBUG;
 
     $path = $config->{ path } || $self->TEMPLATES_PATH;
     $path = split_to_list($path);
@@ -35,7 +35,7 @@ sub init_component {
     $self->debug(
         'templates path: ',
         $self->dump_data($path)
-    );
+    ) if DEBUG;
 
     # keep this as much for debugging/testing as anything else
     $self->{ vfs } = VFS->new(
