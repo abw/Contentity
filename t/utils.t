@@ -13,7 +13,7 @@ use Badger
     Debug => [import => ':all'];
 
 use Badger::Test
-    tests => 8,
+    tests => 9,
     debug => 'Contentity::Utils',
     args  => \@ARGV;
 
@@ -87,3 +87,11 @@ is (
     H('i#icon', 'foo'), '<i id="icon">foo</i>', 'HTML shortcut for #id'
 );
 
+#-----------------------------------------------------------------------------
+# Contentity::Colour
+#-----------------------------------------------------------------------------
+
+use Contentity::Utils 'Colour';
+
+my $orange = Colour('#ff7f00');
+ok( $orange, "got orange: $orange" );

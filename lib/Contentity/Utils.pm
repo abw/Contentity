@@ -18,7 +18,7 @@ use Contentity::Class
     codecs    => 'html',
     exports   => {
         any => q{
-            Timestamp Now URL File Dir VFS Logic
+            Timestamp Now URL File Dir VFS Logic Colour
             debug_caller 
             list_each split_to_list 
             hash_each extend
@@ -30,6 +30,7 @@ use Contentity::Class
             find_program prompt confirm 
         }
     };
+use Contentity::Colour  'Colour';
 
 #-----------------------------------------------------------------------------
 # List utilities
