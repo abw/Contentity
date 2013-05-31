@@ -3,6 +3,7 @@ name: The Hotel Project
 components:
     - templates
     - app_templates
+    - plack
 
 templates:
     path: templates
