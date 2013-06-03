@@ -1,14 +1,20 @@
 package Contentity::Component::Plack;
 
 use Plack::Request;
+use Contentity::Request;
+use Contentity::Context;
+#use Contentity::Middlewares;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Component',
     accessors => 'env request',
-    auto_can  => 'auto_can',
+#    auto_can  => 'auto_can',
     constant  => {
-        REQUEST => 'Plack::Request'
+        REQUEST     => 'Plack::Request',
+        #REQUEST     => 'Contentity::Request',
+        CONTEXT     => 'Contentity::Context',
+        MIDDLEWARES => 'Contentity::Middlewares',
     };
 
 
@@ -18,49 +24,44 @@ sub init_component {
     $self->debug(
         "Plack init_component() => ",
         $self->dump_data($config)
-    ) if DEBUG;
+    ) if DEBUG or 1;
 
     return $self;
 }
 
 
 sub app {
+    my $self = shift;
+    my $app  = $self->dispatcher;
+
+    return sub {
+        my $env = shift;
+        my $res = eval {
+            $app->($env);
+        };
+        if ($@) {
+            $self->debug("Caught error: $@");
+            return [ 500, [], ["Error: $@"]];
+        }
+        return $res->finalize;
+    };
+}
+
+
+sub dispatcher {
     my $self    = shift;
     my $project = $self->project;
 
     return sub {
-        my $env  = shift;
-        my $req  = $self->REQUEST->new($env);
-        my $host = $env->{ SERVER_NAME } || return $self->error_msg( missing => 'SERVER_NAME' );
-        my $path = $req->path_info;
-        my ($site, $meta, $res);
-
-        CLASS->debug("env: ", CLASS->dump_data($env));
-
-        eval {
-            $site = $project->domain_site($host)
-                || die "No site ", $project->error, "\n";
-
-            $meta = $site->match_route($path);
-            $self->debug(
-                "routed path $path to meta: ", 
-                $self->dump_data($meta)
-            );
-        };
-        if ($@) {
-            Cog->debug("BARF: $@");
-            my $error = $@;
-            $res = $req->new_response(500);
-            $res->content_type('text/html');
-            $res->body("ERROR: $error");
-        }
-        else {
-            $res = $req->new_response(200);
-            $res->content_type('text/html');
-            $res->body("Hello World from " . $site->urn);
-     #   $res->body("\n\nsite: ", $self->dump_data($site));
-        }
-        return $res->finalize;
+        my $env     = shift;
+        my $host    = $env->{ SERVER_NAME }        || return $self->error_msg( missing => 'SERVER_NAME' );
+        my $site    = $project->domain_site($host) || return $self->error_msg( invalid => domain => $project->error );
+        my $context = $self->CONTEXT->new(
+            env  => $env,
+            site => $site,
+        );
+        $self->debug("RUN env: ", $self->dump_data($env));
+        return $site->dispatch($context);
     }
 }
 

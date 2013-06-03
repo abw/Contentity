@@ -1,15 +1,18 @@
 package Contentity::Template;
 
-use Template;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Base',
+    import    => 'class',
     utils     => 'params',
-    accessors => 'tt2',
+    accessors => 'engine',
+    constant  => {
+        ENGINE => 'Template',
+    },
     messages  => {
-        tt_init   => 'Failed to initialise TT: %s',
-        tt_render => 'Failed to render %s: %s',
+        engine_init   => 'Failed to initialise TT: %s',
+        engine_render => 'Failed to render %s: %s',
     };
 
 
@@ -38,21 +41,32 @@ sub init {
 
     $self->debug("Template config: ", $self->dump_data($ttcfg)) if DEBUG;
 
-    $self->{ tt2 } = Template->new($ttcfg)
-        || return $self->error_msg( tt_init => Template->error );
+    $ttcfg->{ engine } = $config->{ engine };   # ick
+    $self->init_engine($ttcfg);
 
     return $self;
+}
+
+sub init_engine {
+    my ($self, $config) = @_;
+    my $engine = delete $config->{ engine } 
+        || $self->ENGINE;
+
+    class($engine)->load;
+
+    $self->{ engine } = $engine->new($config)
+        || return $self->error_msg( engine_init => $engine->error );
 }
 
 sub render {
     my $self   = shift;
     my $name   = shift;
     my $params = params(@_);
-    my $tt2    = $self->tt2;
+    my $engine = $self->engine;
     my $output;
 
-    $tt2->process($name, $params, \$output)
-        || return $self->error_msg( tt_render => $name, $tt2->error );
+    $engine->process($name, $params, \$output)
+        || return $self->error_msg( engine_render => $name, $engine->error );
 
     return $output;
 }

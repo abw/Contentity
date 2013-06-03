@@ -24,6 +24,9 @@ use Badger::Class
         CONFIG_ENCODING     => 'utf8',
         CONFIG_EXTENSION    => undef,   # defaults to CONFIG_CODEC
         RESOURCES_DIR       => 'resources',
+        MIDDLEWARE          => 'middleware',
+        INDEX_HTML          => 'index.html',
+        DOT_HTML            => '.html',
 
         # Timestamp handling
         NULL_DATE           => '0000-00-00',
@@ -52,7 +55,7 @@ use Badger::Class
         @status,
     },
     exports  => {
-        any  => 'UTF8',
+        any  => 'UTF8 MIDDLEWARE',
         tags => {
             status          => \@status,
             config          => 'CONFIG_DIR CONFIG_FILE CONFIG_CODEC
@@ -61,6 +64,7 @@ use Badger::Class
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
+            html            => 'INDEX_HTML DOT_HTML',
         },
     };
 

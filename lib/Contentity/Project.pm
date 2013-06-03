@@ -10,7 +10,7 @@ use Contentity::Class
     filesystem  => 'Dir VFS',
     accessors   => 'root config',
     autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config autoload_master',
-    constants   => ':config DOT DELIMITER HASH ARRAY',
+    constants   => ':config DOT DELIMITER HASH ARRAY MIDDLEWARE',
     constant    => {
         COMPONENT_FACTORY => 'Contentity::Components',
     },
@@ -626,6 +626,19 @@ sub has_delegate {
     ) if DEBUG;
 
     return [$component, $method];
+}
+
+
+#-----------------------------------------------------------------------------
+# Middleware
+#-----------------------------------------------------------------------------
+
+sub middleware {
+    my $self = shift;
+    my $mids = $self->component(MIDDLEWARE);
+    return @_
+        ? $mids->middleware(@_)
+        : $mids;
 }
 
 #-----------------------------------------------------------------------------

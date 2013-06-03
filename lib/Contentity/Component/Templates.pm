@@ -7,10 +7,10 @@ use Contentity::Class
     base      => 'Contentity::Component',
     import    => 'class',
     utils     => 'split_to_list VFS',
-    accessors => 'vfs engine',
+    accessors => 'vfs renderer',
     constant  => {
-        TEMPLATES_PATH  => 'templates',
-        TEMPLATE_ENGINE => 'Contentity::Template',
+        TEMPLATES_PATH => 'templates',
+        RENDERER       => 'Contentity::Template',
     };
 
 
@@ -44,24 +44,24 @@ sub init_component {
 
     $config->{ path } = $path;
 
-    $self->init_engine($config);
+    $self->init_renderer($config);
 
     return $self;
 }
 
 
-sub init_engine {
+sub init_renderer {
     my ($self, $config) = @_;
-    my $engine = $config->{ engine } 
-        || $self->TEMPLATE_ENGINE;
+    my $renderer = $config->{ renderer } 
+        || $self->RENDERER;
 
-    class($engine)->load;
+    class($renderer)->load;
 
-    $self->{ engine } = $engine->new($config);
+    $self->{ renderer } = $renderer->new($config);
 }
 
 sub render {
-    shift->engine->render(@_);
+    shift->renderer->render(@_);
 }
 
 

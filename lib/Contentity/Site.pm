@@ -11,6 +11,21 @@ use Contentity::Class
         ROUTER      => 'Contentity::Router'
     };
 
+sub dispatch {
+    my ($self, $context) = @_;
+    my $path = $context->path;
+    my $meta = $self->match_route($path);
+    my $appn  = $meta->{ app };
+    $self->debug("site dispatching context: $path => ", $self->dump_data($meta));
+    #$context->content("Hello world from the ", $self->urn, " site!!!");
+    if ($appn) {
+        my $app = $self->app($appn);
+        $self->debug("Got $appn app: $app");
+        $app->run($context);
+    }
+    return $context->response;
+}
+
 #sub init {
 #    my ($self, $config) = @_;
 #    $self->init_project($config);
@@ -61,6 +76,14 @@ sub match_route {
 
 sub add_route {
     shift->router->add_route(@_);
+}
+
+sub apps {
+    shift->component('apps');
+}
+
+sub app {
+    shift->apps->app(@_);
 }
 
 #-----------------------------------------------------------------------------

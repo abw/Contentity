@@ -5,6 +5,7 @@ components:
     - database 
     - entities 
     - frusset
+    - middleware
 resources:
     - forms
     - apps

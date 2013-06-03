@@ -4,10 +4,13 @@ components:
     - templates
     - app_templates
     - plack
+    - apps
 
 templates:
     path: templates
 
+delegates:
+    app:    apps
 # Moved into separate file
 #app_templates:
 #    component:      templates
