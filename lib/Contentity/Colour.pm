@@ -23,7 +23,7 @@ use POSIX 'floor';
 
 our $VERSION = 0.06;
 our @SCHEME  = qw( 
-    black darkest darker dark mid light lighter lightest white 
+    black darkest darker dark darkish mid lightish light lighter lightest white 
     pale wash dull bold bright
 );
 our $SPACES  = {
@@ -150,9 +150,9 @@ sub scheme {
         && ! @_;
 
     my $args   = @_ && ref $_[0] eq HASH ? shift : { @_ };
-    my $shades = $self->shades(4, $args->{ black });        # black to col
-    my $tints  = $self->tints(4, $args->{ white });         # col to white
-    my $washes = $tints->[3]->tints(3, $args->{ white });   # pale washes
+    my $shades = $self->shades(5, $args->{ black });        # black to col
+    my $tints  = $self->tints(5, $args->{ white });         # col to white
+    my $washes = $tints->[4]->tints(3, $args->{ white });   # pale washes
     my $scheme = { };
 
     # remove the base colour and white from washes
@@ -163,9 +163,9 @@ sub scheme {
     shift(@$shades);
 
     @$scheme{ @SCHEME } = ( 
-        # black, darkest, darker, dark
+        # black, darkest, darker, dark, darkish
         reverse(@$shades), 
-        # mid light lighter lightest white
+        # mid lightish, light lighter lightest white
         @$tints,
         # pale, wash
         @$washes,
