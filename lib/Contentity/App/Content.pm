@@ -35,6 +35,9 @@ sub run {
     if ($path =~ /\.css$/) {
         $context->content_type('text/css');
     }
+    elsif ($path =~ /\.js$/) {
+        $context->content_type('text/javascript');
+    }
     else {
         $context->set( wrapper => 'html' );
     }

@@ -243,6 +243,16 @@ sub HTML {
     $self->rgb->HTML;
 }
 
+sub css_rgb {
+    my $self = shift;
+    $self->rgb->css_rgb;
+}
+
+sub css_rgba {
+    my $self = shift;
+    $self->rgb->css_rgba;
+}
+
 sub range {
     my $self   = shift;
     my $steps  = shift;

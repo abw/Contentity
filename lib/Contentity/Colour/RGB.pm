@@ -139,6 +139,28 @@ sub HTML {
     return '#' . uc $self->hex();
 }
 
+sub css_rgb {
+    my $self = shift;
+    return sprintf(
+        "rgb(%i,%i,%i)", 
+        $self->[RED_SLOT],
+        $self->[GREEN_SLOT],
+        $self->[BLUE_SLOT],
+    );
+}
+
+sub css_rgba {
+    my $self  = shift;
+    my $alpha = shift;
+    return sprintf(
+        "rgba(%i,%i,%i,%f)", 
+        $self->[RED_SLOT],
+        $self->[GREEN_SLOT],
+        $self->[BLUE_SLOT],
+        $alpha
+    );
+}
+
 sub red { 
     my $self = shift;
     if (@_) {
