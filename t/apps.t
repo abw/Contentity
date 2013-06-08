@@ -15,7 +15,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 6,
+    tests => 3,
     debug => 'Contentity::Apps Contentity::Component::App',
     args  => \@ARGV;
 

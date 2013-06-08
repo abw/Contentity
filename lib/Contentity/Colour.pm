@@ -154,6 +154,20 @@ sub scheme {
     my $tints  = $self->tints(5, $args->{ white });         # col to white
     my $washes = $tints->[4]->tints(3, $args->{ white });   # pale washes
     my $scheme = { };
+    my $dsat   = 5;     # increase/decrease saturation by N% per step
+    my $hsv    = $self->hsv;
+    my $sat    = 0;
+
+    foreach (@$shades) {
+        $_ = $_->hsv->adjust( sat => "+$sat%" );
+        $sat += $dsat;
+    }
+
+#    $sat = $hsv->saturation;
+#    foreach (@$tints) {
+#        $_ = $_->hsv->adjust( sat => "-$sat%" );
+#        $sat += $dsat;
+#    }
 
     # remove the base colour and white from washes
     shift(@$washes);

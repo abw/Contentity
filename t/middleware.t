@@ -8,14 +8,14 @@
 #
 #========================================================================
 
-BEGIN { $Badger::Utils::DEBUG = 1 };
+#BEGIN { $Badger::Utils::DEBUG = 1 };
 use Badger
     lib        => '../lib lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 1,
+    tests => 2,
     debug => 'Contentity::Middleware Contentity::Middlewares',
     args  => \@ARGV;
 

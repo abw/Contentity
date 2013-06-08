@@ -14,7 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 70,
+    tests => 72,
     debug => 'Contentity::Colour',
     args  => \@ARGV;
 
@@ -143,15 +143,17 @@ is( $range->[7]->HTML, '#8811EE', 'range 7' );
 
 $orange = Col->RGB('#ff8800');
 my $scheme = $orange->scheme();
-is( $scheme->{ black    }, '#000000', 'black is black' );
-is( $scheme->{ darkest  }, '#3F2200', 'darkest orange' );
-is( $scheme->{ darker   }, '#7F4400', 'darker orange' );
-is( $scheme->{ dark     }, '#BF6600', 'dark orange' );
-is( $scheme->{ mid      }, $orange, 'mid is orange' );
-is( $scheme->{ light    }, '#FFA53F', 'light orange' );
-is( $scheme->{ lighter  }, '#FFC37F', 'lighter orange' );
-is( $scheme->{ lightest }, '#FFE1BF', 'lightest orange' );
-is( $scheme->{ white    }, '#FFFFFF', 'white is white' );
+is( $scheme->{ black    }, '#000000', 'black is black'  );
+is( $scheme->{ darkest  }, '#331B00', 'darkest orange'  );
+is( $scheme->{ darker   }, '#663600', 'darker orange'   );
+is( $scheme->{ dark     }, '#995100', 'dark orange'     );
+is( $scheme->{ darkish  }, '#CC6C00', 'darkish orange'  );
+is( $scheme->{ mid      }, $orange, 'mid is orange'     );
+is( $scheme->{ lightish }, '#FF9F33', 'lightish orange' );
+is( $scheme->{ light    }, '#FFB766', 'light orange'    );
+is( $scheme->{ lighter  }, '#FFCF99', 'lighter orange'  );
+is( $scheme->{ lightest }, '#FFE7CC', 'lightest orange' );
+is( $scheme->{ white    }, '#FFFFFF', 'white is white'  );
 
 
 #-----------------------------------------------------------------------------

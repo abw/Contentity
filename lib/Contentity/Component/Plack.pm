@@ -1,18 +1,15 @@
 package Contentity::Component::Plack;
 
-use Plack::Request;
+#use Plack::Request;
 use Contentity::Request;
 use Contentity::Context;
-#use Contentity::Middlewares;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Component',
     accessors => 'env request',
-#    auto_can  => 'auto_can',
     constant  => {
-        REQUEST     => 'Plack::Request',
-        #REQUEST     => 'Contentity::Request',
+        REQUEST     => 'Contentity::Request',
         CONTEXT     => 'Contentity::Context',
         MIDDLEWARES => 'Contentity::Middlewares',
     };
@@ -24,7 +21,7 @@ sub init_component {
     $self->debug(
         "Plack init_component() => ",
         $self->dump_data($config)
-    ) if DEBUG or 1;
+    ) if DEBUG;
 
     return $self;
 }
