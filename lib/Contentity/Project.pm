@@ -8,7 +8,7 @@ use Contentity::Class
     import      => 'class',
     utils       => 'params extend weaken resolve_uri self_params',
     filesystem  => 'Dir VFS',
-    accessors   => 'root config',
+    accessors   => 'root XXXconfig',
     autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config autoload_master',
     constants   => ':config DOT DELIMITER HASH ARRAY MIDDLEWARE',
     constant    => {
@@ -216,19 +216,37 @@ sub resolve_dir {
 #-----------------------------------------------------------------------------
 
 
-sub EX_config {
+sub config {
     my $self   = shift;
     my $config = $self->{ config };
     return $config unless @_;
 
-    my $item = shift;
-    if (exists $config->{ $item }) {
-        return $config->{ $item };
+    my @lookup = @_;
+    my @done;
+
+    while (@lookup) {
+        my $item  = shift @lookup;
+        if ($item =~ /\W/) {
+            my @bits = split(/\W+/, $item);
+            $item = shift @bits;
+            unshift(@lookup, @bits);
+        }
+        if (exists $config->{ $item }) {
+            $config = $config->{ $item };
+        }
+        elsif (@done) {
+            return $self->decline_msg( 
+                missing_config => join('.', @done, $item)
+            );
+        }
+        else {
+            $config = $self->try->config_data($item)
+                || return $self->decline_msg(
+                        missing_config => $item
+                );
+        }
     }
-    else {
-        return $self->decline_msg("$item is undefined")
-            unless defined $config;
-    }
+    return $config;
 }
 
 sub config_dir {

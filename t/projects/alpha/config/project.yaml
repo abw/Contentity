@@ -1,7 +1,14 @@
 ---
 greeting:       hello world!
-mastermsg:      The master message    
-components:     
+mastermsg:      The master message
+more_stuff:
+    foo:        10
+    bar:        The bar value
+    baz:
+      wibble:   pleasantly
+      frusset:  pouch
+
+components:
     - database 
     - entities 
     - frusset
