@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Colour',
     constants => 'ARRAY HASH :colour_slots',
-    utils     => 'is_object',
+    utils     => 'is_object floor',
     as_text   => 'HTML',
     is_true   => 1,
     throws    => 'Colour.HSV',
@@ -164,19 +164,19 @@ sub adjust {
     $args->{ val }  = $args->{ value      } unless exists $args->{ val };
     
     if ($delta = $args->{ hue }) {
-        $delta = int($delta * 3.59 + 0.5) 
+        $delta = floor($delta * 3.59 + 0.5) 
             if $delta =~ s/(\d+)%$/$1/;   # 0-100% -> 0-359
         $self->hue($self->[HUE_SLOT] + $delta)
     }
 
     if ($delta = $args->{ sat }) {
-        $delta = int($delta * 2.55 + 0.5) 
+        $delta = floor($delta * 2.55 + 0.5) 
             if $delta =~ s/(\d+)%$/$1/;   # 0-100% -> 0-255
         $self->sat($self->[SAT_SLOT] + $delta);
     }
     
     if ($delta = $args->{ val }) {
-        $delta = int($delta * 2.55 + 0.5) 
+        $delta = floor($delta * 2.55 + 0.5) 
             if $delta =~ s/(\d+)%$/$1/;   # 0-100% -> 0-255
         $self->val($self->[VAL_SLOT] + $delta);
     }

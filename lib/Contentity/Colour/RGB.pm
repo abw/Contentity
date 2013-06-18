@@ -1,11 +1,12 @@
 package Contentity::Colour::RGB;
 
+use POSIX 'floor';
 use Contentity::Class
     version   => 2.10,
     debug     => 0,
     base      => 'Contentity::Colour',
     constants => 'ARRAY HASH :colour_slots',
-    utils     => 'is_object',
+    utils     => 'is_object floor',
     as_text   => 'HTML',
     is_true   => 1,
     throws    => 'Colour.RGB';
@@ -202,9 +203,10 @@ sub grey  {
         return ($self->[RED_SLOT] = $self->[GREEN_SLOT] = $self->[BLUE_SLOT] = shift);
     }
     else {
-        return int( $self->[RED_SLOT]  * 0.222 
-                  + $self->[GREEN_SLOT]* 0.707 
-                  + $self->[BLUE_SLOT] * 0.071 );
+        return floor( $self->[RED_SLOT]  * 0.222 
+                    + $self->[GREEN_SLOT]* 0.707 
+                    + $self->[BLUE_SLOT] * 0.071 
+                    + 0.5 );
     }
 }
 
@@ -306,8 +308,8 @@ sub hsv {
             }
             
             $h += 360 if $h < 0;  # hue is in the range 0-360
-            $h = int( $h + 0.5 ); # smooth out rounding errors
-            $s = int($s * 255);   # expand saturation to 0-255
+            $h = floor($h + 0.5); # smooth out rounding errors
+            $s = floor($s * 255);   # expand saturation to 0-255
         }
         else {
             $h = $s = 0;

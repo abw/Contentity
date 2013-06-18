@@ -3,6 +3,7 @@ package Contentity::Utils;
 use warnings            qw( FATAL utf8 );
 use open                qw< :std :utf8 >;
 use Carp;
+use POSIX               'floor';
 use Badger::Rainbow     ANSI => 'cyan yellow';
 use Badger::Debug       'debug_caller';
 use Badger::Filesystem  'File Dir VFS';
@@ -27,7 +28,7 @@ use Contentity::Class
             H html_elem html_attrs data_attrs
             datestamp today format_date
             ordinal ordinate plurality inflect commas
-            find_program prompt confirm 
+            find_program prompt confirm floor
         }
     };
 use Contentity::Colour  'Colour';

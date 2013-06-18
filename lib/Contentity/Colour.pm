@@ -4,7 +4,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base',
     constants => 'HASH SCHEME_SLOT WHITE BLACK',
-    utils     => 'is_object',
+    utils     => 'is_object floor',
     import    => 'CLASS class',
     alias     => {
         Color => \&Colour,
@@ -19,7 +19,6 @@ use Contentity::Class
 
 use Contentity::Colour::RGB;
 use Contentity::Colour::HSV;
-use POSIX 'floor';
 
 our $VERSION = 0.06;
 our @SCHEME  = qw( 
@@ -217,9 +216,9 @@ sub mix {
     $self->debug("mixing $rgb1 * $w1 + $rgb2 * $w2") if DEBUG;
 
     return $self->RGB(
-        int( $rgb1->red   * $w1 + $rgb2->red   * $w2 ),
-        int( $rgb1->green * $w1 + $rgb2->green * $w2 ),
-        int( $rgb1->blue  * $w1 + $rgb2->blue  * $w2 ),
+        floor( $rgb1->red   * $w1 + $rgb2->red   * $w2 ),
+        floor( $rgb1->green * $w1 + $rgb2->green * $w2 ),
+        floor( $rgb1->blue  * $w1 + $rgb2->blue  * $w2 ),
     )
 }
 
