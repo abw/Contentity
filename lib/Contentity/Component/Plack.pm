@@ -1,6 +1,5 @@
 package Contentity::Component::Plack;
 
-#use Plack::Request;
 use Contentity::Request;
 use Contentity::Context;
 use Contentity::Class
@@ -9,9 +8,7 @@ use Contentity::Class
     base      => 'Contentity::Component',
     accessors => 'env request',
     constant  => {
-        REQUEST     => 'Contentity::Request',
-        CONTEXT     => 'Contentity::Context',
-        MIDDLEWARES => 'Contentity::Middlewares',
+        CONTEXT => 'Contentity::Context',
     };
 
 
@@ -32,34 +29,60 @@ sub app {
     my $app  = $self->dispatcher;
 
     return sub {
-        my $env = shift;
-        my $res = eval {
-            $app->($env);
-        };
-        if ($@) {
-            $self->debug("Caught error: $@");
-            return [ 500, [], ["Error: $@"]];
-        }
-        return $res->finalize;
+        return $app->(@_)->finalize;
     };
 }
 
-
 sub dispatcher {
-    my $self    = shift;
-    my $project = $self->project;
+    my $self = shift;
 
     return sub {
-        my $env     = shift;
-        my $host    = $env->{ SERVER_NAME }        || return $self->error_msg( missing => 'SERVER_NAME' );
-        my $site    = $project->domain_site($host) || return $self->error_msg( invalid => domain => $project->error );
-        my $context = $self->CONTEXT->new(
-            env  => $env,
-            site => $site,
-        );
-        $self->debug("RUN env: ", $self->dump_data($env));
-        return $site->dispatch($context);
+        $self->dispatch(@_);
     }
 }
+
+sub dispatch {
+    my ($self, $env) = @_;
+    my $site    = $self->site($env);
+    my $context = $self->context($env, $site);
+    $self->debug("RUN env: ", $self->dump_data($env)) if DEBUG;
+
+    return $site->dispatch($context);
+}
+
+sub hostname {
+    my ($self, $env) = @_;
+    my $host = $env->{ SERVER_NAME }
+            || $env->{ HTTP_HOST   }
+            || return $self->error_msg( missing => 'SERVER_NAME or HTTP_HOST' );
+
+    $self->debug("HOST: $host");
+    # remove port
+    $host =~ s/:\d+$//g;
+
+    return $host;
+}
+
+sub site {
+    my ($self, $env) = @_;
+    my $host    = $self->hostname($env);
+    my $project = $self->project;
+
+    return $project->domain_site($host) 
+        || $self->error_msg( invalid => domain => $host );
+}
+
+sub context {
+    my ($self, $env, $site) = @_;
+
+    $site ||= $self->site($env);
+
+    return $self->CONTEXT->new(
+        env  => $env,
+        site => $site,
+        hub  => $self->project->hub,
+    );
+}
+
 
 1;

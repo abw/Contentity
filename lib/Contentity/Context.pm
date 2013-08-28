@@ -12,9 +12,10 @@ use Contentity::Class
     debug       => 0,
     import      => 'class',
     base        => 'Contentity::Base',
-    accessors   => 'apache site request path url options',
+    accessors   => 'env hub site path request url',
+    config      => 'hub!',
+
     mutators    => 'content_type',
-#    config      => 'apache! hub! site!',
     utils       => 'is_object weaken',
     constants   => 'HASH ARRAY',
     alias       => {
@@ -47,6 +48,16 @@ our $ACCEPT_TYPES  = {
 sub init {
     my ($self, $config) = @_;
     $self->debug("context init") if DEBUG;
+    $self->configure($config);
+    $self->init_context($config);
+    #$self->{ apps } = [ ];
+    #$self->{ data } = { };
+    return $self;
+}
+
+sub init_context {
+    my ($self, $config) = @_;
+    $self->debug("context init") if DEBUG;
 
     my $env = delete $config->{ env }
         || return $self->error_msg( missing => 'env' );
@@ -60,7 +71,7 @@ sub init {
     $self->{ env } = $env;
     weaken $self->{ env };
 
-    $self->{ path         } = $path;
+    $self->{ path         } = $self->WEB_PATH->new($path);
     $self->{ site         } = $site;
     $self->{ request      } = $request;
     $self->{ url          } = $self->WEB_URL->new($request->uri);
@@ -72,10 +83,11 @@ sub init {
     $self->{ content_type } = 'text/html';
     $self->{ status       } = 200;
 
-    $self->{ apache  } = $config->{ apache };       # not sure if we need this
+#   $self->{ apache  } = $config->{ apache };       # not sure if we need this
 
     return $self;
 }
+
 
 sub response {
     my $self = shift;
@@ -110,10 +122,10 @@ sub content {
     return $content;
 }
 
-sub env {
-    # TODO: set/get
-    shift->request->env;
-}
+#sub env {
+#    # TODO: set/get
+#    shift->request->env;
+#}
 
 
 
@@ -311,6 +323,9 @@ sub cookie {
     shift->request->cookie(@_);
 }
 
+sub page {
+    shift->data( Page => @_ );
+}
 
 
 #-----------------------------------------------------------------------

@@ -16,6 +16,7 @@ sub return_resource {
     my ($self, $data) = @_;
     my $project = $self->project;
     my $base    = $data->{ base };
+    my $base_site;
 
     $self->debug(
         "sub-site is $data->{ uri }\n",
@@ -24,14 +25,16 @@ sub return_resource {
 
     $self->debug("site data: ", $self->dump_data($data)) if DEBUG;
 
+    # resolve root directory relative to project root
+    $data->{ root } = $project->dir( $data->{ root } ) 
+        if $data->{ root };
+
     # attach project to intermediary base class if there is one specified
     # (sites are subclasses of projects, so it's safe to cross-breed the two)
     $project = $project->site($base)
         if $base;
 
     $data->{_project_} = $project;
-    $data->{ root    } = $project->dir( $data->{ root } ) 
-        if $data->{ root };
 
     # create a new slave site hanging off the master project or site
     return $self->SITE_CLASS->new($data);

@@ -8,15 +8,18 @@ use Contentity::Class
     import      => 'class',
     utils       => 'params extend weaken resolve_uri self_params',
     filesystem  => 'Dir VFS',
-    accessors   => 'root XXXconfig',
-    autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config autoload_master',
+    accessors   => 'root hub XXXconfig',
+    #autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config autoload_master',
+    autolook    => 'autoload_config',
     constants   => ':config DOT DELIMITER HASH ARRAY MIDDLEWARE',
     constant    => {
+        DIRS              => 'dirs',
         COMPONENT_FACTORY => 'Contentity::Components',
     },
     messages => {
         load_fail => 'Failed to load data from %s: %s',
         no_config => 'No configuration file or directory for %s',
+        no_domain_site => "There isn't any site defined for the '%s' domain",
     };
  #   auto_can    => 'auto_can';
 
@@ -46,6 +49,7 @@ sub init_project {
     my $cfg_defaults = {
         resources_dir => $self->RESOURCES_DIR,
     };
+    $self->debug("resources dir: $cfg_defaults->{ resources_dir }") if DEBUG;
 
     $root_dir = Dir($root_dir)->must_exist;
     $cfg_dir  = $root_dir->dir($cfg_dir, $cfg_filespec)->must_exist;
@@ -54,6 +58,7 @@ sub init_project {
     my $qm_ext = quotemeta $cfg_ext;
     my $ext_re = qr/.$cfg_ext$/i;
 
+    $self->{ hub              } = $config->{ hub };                         # hmmm....
     $self->{ uri              } = $config->{ uri } || $root_dir->name;
     $self->{ root             } = $root_dir;
     $self->{ config_dir       } = $cfg_dir;
@@ -90,6 +95,9 @@ sub init_project {
         $cfg_data, 
         $config
     );
+
+    $self->debug("merged config: ", $self->dump_data($config)) if DEBUG;
+#    $self->debug("self resources_dir: ", $self->{ resources_dir });
 
     return $self
         ->init_components($config)
@@ -128,7 +136,7 @@ sub init_resources {
     }
 
     while (($key, $value) = each %$rcomps) {
-        $component = $self->component($key);
+        $component = $self->component($key) || return $self->error_msg( invalid => 'resource component' => $key);
         $single    = $component->resource;
         $plural    = $component->resources;
         $singles->{ $single } = $component;
@@ -194,20 +202,32 @@ sub dir {
     my $self = shift;
 
     return @_
-        ? $self->root->dir(@_)
+        ? $self->resolve_dir(@_)
         : $self->root;
 }
 
 sub resolve_dir {
-    my ($self, $dir) = @_;
+    my ($self, @path) = @_;
 
-    if ($dir =~ s/^base://g) {
+    # As a special case we allow the base: prefix to denote a path relative
+    # to the base/parent/master project.  Note sure how sound this is in the
+    # long run.
+
+    if ($path[0] =~ s/^base://g) {
         my $base = $self->master || $self;
-        return $base->dir($dir);
+        return $base->resolve_dir(@path);
     }
-    else {
-        return $self->dir($dir);
+
+    # configuration can define a lookup table of 'dirs' for aliases
+    my $dirs = $self->config(DIRS) || { };
+    $self->debug(DIRS, ": ", $self->dump_data($dirs)) if DEBUG;
+    my $alias;
+
+    if ($alias = $dirs->{ $path[0] }) {
+        $path[0] = $alias;
     }
+
+    return $self->root->dir(@path);
 }
 
 
@@ -236,14 +256,14 @@ sub config {
         }
         elsif (@done) {
             return $self->decline_msg( 
-                missing_config => join('.', @done, $item)
+                no_config => join('.', @done, $item)
             );
         }
         else {
             $config = $self->try->config_data($item)
-                || return $self->decline_msg(
-                        missing_config => $item
-                );
+                ||  return $self->decline_msg(
+                        no_config => $item
+                    );
         }
     }
     return $config;
@@ -475,8 +495,8 @@ sub component_config {
     my $self     = shift;
     my $type     = shift;
     my $params   = params(@_);
-    my $component = $self->{ components }->{ $type }
-        || return $self->error_msg( invalid => component => $type );
+    my $component = $self->{ components }->{ $type } || { };
+        #|| return $self->error_msg( invalid => component => $type );
     my $master   = $self->{ config }->{ $type };
     my $merged   = extend({ _component_ => $type }, $component, $master, $params);
     my $cfg_file = $merged->{ config_file } || $self->config_filename($type);
@@ -543,6 +563,9 @@ sub has_resources {
 
 sub resources_dir {
     my $self = shift;
+    my $rdname = $self->{ config }->{ resources_dir };
+    my $rddir  = $self->dir($rdname);
+
     my $rdir = $self->{ resources_dir } ||= $self->dir(
         $self->{ config }->{ resources_dir }
     )->must_exist;
@@ -559,29 +582,34 @@ sub resource_dir {
         ||= $self->resources_dir(
                 $type,
                 $self->config_filespec(@spec)
-            )->must_exist;
+            ); #->must_exist;
 }
 
 sub resource_file {
     my ($self, $type, $name) = @_;
 
     # look for the resource file in the local project directory
-    my $file = $self
-        ->resource_dir($type)
-        ->file( $self->config_filename($name) );
+    my $dir = $self->resource_dir($type);
 
-    if ($file->exists) {
-        return $file;
+    if ($dir->exists) {
+        my $file = $dir->file(
+            $self->config_filename($name)
+        );
+        if ($file->exists) {
+            return $file;
+        }
     }
 
     # delegate to any master project
     my $master = $self->master;
+
     if ($master) {
         return $master->resource_file($type, $name);
     }
 
     # trigger exception
-    return $file->must_exist;
+    #return $file->must_exist;
+    return $self->error_msg( invalid => $type => $name );
 }
 
 sub resource_vfs {
@@ -663,6 +691,13 @@ sub middleware {
 # Sub-projects
 #-----------------------------------------------------------------------------
 
+sub grand_master {
+    my $self = shift;
+    return $self->{ project }
+        ?  $self->{ project }->grand_master
+        :  $self;
+}
+
 sub master {
     shift->{ project };
 }
@@ -685,6 +720,56 @@ sub roots {
 }
 
 
+#-----------------------------------------------------------------------------
+# Mappings to various components, etc
+#-----------------------------------------------------------------------------
+
+sub plack {
+    shift->component('plack');
+}
+
+sub domains {
+    shift->component('domains');
+}
+
+sub domain {
+    shift->domains->domain(@_);
+}
+
+sub domain_site {
+    my ($self, $name) = @_;
+    my $domain  = $self->domain($name) || return;
+    my $siteurn = $domain->{ site }    || return $self->error_msg( no_domain_site => $name );
+    return $self->site($siteurn);
+}
+
+sub site_domains {
+    shift->domains->site_domains(@_);
+}
+
+sub sites {
+    shift->component('sites');
+}
+
+sub site {
+    shift->sites->resource(@_);
+}
+
+sub lists {
+    shift->component('lists');
+}
+
+sub list {
+    shift->lists->resource(@_);
+}
+
+sub templates {
+    shift->component('templates');
+}
+
+sub template {
+    shift->templates->template(@_);
+}
 
 #-----------------------------------------------------------------------------
 # Autoload methods for looking up components, resources, delegates, etc.

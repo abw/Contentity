@@ -320,6 +320,14 @@ sub match {
         " [$params] [$fragment]"
     ) if DEBUG;
 
+    # $path may be empty, e.g. for the / URL but we still want to match 
+    # endpoint data defined as /* or /- 
+    # The continue { } block doesn't get trigged if @parts is empty so we
+    # special-case it by copying any endpoint data into $params
+    if (! @parts && $self->{ endpoint }) {
+        $params = { %{ $self->{ endpoint } } };
+    }
+
     PART: while (@parts) {
         $part = $parts[0];
 
@@ -348,6 +356,7 @@ sub match {
         return $self->error("Invalid path: $path");
     }
     continue {
+        $self->debug("CONTINUE: [", join(', ', @parts), "]");
         # look at endpoint if @parts is empty and midpoint if there's more to come
         my $collect  = @parts
             ? $self->{ midpoint }

@@ -15,7 +15,7 @@ sub call {
 
     if ($@) {
         $self->debug("Caught error: $@");
-        return [ 500, [], ["Error: $@"]];
+        return [ 500, [], ["Server Error: $@"]];
     }
     return $res;
 }

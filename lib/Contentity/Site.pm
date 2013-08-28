@@ -9,20 +9,34 @@ use Contentity::Class
     constant    => {
         CONFIG_FILE => 'site',
         ROUTER      => 'Contentity::Router'
+    },
+    messages => {
+        no_app => "No application defined for $path",
     };
 
 sub dispatch {
     my ($self, $context) = @_;
     my $path = $context->path;
-    my $meta = $self->match_route($path);
-    my $appn  = $meta->{ app };
-    $self->debug("site dispatching context: $path => ", $self->dump_data($meta));
-    #$context->content("Hello world from the ", $self->urn, " site!!!");
+    my $page = $self->match_route($path);
+    my $appn = $page->{ app };
+
+    $context->set( Site => $self );
+    $context->set( Page => $page );
+
+    $self->debug("site dispatching context: $path => ", $self->dump_data($page));
+
     if ($appn) {
         my $app = $self->app($appn);
         $self->debug("Got $appn app: $app");
-        $app->run($context);
+        $context->set( App => $app );
+        $app->dispatch($context);
     }
+    else {
+        $context->content(
+            $self->message( no_app => $path )
+        );
+    }
+
     return $context->response;
 }
 
@@ -33,6 +47,22 @@ sub dispatch {
 #    return $self;
 #}
 
+
+sub project {
+    shift->grand_master;
+}
+
+sub domains {
+    my $self = shift;
+    return  $self->{ domains }
+        ||= $self->project->site_domains($self->urn);
+}
+
+sub domain {
+    my $self = shift;
+    return  $self->{ domain }
+        ||= $self->domains->[0];
+}
 
 #-----------------------------------------------------------------------------
 # Mapping simple names to URLs, e.g. scheme_info => /scheme/:id/info
@@ -70,6 +100,7 @@ sub router {
             );
 }
 
+
 sub match_route {
     shift->router->match(@_);
 }
@@ -98,7 +129,7 @@ sub rgb {
 
 sub load_rgb {
     my $self = shift;
-    my $rgb  = $self->config_uri_tree('rgb');
+    my $rgb  = $self->config_underscore_tree('rgb');
     foreach my $key (keys %$rgb) {
         $rgb->{ $key } = Colour($rgb->{ $key });
     }
@@ -113,7 +144,7 @@ sub load_rgb {
 sub fonts {
     my $self = shift;
     return  $self->{ fonts } 
-        ||= $self->config_uri_tree('fonts');
+        ||= $self->config_underscore_tree('fonts');
 }
 
 sub font {
@@ -124,5 +155,14 @@ sub font {
         || $self->decline_msg( invalid => font => $name );
 }
 
+#-----------------------------------------------------------------------------
+# File extensions
+#-----------------------------------------------------------------------------
+
+sub extensions {
+    my $self = shift;
+    return  $self->{ extensions } 
+        ||= $self->config('extensions');
+}
 
 1;

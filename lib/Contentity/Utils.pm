@@ -3,7 +3,7 @@ package Contentity::Utils;
 use warnings            qw( FATAL utf8 );
 use open                qw< :std :utf8 >;
 use Carp;
-use Badger::Rainbow     ANSI => 'cyan yellow';
+use Badger::Rainbow     ANSI => 'red green cyan magenta yellow';
 use Badger::Debug       'debug_caller';
 use Badger::Filesystem  'File Dir VFS';
 use Badger::Timestamp   'TIMESTAMP Timestamp Now';
@@ -14,15 +14,16 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Badger::Utils',
-    constants => 'ARRAY HASH DELIMITER BLANK SPACE :timestamp :date_formats',
+    constants => 'ARRAY PKG HASH DELIMITER BLANK SPACE :timestamp :date_formats',
     codecs    => 'html',
     exports   => {
         any => q{
             Timestamp Now URL File Dir VFS Logic Colour
             debug_caller 
             list_each split_to_list 
-            hash_each extend
-            join_uri resolve_uri uri_safe
+            hash_each extend strip_hash strip_hash_undef
+            module_name
+            join_uri resolve_uri uri_safe id_safe
             self_key self_keys
             H html_elem html_attrs data_attrs
             datestamp today format_date
@@ -93,6 +94,51 @@ sub extend {
     return $hash;
 }
 
+sub strip_hash {
+    my $hash = shift;
+    foreach (keys %$hash) {
+        delete $hash->{ $_ }
+            unless defined $hash->{ $_ }
+               and length  $hash->{ $_ };
+    }
+    return $hash;
+}
+
+sub strip_hash_undef {
+    my $hash = shift;
+    foreach (keys %$hash) {
+        delete $hash->{ $_ }
+            unless defined $hash->{ $_ };
+    }
+    return $hash;
+}
+
+
+#-----------------------------------------------------------------------------
+# Modules
+#-----------------------------------------------------------------------------
+
+sub module_name(@) {
+    # map {  } works backwards, so read this from bottom to top...
+    join(   
+        PKG,# join into a module path, e.g. User::SendInvite
+        grep {
+            # ignore any empty items
+            defined $_ && length $_
+        }
+        map {
+            # underscores indicate word breaks that we capitalise
+            # e.g. send_invite becomes SendInvite
+            join('',  map { s/(.)/\U$1/; $_ } split '_' )
+        }
+        map {
+            # split on slashes in the URI 
+            # e.g. 'user/send_invite' => 'user', 'send_invite'
+            split qr</>
+        }
+        @_  # feed in arguments
+    );
+}
 
 #-----------------------------------------------------------------------------
 # URI utilities
@@ -123,6 +169,17 @@ sub uri_safe {
         s/[^\w\.]+/-/g;     # convert all other non-word (or dot) sequences to -
     }
     return $text;
+}
+
+sub id_safe {
+    my $text = join('', @_);
+    for ($text) {
+        s/\W+/_/g;          # change all non-word characters to underscores
+        s/^_+//g;           # remove leading underscores
+        s/_+$//g;           # remove trailing underscores
+        s/_+/_/g;           # collapse multiple underscores into one
+    }
+    return lc $text;
 }
 
 
@@ -404,9 +461,11 @@ sub prompt {
     my ($msg, $def, $yes) = @_;
     my $ans = '';
     $def = '' unless defined $def;
-    my $defprompt = $def ? " [$def]" : "";
+    my $defprompt = $def 
+        ? ' ' . yellow("[") . green($def) . yellow("]") 
+        : "";
 
-    print cyan($msg) . yellow($defprompt) . ' ';
+    print cyan($msg) . $defprompt . ' ';
 
     if ($yes) {    # accept default
         print "$def\n";

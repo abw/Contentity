@@ -43,6 +43,10 @@ is( $echo->name, 'The Echo Site', 'got echo site name' );
 is( $echo->greeting, 'Hello from the echo site', 'got echo greeting' );
 is( $echo->mastermsg, 'The master message', 'got echo master project message' );
 
+my $exts = $echo->extensions;
+ok( $exts, "Got echo extensions" );
+print main->dump_data($exts);
+
 
 #-----------------------------------------------------------------------------
 # Fetch foxtrot site, based on echo site
@@ -56,4 +60,6 @@ is( $fox->greeting, 'Hello from the foxtrot site', 'got foxtrot greeting' );
 is( $fox->mastermsg, 'The master message', 'got foxtrot master project message' );
 is( $fox->master->name, 'The Echo Site', 'foxtrot is a slave of echo' );
 
-
+$exts = $fox->extensions;
+ok( $exts, "Got foxtrot extensions" );
+print main->dump_data($exts);

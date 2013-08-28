@@ -52,12 +52,15 @@ sub dir {
     shift->project_dir(@_);
 }
 
+sub hub {
+    shift->project->hub;
+}
 
 #-----------------------------------------------------------------------------
 # Autoload methods, applied by 'autolook' hook to Contentity::Class above
 #-----------------------------------------------------------------------------
 
-sub autoload_config {
+sub XXXautoload_config {
     my ($self, $name, @args) = @_;
     $self->debug("autoload_config($name)") if DEBUG;
     my $config = $self->{ config };
@@ -67,7 +70,7 @@ sub autoload_config {
         :   undef;
 }
 
-sub autoload_project {
+sub XXXautoload_project {
     my ($self, $name, @args) = @_;
     $self->debug("autoload_project($name)") if DEBUG;
     return $self->project->$name(@args);

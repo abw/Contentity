@@ -1,9 +1,10 @@
-greeting: Hello from the echo site
-extensions:
-  html:
+html:
     content-type: text/html
-  css:
+    wrapper:      html
+css:
     content-type: text/css
-  js:
+    wrapper:      css
+js:
     content-type: text/js
+    wrapper:      js
 
