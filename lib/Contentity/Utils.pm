@@ -1,15 +1,12 @@
 package Contentity::Utils;
 
+use Carp;
 use warnings            qw( FATAL utf8 );
 use open                qw< :std :utf8 >;
-use Carp;
 use Badger::Rainbow     ANSI => 'red green cyan magenta yellow';
+use Badger::Timestamp   'TIMESTAMP';
 use Badger::Debug       'debug_caller';
-use Badger::Filesystem  'File Dir VFS';
-use Badger::Timestamp   'TIMESTAMP Timestamp Now';
-use Badger::URL         'URL';
 use Badger::Utils       'params numlike is_object plural permute_fragments xprintf';
-use Badger::Logic       'Logic';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
@@ -18,7 +15,7 @@ use Contentity::Class
     codecs    => 'html',
     exports   => {
         any => q{
-            Timestamp Now URL File Dir VFS Logic Colour
+            Colour
             debug_caller 
             list_each split_to_list 
             hash_each extend strip_hash strip_hash_undef
@@ -27,11 +24,12 @@ use Contentity::Class
             self_key self_keys
             H html_elem html_attrs data_attrs
             datestamp today format_date
-            ordinal ordinate plurality inflect commas
+            ordinal ordinate commas
             find_program prompt confirm 
         }
     };
 use Contentity::Colour  'Colour';
+
 
 #-----------------------------------------------------------------------------
 # List utilities
@@ -367,38 +365,6 @@ sub ordinate {
     my $n = shift;
     $n = 0+$n;
     return $n . ordinal($n);
-}
-
-sub plurality {
-    my $n     = shift || 0;
-    my @items = map { permute_fragments($_) } 
-                (@_ == 1 && ref $_[0] eq ARRAY)
-                ? @{ $_[0] }
-                : @_;
-
-    # if the user specifies a single word then we pluralise it for them,
-    # assuming that 0 items are plural, 1 is singular, and > 1 is plural
-    if (@items == 1) {
-        my $plural = plural($items[0]);
-        unshift(@items, $plural);       # 0 whatevers
-        push(@items, $plural);          # n whatevers (where n > 1)
-    }
-
-    die "$n is not a number\n" unless numlike $n;
-    my $i     = $n > $#items ? $#items : $n;
-    $i        = 0 if $i < 0;
-
-    return $items[$i];
-}
-
-
-sub inflect {
-    my $n = shift || 0;
-    my $i = shift;
-    my $f = shift || '%s %s';
-    return xprintf(
-        $f, ($n or 'No'), plurality($n, $i)
-    );
 }
 
 sub commas {
