@@ -5,7 +5,11 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     utils     => 'weaken',
-    base      => 'Badger::Base';
+    base      => 'Badger::Base',
+    messages  => {
+        invalid_in      => "Invalid %s specified: '%s' in %s",
+        invalid_in_item => "Invalid %s specified: '%s' in %s: %s",
+    };
 
 
 sub dump_data_depth {

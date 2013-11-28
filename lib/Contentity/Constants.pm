@@ -18,11 +18,15 @@ use Badger::Class
     import   => 'class',
     constant => {
         UTF8                => 'utf8',
+        YAML                => 'yaml',
+        JSON                => 'json',
+
+        # current stuff
         CONFIG_DIR          => 'config',
-        CONFIG_FILE         => 'project',
-        CONFIG_CODEC        => 'yaml',
-        CONFIG_ENCODING     => 'utf8',
-        CONFIG_EXTENSION    => undef,   # defaults to CONFIG_CODEC
+        CONFIG_FILE         => 'workspace',
+        CONFIG_FILESYSTEM   => 'Contentity::Config::Filesystem',
+        METADATA_FILE       => 'metadata',
+
         RESOURCES_DIR       => 'resources',
         MIDDLEWARE          => 'middleware',
         INDEX_HTML          => 'index.html',
@@ -58,13 +62,14 @@ use Badger::Class
         any  => 'UTF8 MIDDLEWARE',
         tags => {
             status          => \@status,
-            config          => 'CONFIG_DIR CONFIG_FILE CONFIG_CODEC
-                                CONFIG_EXTENSION CONFIG_ENCODING RESOURCES_DIR',
+            codecs          => 'YAML JSON',
+            encoding        => 'UTF8',
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
             html            => 'INDEX_HTML DOT_HTML',
+            config          => 'CONFIG_DIR CONFIG_FILE CONFIG_FILESYSTEM',
         },
     };
 

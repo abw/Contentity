@@ -4,16 +4,19 @@ use Contentity::Components;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
-    base        => 'Contentity::Base',
+    base        => 'Contentity::Workspace',
     import      => 'class',
-    utils       => 'params extend weaken resolve_uri self_params',
+    utils       => 'params extend self_params',
     filesystem  => 'Dir VFS',
     accessors   => 'root hub XXXconfig',
     #autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config autoload_master',
-    autolook    => 'autoload_config',
-    constants   => ':config DOT DELIMITER HASH ARRAY MIDDLEWARE',
+    #autolook    => 'autoload_config',
+    constants   => 'DOT DELIMITER HASH ARRAY MIDDLEWARE',
     constant    => {
+        SITEMAP           => 'Contentity::Sitemap',
+        CONFIG_FILE       => 'project',
         DIRS              => 'dirs',
+        WORKSPACE_TYPE    => 'project',
         COMPONENT_FACTORY => 'Contentity::Components',
     },
     messages => {
@@ -30,75 +33,18 @@ use Contentity::Class
 #-----------------------------------------------------------------------------
 
 sub init {
-    shift->init_project(@_);
-}
+    my ($self, $config) = @_;
+    $self->init_workspace($config);
 
+    # Careful now!  init_workspace() will have modified the $config hash
+    $self->debug("intermediate config: ", $self->dump_data($config)) if DEBUG;
+    $self->init_project($config);
+
+    return $self;
+}
 
 sub init_project {
     my ($self, $config) = @_;
-    my $root_dir     = $config->{ root             } || return $self->error_msg( missing => 'root' );
-    my $cfg_dir      = $config->{ config_dir       } || $self->CONFIG_DIR;
-    my $cfg_file     = $config->{ config_file      } || $self->CONFIG_FILE;
-    my $cfg_codec    = $config->{ config_codec     } || $self->CONFIG_CODEC;
-    my $cfg_ext      = $config->{ config_extension } || $self->CONFIG_EXTENSION || $cfg_codec;
-    my $cfg_encoding = $config->{ config_encoding  } || $self->CONFIG_ENCODING;
-    my $cfg_filespec = {
-        codec    => $cfg_codec,
-        encoding => $cfg_encoding,
-    };
-    my $cfg_defaults = {
-        resources_dir => $self->RESOURCES_DIR,
-    };
-    $self->debug("resources dir: $cfg_defaults->{ resources_dir }") if DEBUG;
-
-    $root_dir = Dir($root_dir)->must_exist;
-    $cfg_dir  = $root_dir->dir($cfg_dir, $cfg_filespec)->must_exist;
-
-    # set this lot up early so we can load further config files
-    my $qm_ext = quotemeta $cfg_ext;
-    my $ext_re = qr/.$cfg_ext$/i;
-
-    $self->{ hub              } = $config->{ hub };                         # hmmm....
-    $self->{ uri              } = $config->{ uri } || $root_dir->name;
-    $self->{ root             } = $root_dir;
-    $self->{ config_dir       } = $cfg_dir;
-    $self->{ config_file      } = $cfg_file;
-    $self->{ config_codec     } = $cfg_codec;
-    $self->{ config_encoding  } = $cfg_encoding;
-    $self->{ config_filespec  } = $cfg_filespec;
-    $self->{ config_extension } = $cfg_ext;
-    $self->{ config_match_ext } = $ext_re;
-
-    # Hmmm... should this be "master" or simply "project" in keeping with
-    # components?  Or "base" in keeping with sites that have base sites?
-    if ($config->{_project_}) {
-        $self->attach_project($config);
-        $self->debugf(
-            "attaching slave project [%s] to master project [%s]",
-            $self->uri,
-            $self->master->uri
-        ) if DEBUG;
-    }
-
-    my $cfg_data = $self->config_data($cfg_file);
-
-    # TODO: handle base projects?
-
-    $config = $self->{ config } = extend(
-        # Merge contentity defaults with config file parameters and finally
-        # the configuration parameters.  Values defined in successive 
-        # configurations will replace those in earlier ones, e.g. 
-        # a value for 'resources_dir' defined in the config file will replace
-        # the default value defined in RESOURCE_DIR, but a value defined in 
-        # $config will override that.
-        $cfg_defaults, 
-        $cfg_data, 
-        $config
-    );
-
-    $self->debug("merged config: ", $self->dump_data($config)) if DEBUG;
-#    $self->debug("self resources_dir: ", $self->{ resources_dir });
-
     return $self
         ->init_components($config)
         ->init_resources($config)
@@ -107,9 +53,7 @@ sub init_project {
 sub init_components {
     my ($self, $config) = @_;
     my $comps = $config->{ components } || return $self;
-
     $self->{ components } = $self->prepare_components($comps);
-
     return $self;
 }
 
@@ -153,6 +97,7 @@ sub init_resources {
     return $self;
 }
 
+
 sub prepare_components {
     my ($self, $components) = @_;
     my $component;
@@ -179,277 +124,13 @@ sub prepare_components {
         map {
             $component = $components->{ $_ };
             ref $component ? ( $_ => $component )     # leave as is
-              : $component ? ( $_ => { }     )     # change true value to hash
-              : ( )                             # ignore false values
+              : $component ? ( $_ => { }        )     # change true value to hash
+              : ( )                                   # ignore false values
         }
         keys %$components
     };
 }
 
-
-#-----------------------------------------------------------------------------
-# General purpose methods
-#-----------------------------------------------------------------------------
-
-sub uri {
-    my $self = shift;
-    return @_
-        ? resolve_uri($self->{ uri }, @_)
-        : $self->{ uri };
-}
-
-sub dir {
-    my $self = shift;
-
-    return @_
-        ? $self->resolve_dir(@_)
-        : $self->root;
-}
-
-sub resolve_dir {
-    my ($self, @path) = @_;
-
-    # As a special case we allow the base: prefix to denote a path relative
-    # to the base/parent/master project.  Note sure how sound this is in the
-    # long run.
-
-    if ($path[0] =~ s/^base://g) {
-        my $base = $self->master || $self;
-        return $base->resolve_dir(@path);
-    }
-
-    # configuration can define a lookup table of 'dirs' for aliases
-    my $dirs = $self->config(DIRS) || { };
-    $self->debug(DIRS, ": ", $self->dump_data($dirs)) if DEBUG;
-    my $alias;
-
-    if ($alias = $dirs->{ $path[0] }) {
-        $path[0] = $alias;
-    }
-
-    return $self->root->dir(@path);
-}
-
-
-#-----------------------------------------------------------------------------
-# Methods for loading configuration files
-#-----------------------------------------------------------------------------
-
-
-sub config {
-    my $self   = shift;
-    my $config = $self->{ config };
-    return $config unless @_;
-
-    my @lookup = @_;
-    my @done;
-
-    while (@lookup) {
-        my $item  = shift @lookup;
-        if ($item =~ /\W/) {
-            my @bits = split(/\W+/, $item);
-            $item = shift @bits;
-            unshift(@lookup, @bits);
-        }
-        if (exists $config->{ $item }) {
-            $config = $config->{ $item };
-        }
-        elsif (@done) {
-            return $self->decline_msg( 
-                no_config => join('.', @done, $item)
-            );
-        }
-        else {
-            $config = $self->try->config_data($item)
-                ||  return $self->decline_msg(
-                        no_config => $item
-                    );
-        }
-    }
-    return $config;
-}
-
-sub config_dir {
-    my $self = shift;
-    my $dir  = $self->{ config_dir };
-    return @_
-        ? $dir->dir(@_)
-        : $dir;
-}
-
-sub config_filename {
-    my ($self, $name) = @_;
-    return $name.DOT.$self->{ config_extension };
-}
-
-sub config_file {
-    my $self = shift;
-    return @_
-        ? $self->{ config_dir  }->file(@_)
-        : $self->{ config_file };
-}
-
-sub config_data {
-    my ($self, $name) = @_;
-    my $path = $self->config_filename($name);
-    my $file = $self->config_file($path);
-
-    if (! $file->exists && $self->master) {
-        return $self->master->config_data($name);
-    }
-    my $data = $file->try->data;
-    return $@
-        ? $self->error_msg( load_fail => $file => $@ )
-        : $data;
-}
-
-sub config_filespec {
-    my $self     = shift;
-    my $defaults = $self->{ config_filespec };
-
-    return @_ 
-        ? extend({ }, $defaults, @_)
-        : { %$defaults };
-}
-
-sub config_tree {
-    my ($self, $name, $binder, $slave) = @_;
-    my $confdir = $self->config_dir;
-    my $file    = $self->config_file( $self->config_filename($name) );
-    my $dir     = $confdir->dir($name);
-    my $master  = $self->master;
-    my $data    = $master 
-        ? $master->config_tree($name, $binder, $self) 
-        : { };
-
-    if ($file->exists) {
-        # we're expecting to find a $name.yaml file...
-        my $more = $file->try->data;
-        return $self->error_msg( load_fail => $file => $@ ) if $@;
-        @$data{ keys %$more } = values %$more;
-    }
-    elsif ($dir->exists) {
-        # ...or perhaps a $name directory with XXX.yaml files in it
-        # we'll handle that below
-    }
-    elsif ($slave) {
-        # If we're being called as the master of some slave then we don't
-        # need to report any missing files/dirs as errors as it's up to the
-        # slave to take care of that
-        return $data;
-    }
-    elsif ($master && %$data) {
-        # If we're a slave and the master returned some data then we're good
-        return $data;
-    }
-    else {
-        # There's nobody else to blame
-        return $self->error_msg( no_config => $name );
-    }
-
-    # if the master metadata file is empty then $data could be undefined
-    $data ||= { };
-
-    if ($file->exists) {
-        $self->debug("Read metadata from file: ", $file) if DEBUG;
-    }
-    if ($dir->exists) {
-        # create a virtual file system rooted on the metadata directory
-        # so that all file paths are resolved relative to it
-
-        # TODO: add in multiple roots where project has a parent project
-        my $vfs = VFS->new( root => $dir );
-        $self->debug("Reading metadata from dir: ", $dir->name) if DEBUG;
-        $self->scan_config_dir($vfs->root, $data, $binder);
-    }
-
-    $self->debug("$name config: ", $self->dump_data($data)) if DEBUG;
-
-    return $data;
-
-    # return $each_fn
-    #    ? hash_each($data, $each_fn)
-    #    : $data;
-
-}
-
-sub scan_config_dir {
-    my ($self, $dir, $data, $binder) = @_;
-    my $files  = $dir->files;
-    my $dirs   = $dir->dirs;
-
-    $data ||= { };
-
-    foreach my $file (@$files) {
-        next unless $file->name =~ $self->{ config_match_ext };
-        $self->debug("found file: ", $file->name, ' at ', $file->path) if DEBUG;
-        $self->scan_config_file($file, $data, $binder);
-    }
-    foreach my $dir (@$dirs) {
-        $self->debug("found dir: ", $dir->name, ' at ', $dir->path) if DEBUG;
-        $self->scan_config_dir($dir, $data, $binder);
-    }
-}
-
-sub scan_config_file {
-    my ($self, $file, $data, $binder) = @_;
-
-    $file->codec( $self->{ config_codec } );
-    $file->encoding( $self->{ config_encoding } );
-
-    my $base = $file->path;
-    my $meta = $file->try->data;
-    my $uri;
-
-    return $self->error_msg( load_fail => $file => $@ ) if $@;
-
-    # remove file extension
-    $base =~ s/$self->{ config_match_ext }//i;
-
-    if ($binder) {
-        $binder->($self, $data, $base, $meta);
-    }
-    else {
-        $base =~ s[^/][];
-        $data->{ $base } = $meta;
-    }
-}
-
-sub config_uri_tree {
-    my ($self, $name) = @_;
-    return $self->config_tree($name, $self->can('uri_binder'));
-}
-
-sub config_underscore_tree {
-    my ($self, $name) = @_;
-    return $self->config_tree($name, $self->can('underscore_binder'));
-}
-
-sub uri_binder {
-    my ($self, $data, $base, $meta) = @_;
-
-    while (my ($key, $value) = each %$meta) {
-        my $uri = resolve_uri($base, $key);
-        $data->{ $uri } = $value;
-        $self->debug(
-            "loaded metadata for [$base] + [$key] = [$uri]"
-        ) if DEBUG;
-    }
-}
-
-sub underscore_binder {
-    my ($self, $data, $base, $meta) = @_;
-
-    while (my ($key, $value) = each %$meta) {
-        my $uri = resolve_uri($base, $key);
-        for ($uri) {
-            s[^/+][]g;
-            s[/+$][]g;
-            s[/+][_]g;
-        }
-        $data->{ $uri } = $value;
-    }
-}
 
 #-----------------------------------------------------------------------------
 # Methods for loading component modules
@@ -458,20 +139,10 @@ sub underscore_binder {
 sub component {
     my $self = shift;
     my $type = shift;
-
-    # Always create a new instance if arguments are specified
-    if (@_) {
-        $self->debug(
-            "Creating custom $type component with config: ", 
-            $self->dump_data(\@_)
-        ) if DEBUG;
-
-        return $self->load_component( $type => @_ );
-    }
-
-    # Otherwise create and cache a component using the project config defaults
-    return  $self->{ component }->{ $type }
-        ||= $self->load_component( $type => @_ );
+    
+    return $self->component_factory->item(
+        $type => $self->component_config($type)
+    );
 }
 
 sub has_component {
@@ -480,18 +151,19 @@ sub has_component {
     return $self->{ components }->{ $type };
 }
 
-sub load_component {
-    my $self    = shift;
-    my $type    = shift;
-    my $config  = $self->component_config( $type => @_ );
-    my $factory = $self->component_factory;
+sub component_config {
+    my $self   = shift;
+    my $type   = shift;
+    my $config = $self->config($type);
 
-    return $factory->item(
-        $type => $config
-    );
+    $config->{ _workspace_} = $self;
+
+    $self->debug("component config for $type: ", $self->dump_data($config));
+    return $config;
 }
 
-sub component_config {
+
+sub OLD_component_config {
     my $self     = shift;
     my $type     = shift;
     my $params   = params(@_);
@@ -499,9 +171,7 @@ sub component_config {
         #|| return $self->error_msg( invalid => component => $type );
     my $master   = $self->{ config }->{ $type };
     my $merged   = extend({ _component_ => $type }, $component, $master, $params);
-    my $cfg_file = $merged->{ config_file } || $self->config_filename($type);
-    my $cfg_fobj = $self->config_file($cfg_file);                             # TODO: doesn't account for inheritance
-    my $cfg_data = $cfg_fobj->exists ? $cfg_fobj->data : undef;
+    my $cfg_data = $self->config($type);
     my $config   = extend($cfg_data, $merged);
 
     $self->debug(
@@ -510,11 +180,12 @@ sub component_config {
         "- Master config ($type): ", $self->dump_data($master), "\n",
         "- Local params (component_config(...)): ", $self->dump_data($params), "\n",
         "= Merged config ({} < component < master < local): ", $self->dump_data($merged), "\n",
-        "- Config file ($cfg_file): ", $self->dump_data($cfg_file), "\n",
+        "- Config data from workspace ($type): ", $self->dump_data($cfg_data), "\n",
         "= Fully merged (file < merged): ", $self->dump_data($config), "\n",
-    ) if DEBUG;
+    ) if DEBUG or 1;
 
-    $config->{_project_} = $self;
+    $config->{_workspace_} = $self;     # new?
+    $config->{_project_} = $self;       # old
 
     return $config;
 }
@@ -527,6 +198,20 @@ sub component_factory {
                 path => $self->{ config }->{ component_path }
             );
 }
+
+
+1;
+
+__END__
+
+
+
+
+
+#-----------------------------------------------------------------------------
+# General purpose methods
+#-----------------------------------------------------------------------------
+
 
 
 #-----------------------------------------------------------------------------
@@ -747,11 +432,11 @@ sub site_domains {
     shift->domains->site_domains(@_);
 }
 
-sub sites {
+sub OLD_sites {
     shift->component('sites');
 }
 
-sub site {
+sub OLD_site {
     shift->sites->resource(@_);
 }
 

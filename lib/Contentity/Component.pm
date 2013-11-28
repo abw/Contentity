@@ -5,23 +5,24 @@ use Contentity::Class
     debug       => 0,
     base        => 'Contentity::Base',
     utils       => 'weaken',
-    accessors   => 'project component config';
+    accessors   => 'workspace component config';
 
 
 sub init {
     my ($self, $config) = @_;
     my $component = delete $config->{_component_} || 'component';
+    my $workspace = delete $config->{_workspace_} || return $self->error_msg( missing => '_workspace_' );
 
     $self->debug(
         "initialising $config->{ component } component module: ", 
         $self->dump_data($config)
     ) if DEBUG;
 
-    $self->{ config    } = $config;
+    $self->{ workspace } = $workspace;
     $self->{ component } = $component;
+    $self->{ config    } = $config;
 
     return $self
-        ->attach_project($config)
         ->init_component($config);
 }
 
@@ -32,49 +33,31 @@ sub init_component {
     return $self;
 }
 
+
 #-----------------------------------------------------------------------------
 # Various useful accessor methods
 #-----------------------------------------------------------------------------
 
-sub project_uri {
-    shift->project->uri(@_);
-}
-
-sub project_dir {
-    shift->project->dir(@_);
+sub hub {
+    shift->workspace->hub;
 }
 
 sub uri {
-    shift->project_uri(@_);
+    shift->workspace_uri(@_);
 }
 
 sub dir {
-    shift->project_dir(@_);
+    shift->workspace_dir(@_);
 }
 
-sub hub {
-    shift->project->hub;
+sub workspace_uri {
+    shift->workspace->uri(@_);
 }
 
-#-----------------------------------------------------------------------------
-# Autoload methods, applied by 'autolook' hook to Contentity::Class above
-#-----------------------------------------------------------------------------
-
-sub XXXautoload_config {
-    my ($self, $name, @args) = @_;
-    $self->debug("autoload_config($name)") if DEBUG;
-    my $config = $self->{ config };
-
-    return  exists $config->{ $name }
-        ?   $config->{ $name }
-        :   undef;
+sub workspace_dir {
+    shift->workspace->dir(@_);
 }
 
-sub XXXautoload_project {
-    my ($self, $name, @args) = @_;
-    $self->debug("autoload_project($name)") if DEBUG;
-    return $self->project->$name(@args);
-}
 
 #-----------------------------------------------------------------------------
 # Cleanup methods
@@ -82,8 +65,8 @@ sub XXXautoload_project {
 
 sub destroy {
     my $self = shift;
-    delete $self->{ project };
-    delete $self->{ config  };
+    delete $self->{ workspace };
+    delete $self->{ config    };
     $self->debug("$self->{ component } component is destroyed") if DEBUG;
 }
 

@@ -250,7 +250,7 @@ sub css_rgb {
 
 sub css_rgba {
     my $self = shift;
-    $self->rgb->css_rgba;
+    $self->rgb->css_rgba(@_);
 }
 
 sub range {
