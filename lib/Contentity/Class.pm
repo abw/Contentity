@@ -5,8 +5,8 @@ use Badger::Class
     version   => 0.01,
     debug     => 0,
     uber      => 'Badger::Class',
-    hooks     => 'component resource resources autolook',
-#    utils     => 'camel_case split_to_list',
+    hooks     => 'constructor component resource resources autolook',
+    utils     => 'is_object',
     constants => 'CODE',
     constant  => {
         UTILS            => 'Contentity::Utils',
@@ -16,6 +16,27 @@ use Badger::Class
 
 use Contentity::Utils 'camel_case split_to_list';
 
+sub constructor {
+    my ($self, $name) = @_;
+    my $type = $self->name;
+
+    $self->method(
+        $name => sub {
+            if (@_ == 1 && is_object($type, $_[0])) {
+                return $_[0];
+            }
+            elsif (@_) {
+                return $type->new(@_);
+            }
+            else {
+                return $type;
+            }
+        }
+    );
+    $self->exports(
+        any => $name
+    );
+}
 
 sub component {
     my ($self, $name) = @_;
