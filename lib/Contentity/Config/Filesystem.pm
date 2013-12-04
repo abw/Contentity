@@ -1,3 +1,5 @@
+# NOTE: moved upstream to Badger::Config::Files
+
 package Contentity::Config::Filesystem;
 
 use Badger::Filesystem 'Dir VFS';
@@ -6,9 +8,9 @@ use Contentity::Class
     debug       => 0,
     import      => 'class',
     base        => 'Contentity::Base',
-    utils       => 'extend resolve_uri split_to_list params',
+    utils       => 'resolve_uri split_to_list params',
     accessors   => 'root extensions codecs schemas',
-    constants   => ':codecs UTF8 DOT',
+    constants   => 'UTF8 YAML JSON DOT',
     constructor => 'ConfigFS',
     messages    => {
         load_fail => 'Failed to load data from %s: %s',
@@ -115,7 +117,7 @@ sub fetch_under_tree {
 # Internal methods
 #-----------------------------------------------------------------------------
 
-sub uri {
+sub OLD_uri {
     my $self = shift;
     return @_
         ? resolve_uri($self->{ uri }, @_)

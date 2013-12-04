@@ -1,11 +1,38 @@
 package Contentity::Site;
 
-use Contentity::Router;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
-    base        => 'Contentity::Project',
-    utils       => 'Colour',
+    base        => 'Contentity::Workspace',
+    constant    => {
+        CONFIG_FILE    => 'site',
+        WORKSPACE_TYPE => 'site',
+    };
+
+
+#-----------------------------------------------------------------------------
+# Initialisation methods
+#-----------------------------------------------------------------------------
+
+sub init {
+    my ($self, $config) = @_;
+    $self->init_workspace($config);
+    $self->init_site($config);
+    return $self;
+}
+
+sub init_site {
+    my ($self, $config) = @_;
+}
+
+sub project {
+    shift->uberspace;
+}
+
+1;
+
+
+__END__
     constant    => {
         CONFIG_FILE => 'site',
         ROUTER      => 'Contentity::Router'

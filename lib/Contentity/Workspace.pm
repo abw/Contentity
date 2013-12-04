@@ -1,40 +1,9 @@
 package Contentity::Workspace;
 
-use Contentity::Config::Filesystem;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
-    base        => 'Contentity::Base',
-    import      => 'class',
-    utils       => 'params extend weaken join_uri resolve_uri self_params Duration',
-    filesystem  => 'Dir VFS',
-    accessors   => 'root superspace hub config_dir config_fs urn type',
-    #autolook    => 'autoload_config',
-    constants   => ':config DOT DELIMITER HASH ARRAY CODE SLASH',
-    constant    => {
-        DIRS           => 'dirs',
-        DEFAULT_SCHEMA => '_default_',
-        COMMON_SCHEMA  => '_common_',
-        WORKSPACE_TYPE => 'workspace',
-    },
-    messages => {
-        no_config             => 'No metadata found for %s',
-        cannot_merge_metadata => "Cannot merge metadata for %s.%s (%s and %s)",
-    };
-
-# word: prefixes in directories and other paths are mapped to methods that 
-# resolves the relative space, e.g. super => superspace, uber => uberspace
-#our $RELATIVE_SPACES = {
-#    map { $_ => $_ . 'space' }
-#    qw( super uber )
-#};
-
-our $LOADERS    = {
-    file       => 'config_file',
-    tree       => 'config_tree',
-    uri_tree   => 'config_uri_tree',
-    under_tree => 'config_under_tree',
-};
+    base        => 'Badger::Workspace Contentity::Base';
 
 
 #-----------------------------------------------------------------------------
@@ -55,8 +24,6 @@ sub init {
 sub init_workspace {
     my ($self, $config) = @_;
     my $class    = $self->class;
-    my $hub      = delete $config->{ hub        } 
-                || return $self->error_msg( missing => 'hub' );
     my $root     = delete $config->{ root       } 
                 || delete $config->{ directory  }
                 || delete $config->{ dir        } 
@@ -81,7 +48,6 @@ sub init_workspace {
     # clean up anything else we don't want to store in the config
     delete $config->{ module };     # from hub/construct
 
-    $self->{ hub        } = $hub;
     $self->{ root       } = $root_dir;
     $self->{ type       } = $type;
     $self->{ urn        } = delete $config->{ urn } || $root_dir->name;
@@ -292,7 +258,7 @@ sub config_head {
     my $data   = $cdata || $self->config_filesystem($uri, $schema);
 
     $self->debug(
-        "metdata for $uri\nSCHEMA: ", 
+        "metadata for $uri\nSCHEMA: ", 
         $self->dump_data($schema), 
         "\nDATA: ", 
         $self->dump_data($data)
@@ -439,6 +405,7 @@ sub schema {
     my $name    = $path;
     my $schema  = $schemas->{ $name };
 
+    $self->debug("schemas: ", $self->dump_data($self->{ schemas })) if DEBUG;
     $self->debug("tried $name") if DEBUG;
 
     while (! $schema && length $name) {
@@ -450,8 +417,9 @@ sub schema {
     }
 
     if (! $schema) {
+        $self->debug("looking for default schema: ", $self->DEFAULT_SCHEMA) if DEBUG;
         $name   = $self->DEFAULT_SCHEMA;
-        $schema = $schema->{ $name };
+        $schema = $schemas->{ $name };
     }
 
     if ($schema) {
@@ -734,9 +702,6 @@ sub file {
 }
 
 
-sub project {
-    shift->hub->project;
-}
 
 #-----------------------------------------------------------------------------
 # Sub-projects

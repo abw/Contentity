@@ -1,6 +1,6 @@
 #============================================================= -*-perl-*-
 #
-# t/utils.t
+# t/core/utils.t
 #
 # Test functionality in the Contentity::Utils module
 #
@@ -9,7 +9,7 @@
 #========================================================================
 
 use Badger
-    lib   => '../lib',
+    lib   => '../../lib',
     Debug => [import => ':all'];
 
 use Badger::Test

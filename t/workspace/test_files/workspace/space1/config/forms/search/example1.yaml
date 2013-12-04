@@ -1,0 +1,14 @@
+form: Example Search Form
+note: This is inherited by space2, but the class and style fields should be excluded
+class: blah
+style: yada
+nested:
+  data:
+    foo: foo is 10
+fields:
+  -
+    name: field1
+    type: type1
+  -
+    name: field2
+    type: type2

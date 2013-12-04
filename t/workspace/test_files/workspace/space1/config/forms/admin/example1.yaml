@@ -1,0 +1,2 @@
+form: Admin Form
+note: This shouldn't be accessible in space2 because forms/admin are not inherited

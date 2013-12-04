@@ -1,0 +1,19 @@
+schemas:
+  _default_:
+    loader:  file
+    inherit: all
+  _common_:
+    cache:   1 minute
+  site:
+    loader:  tree
+    inherit: -private -hidden +urls +css
+    cache:   5 minutes
+  forms:
+    inherit: all
+    cache:   5 minutes
+  forms/admin:
+    inherit: none
+  forms/search:
+    cache:   2 hours
+    inherit:
+      exclude: class style

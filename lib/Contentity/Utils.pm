@@ -16,11 +16,9 @@ use Contentity::Class
     exports   => {
         any => q{
             Colour
-            debug_caller 
-            list_each split_to_list 
-            hash_each extend strip_hash strip_hash_undef
+            debug_caller strip_hash strip_hash_undef
             module_name
-            join_uri resolve_uri uri_safe id_safe
+            uri_safe id_safe
             self_key self_keys
             H html_elem html_attrs data_attrs
             datestamp today format_date
@@ -32,65 +30,9 @@ use Contentity::Colour  'Colour';
 
 
 #-----------------------------------------------------------------------------
-# List utilities
-#-----------------------------------------------------------------------------
-
-sub list_each {
-    my ($list, $fn) = @_;
-    my $n = 0;
-
-    for (@$list) {
-        $fn->($list, $n++, $_);
-    }
-
-    return $list;
-}
-
-sub split_to_list {
-    my $list = shift;
-    $list = [ split(DELIMITER, $list) ]
-        unless ref $list eq ARRAY;
-    return $list;
-}
-
-
-#-----------------------------------------------------------------------------
 # Hash utilities
 #-----------------------------------------------------------------------------
 
-sub hash_each {
-    my ($hash, $fn) = @_;
-
-    while (my ($key, $value) = each %$hash) {
-        $fn->($hash, $key, $value);
-    }
-
-    return $hash;
-}
-
-
-sub extend {
-    my $hash = shift;
-    my $more;
-
-    while (@_) {
-        if (! $_[0]) {
-            # ignore undefined/false values
-            shift;
-            next;
-        }
-        elsif (ref $_[0] eq HASH) {
-            $more = shift;
-        }
-        else {
-            $more = params(@_);
-            @_    = ();
-        }
-        @$hash{ keys %$more } = values %$more;
-    }
-    
-    return $hash;
-}
 
 sub strip_hash {
     my $hash = shift;
@@ -142,20 +84,6 @@ sub module_name(@) {
 # URI utilities
 #-----------------------------------------------------------------------------
 
-sub join_uri {
-    my $uri = join('/', @_);
-    $uri =~ s{/+}{/}g;
-    return $uri;
-}
-
-
-sub resolve_uri {
-    my $base = shift;
-    my $rel  = join_uri(@_);
-    return ($rel =~ m{^/})
-        ? $rel
-        : join_uri($base, $rel);
-}
 
 sub uri_safe {
     my $text = join('', @_);
@@ -486,113 +414,8 @@ from L<Badger::Utils>.
 These function serve to create instances of various utility objects, e.g.
 files, timestamps, URLs, etc.
 
-=head2 File
-
-Function for creating a file object, imported from L<Badger::Filesystem>.
-
-=head2 Logic
-
-Function for returning a L<Badger::Logic> object for representing simple
-logical assertions.
-
-=head2 Now
-
-Function for returning a L<Badger::Timestamp> object representing the 
-current date and time.  Imported from L<Badger::Timestamp>.
-
-=head2 Timestamp
-
-Function for creating a L<Badger::Timestamp> object. Imported from
-L<Badger::Timestamp>.
-
-=head2 URL
-
-Function for creating a L<Badger::URL> object for representing and
-manipulating a URL.  Imported from L<Badger::URL>.
-
-=head1 LIST UTILITY FUNCTIONS
-
-These functions are provided for working with lists.
-
-=head2 list_each($listref, $coderef)
-
-Iterates over the items in the list reference passed as the first argument,
-calling the code reference passed as the second for each.  The arguments
-passed to C<$coderef> are C<($listref, $index, $item)>, where C<$listref> is
-the reference to the list, C<$index> is the iteration index (starting at 0 
-for the first item) and C<$item> is the item at that position in the list.
-
-    list_each(
-        $listref,
-        sub {
-            my ($listref, $index, $item) = @_;
-            print "List item $index is $item\n";
-        }
-    );
-
-=head2 split_to_list($text_or_list)
-
-Splits a text string into a list of comma and/or whitespace delimited values.
-
-    split_to_list('foo bar');   # returns ['foo', 'bar']
-
-If the argument passed is already a reference to a list then it is returned
-unmodified.
-
-=head1 HASH UTILITY FUNCTIONS
-
-These functions are provided for working with hash arrays.
-
-=head2 hash_each($hashref, $coderef)
-
-Iterates over the items in the hash array reference passed as the first 
-argument, calling the code reference passed as the second for each.  The 
-arguments passed to C<$coderef> are C<($hashref, $key, $value)>.
-
-    hash_each(
-        $hashref,
-        sub {
-            my ($hashref, $key, $value) = @_;
-            print "Hash key $key is $value\n";
-        }
-    );
-
-=head2 extend($target, $source1, $source2, key1 => value1, ...)
-
-This function can be used to extend a hash array with the contents of one
-or more hash arrays, or loose C<key =E<gt> value> pairs passed as arguments.
-
-    my $target  = { foo => 10 };
-    my $source1 = { bar => 20 };
-    my $source2 = { baz => 30 };
-
-    extend(
-        $target,        # this gets extended...
-        $source1,       #   ...with this
-        $source2,       #   ...and this
-        wam => 40,      #   ...and these
-        bam => 50
-    );
 
 =head1 URI UTILITY METHODS
-
-=head2 join_uri(frag1, frag2, etc)
-
-Joins the elements of a URI passed as arguments into a single URI.
-
-    use Contentity::Utils 'join_uri';
-    print join_uri('/foo', 'bar');     # /foo/bar
-
-=head2 resolve_uri(base, frag1, frag2, etc)
-
-The first argument is a base URI.  The remaining argument(s) are joined 
-(via L<join_uri()>) to construct a relative URI.  If the relative URI begins
-with C</> then it is considered absolute and is returned unchanged.  Otherwise
-it is appended to the base URI.
-
-    use Contentity::Utils 'resolve_uri';
-    print resolve_uri('/foo', 'bar/baz');     # /foo/bar/baz
-    print resolve_uri('/foo', '/bar/baz');    # /bar/baz
 
 =head2 uri_safe(text)
 

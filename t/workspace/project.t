@@ -9,12 +9,12 @@
 #========================================================================
 
 use Badger
-    lib        => '../lib lib',
+    lib        => '../../lib lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 26,
+    tests => 7,
     debug => 'Contentity::Project',
     args  => \@ARGV;
 
@@ -25,7 +25,7 @@ use Contentity::Project;
 # Instantiate project object
 #-----------------------------------------------------------------------------
 
-my $root    = Bin->parent->dir( t => projects => 'alpha' );
+my $root    = Bin->dir( test_files => projects => 'alpha' );
 my $project = Contentity::Project->new( 
     root        => $root,
     component_path => 'Wibble::Component',
@@ -38,9 +38,10 @@ ok( $project, "created contentity project: $project" );
 #-----------------------------------------------------------------------------
 
 my $uri  = $project->uri;
-is( $project->uri, 'alpha', 'project uri is alpha' );
-is( $project->uri('wibble'), 'alpha/wibble', 'project relative uri is alpha/wibble' );
-is( $project->uri('/wobble'), '/wobble', 'project absolute uri is /wobble' );
+is( $project->urn, 'alpha', 'project urn is alpha' );
+is( $project->uri, 'project:alpha', 'project uri is project:alpha' );
+is( $project->uri('wibble'), 'project:alpha/wibble', 'project relative uri is project:alpha/wibble' );
+is( $project->uri('/wobble'), 'project:alpha/wobble', 'project absolute uri is project:alpha/wobble' );
 
 
 #-----------------------------------------------------------------------------
@@ -54,6 +55,14 @@ my $ptmp = $project->dir('tmp');
 my $rtmp = $root->dir('tmp');
 is( $ptmp, $rtmp, 'project tmp directory is ' . $rtmp );
 
+
+#-----------------------------------------------------------------------------
+# Sitemap
+#-----------------------------------------------------------------------------
+
+__END__
+
+TODO: fix the rest of this
 
 #-----------------------------------------------------------------------------
 # Config files

@@ -1,0 +1,11 @@
+name: Space1 Site
+version: 23
+private: secret
+hidden:  item
+urls:
+  foo: /foo
+  bar: /bar
+css:
+  - one.css
+  - two.css
+

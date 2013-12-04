@@ -158,7 +158,7 @@ sub component_config {
 
     $config->{ _workspace_} = $self;
 
-    $self->debug("component config for $type: ", $self->dump_data($config));
+    $self->debug("component config for $type: ", $self->dump_data($config)) if DEBUG;
     return $config;
 }
 

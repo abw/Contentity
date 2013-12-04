@@ -17,10 +17,6 @@ use Badger::Class
     base     => 'Badger::Constants',
     import   => 'class',
     constant => {
-        UTF8                => 'utf8',
-        YAML                => 'yaml',
-        JSON                => 'json',
-
         # current stuff
         CONFIG_DIR          => 'config',
         CONFIG_FILE         => 'workspace',
@@ -62,8 +58,6 @@ use Badger::Class
         any  => 'UTF8 MIDDLEWARE',
         tags => {
             status          => \@status,
-            codecs          => 'YAML JSON',
-            encoding        => 'UTF8',
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
