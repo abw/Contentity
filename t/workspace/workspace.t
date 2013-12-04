@@ -2,119 +2,108 @@
 #
 # t/workspace/workspace.t
 #
-# Test the Contentity::Workspace module
+# Test the Contentity::Workspace module.
 #
-# Written by Andy Wardley, November 2013
+# Copyright (C) 2008-2013 Andy Wardley.  All Rights Reserved.
+#
+# This is free software; you can redistribute it and/or modify it
+# under the same terms as Perl itself.
 #
 #========================================================================
 
-use Badger 
-    lib => '../../lib';
+use strict;
+use warnings;
+
+use lib qw( ./lib ../lib ../../lib t/config/lib );
 use Badger::Debug ':all';
-use Badger::Filesystem 'Bin';
-use Badger::Test
-    tests => 26,
-    debug => 'Contentity::Workspace',
+use Badger::Test 
+    tests => 22,
+    debug => 'Contentity::Workspace Contentity::Cache Contentity::Metadata::Filesystem',
     args  => \@ARGV;
 
+use Badger::Utils 'Bin';
 use Contentity::Workspace;
-use Contentity::Hub;
-
-our $CSPACE = 'Contentity::Workspace';
-our $HUB    = Contentity::Hub->new;
-our $DIR1   = Bin->dir('test_files', 'workspace', 'space1');
-our $DIR2   = Bin->dir('test_files', 'workspace', 'space2');
-
-#-----------------------------------------------------------------------------
-# Master workspace
-#-----------------------------------------------------------------------------
-
-my $cspace1 = $CSPACE->new(
-    dir => $DIR1,
-    hub => $HUB,
-);
-ok( $cspace1, "created $CSPACE object");
-is( $cspace1->root, $DIR1, "workspace directory is $DIR1");
-
-
-my $site1 = $cspace1->config('site');
-ok( $site1, "fetched site config from space1");
-is( $site1->{ name }, "Space1 Site", "site1.name is correct" );
-is( $site1->{ version }, "23", "site1.version is correct" );
-
-main->debug("site1 metadata: ", main->dump_data($site1)) if DEBUG;
-
+my $pkg  = 'Contentity::Workspace';
+my $dir1 = Bin->dir('test_files/wspace1');
+my $dir2 = Bin->dir('test_files/wspace2');
+my $web1 = $dir1->dir('web');
+my $web2 = $dir2->dir('web');
 
 #-----------------------------------------------------------------------------
-# Slave workspace
+# Top level workspace
 #-----------------------------------------------------------------------------
 
-my $cspace2 = $CSPACE->new(
-    dir  => $DIR2,
-    hub  => $HUB,
-    base => $cspace1,
-);
-ok( $cspace2, "created $CSPACE object");
+my $wspace = $pkg->new( directory => $dir1 );
+ok( $wspace, "Created $wspace object" );
+is( $wspace->uri, 'workspace:wspace1', 'workspace uri' );
 
-my $site2 = $cspace2->config('site');
-ok( $site2, "fetched site config from space2");
-is( $site2->{ name }, "Space2 Site", "site2.name is correct" );
-is( $site2->{ version }, "23", "site2.version is inherited" );
+my $webdir = $wspace->dir('web');
+ok( $webdir, "Got webdir" );
+is( $webdir, $web1, "webdir is $webdir" );
 
-my $css = $site2->{ css };
-$css = join(', ', @$css);
-is( $css, "one.css, two.css, three.css, four.css", "site2.css is a merged list" );
+my $pages = $wspace->config->get('pages');
+ok( $pages, "Got pages config data" );
+main->debug(
+    "Pages: ",
+    main->dump_data($pages)
+) if DEBUG;
 
-my $urls = $site2->{ urls };
-is( $urls->{ foo }, "/foo", "site2.urls.foo is correct" );
-is( $urls->{ one }, "/one", "site2.urls.one is correct" );
+my $wibble = $wspace->config('wibble');
+ok( $wibble, "fetched wibble data" );
 
-main->debug("site2 metadata: ", main->dump_data($site2)) if DEBUG;
+my $pouch = $wspace->config('wibble.item');
+my $style = $wspace->config('wibble.wibbled');
+is( $pouch, 'frusset pouch', "fetched wibble.item frusset pouch" );
+is( $style, 'pleasantly', "You have pleasantly wibbled my frusset pouch" );
 
+my $data = $wspace->config->data;
+main->debug("config data: ", main->dump_data($data)) if DEBUG;
 
 #-----------------------------------------------------------------------------
-# Load a form
+# Subspace
 #-----------------------------------------------------------------------------
 
-my $schema = $cspace2->schemas;
-main->debug("schemas: ", main->dump_data($schema)) if DEBUG;
+my $subspace = $wspace->subspace( directory => $dir2 );
+ok( $subspace, "Created $subspace object" );
+is( $subspace->uri, 'workspace:wspace2', 'subspace uri' );
+is( $subspace->dir('web'), $web2, "subspace webdir is $web2" );
 
-my $form1 = $cspace2->config('forms/auth/login');
-ok( $form1, "loaded form" );
-main->debug("site2 forms/auth/login: ", main->dump_data($form1)) if DEBUG;
+my $swibble = $subspace->config('wibble');
+ok( $swibble, "subspace fetched wibble data" );
 
-my $form2 = $cspace1->config('forms/search/example1');
-ok( $form2, "loaded forms/search/example1 from site1" );
-is( $form2->{ class }, 'blah', 'search form class' );
+is( $swibble->{ item    }, 'frusset pouch', "subspace fetched wibble.item frusset pouch" );
+is( $swibble->{ wibbled }, 'pleasantly', "subspace pleasantly wibbled my frusset pouch" );
 
-$form2 = $cspace2->config('forms/search/example1');
-ok( $form2, "loaded forms/search/example1 from site2" );
-is( $form2->{ form }, "Example Search Form", 'search form name');
-ok( ! $form2->{ class }, 'search form class has been excluded');
-ok( ! $form2->{ style }, 'search form style has been excluded');
-main->debug("site2 forms/search/example1: ", main->dump_data($form2)) if DEBUG;
+my $again = $subspace->config('wibble');
+ok( $again, "subspace fetched wibble data again" );
 
-my $form3 = $cspace1->config('forms/admin/example1');
-ok( $form3, "loaded forms/admin/example1 from site1" );
-is( $form3->{ form }, "Admin Form", 'admin form name');
-main->debug("site1 forms/admin/example1: ", main->dump_data($form3)) if DEBUG;
-
-$form3 = $cspace2->config('forms/admin/example1');
-ok( ! $form3, "prohibited from loading forms/admin/example1 from site2" );
+main->debug("config data: ", main->dump_data($subspace->config->data)) if DEBUG;
 
 
 #-----------------------------------------------------------------------------
-# Deeply dotted config variables
+# components
 #-----------------------------------------------------------------------------
 
-is(
-    $cspace2->config('forms/search/example1.nested.data.foo'), 
-    'foo is 10', 'got dotted config data'
-);
+my $comp_cfg = $subspace->config('components');
+main->debug(
+    "components config: ",
+    main->dump_data($comp_cfg)
+) if DEBUG;
+
+is( $comp_cfg->{ flibble }, 'My::Flibble', 'flibble component config' );
+is( $comp_cfg->{ wibble }, 'My::Wibble', 'wibble component config' );
+is( $comp_cfg->{ tribble }, 'My::Tribble', 'tribble component config' );
+is( $comp_cfg->{ flobble }->{ module }, 'My::Flobble', 'flobble component config' );
+is( $comp_cfg->{ wobble }->{ module }, 'My::Wobble', 'wobble component config' );
+
+# trouble component is excluded by inherit/exclude rule in workspace.yaml
+ok( ! $comp_cfg->{ trouble }, 'no trouble' );
+
+
+my $wobble = $subspace->component('wobble');
+ok( $wobble, 'got a wobble component' );
+is( $wobble->name, 'WOBBLE', 'wobble name' );
 
 #-----------------------------------------------------------------------------
-# Uris
+# comment
 #-----------------------------------------------------------------------------
-is( $cspace2->uri, 'workspace:space2', 'uri()' );
-is( $cspace2->uri('foo'), 'workspace:space2/foo', "uri('foo')" );
-is( $cspace2->uri('/bar'), 'workspace:space2/bar', "uri('/bar')" );

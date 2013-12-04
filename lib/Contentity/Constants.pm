@@ -55,7 +55,7 @@ use Badger::Class
         @status,
     },
     exports  => {
-        any  => 'UTF8 MIDDLEWARE',
+        any  => 'MIDDLEWARE',
         tags => {
             status          => \@status,
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
