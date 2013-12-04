@@ -3,6 +3,8 @@
 # chicken and egg problem.  The config needs a project which it gets from the
 # hub which needs a config...
 
+# Now moved into Contentity::Metadata and C::M::Filesystem
+
 package Contentity::Config;
 
 use Contentity::Class

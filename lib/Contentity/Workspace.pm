@@ -11,8 +11,8 @@ use Contentity::Class
     constant    => {
         CACHE           => 'cache',
         CACHE_MANAGER   => 'Contentity::Cache',
-        CONFIG_DIR      => 'config',
-        CONFIG_FILE     => 'workspace',
+        METADATA_DIR    => 'metadata',
+        METADATA_FILE   => 'workspace',
         METADATA_MODULE => 'Contentity::Metadata::Filesystem',
         WORKSPACE_TYPE  => 'workspace',
         COMPONENTS      => 'components',
@@ -34,7 +34,7 @@ our $COLLECTIONS = [COMPONENTS, RESOURCES];
 sub init {
     my ($self, $config) = @_;
     $self->init_workspace($config);
-    $self->init_config($config);
+    $self->init_metadata($config);
 
     # from this point on, all configuration is read from the config object
     # so we don't really need to pass $config, but it can't hurt, right?
@@ -65,43 +65,36 @@ sub init_workspace {
     return $self;
 }
 
-sub init_config {
+sub init_metadata {
     my ($self, $config) = @_;
-    my $class   = $self->class;
-    my $cspec   = $config->{ config } || { };
-    my $metamod = delete $cspec->{ metadata_module } 
-               || $self->METADATA_MODULE;
-    my $cdir    = delete $cspec->{ directory  } 
-               || delete $cspec->{ dir        } 
-               || $config->{ config_dir       }
-               || $config->{ config_directory }
-               || $self->CONFIG_DIR;
-    my $cfile   = delete $cspec->{ file }
-               || $config->{ config_file } 
-               || $self->CONFIG_FILE;
-    my $cdata   = delete $cspec->{ data }
-               || $config->{ config_data };
-               #|| $config;
-    my $parent = $self->{ parent };
+    my $class    = $self->class;
+    my $meta_mod = delete $config->{ metadata_module    } 
+                || $self->METADATA_MODULE;
+    my $mdir     = delete $config->{ metadata_dir       }
+                || delete $config->{ metadata_directory }
+                || $self->METADATA_DIR;
+    my $mfile    = delete $config->{ metadata_file } 
+                || $self->METADATA_FILE;
+    my $mdata    = delete $config->{ metadata };
+    my $parent   = $self->{ parent };
 
     # load the configuration module (e.g. Badger::Config::Directory)
-    class($metamod)->load;
+    class($meta_mod)->load;
 
     # config directory and filesystem
-    my $config_dir = $self->dir($cdir);
-    my $config_opt = {
-        %$cspec,
-        directory => $config_dir,
-        file      => $cfile,
+    my $meta_dir = $self->dir($mdir);
+    my $meta_opt = {
+        directory => $meta_dir,
+        file      => $mfile,
     };
 
-    if ($cdata) {
-        $config_opt->{ data } = $cdata;
+    if ($mdata) {
+        $meta_opt->{ data } = $mdata;
     }
     if ($parent) {
-        $config_opt->{ parent } = $parent->config;
+        $meta_opt->{ parent } = $parent->metadata;
     };
-    my $meta_obj = $metamod->new($config_opt);
+    my $meta_obj = $meta_mod->new($meta_opt);
 
     # Hmmm... what about other stuff that's in the $config?  Can we ignore
     # it or do we need to pass it to the config module?  I think in most, if
@@ -109,15 +102,15 @@ sub init_config {
     # contain the root directory reference and leave all the config data to
     # be defined in the config dir/file.
 
-    $self->{ config_dir } = $config_dir;
-    $self->{ config     } = $meta_obj;
+    $self->{ metadata_dir } = $meta_dir;
+    $self->{ metadata     } = $meta_obj;
 
     return $self;
 }
 
 sub init_cache {
     my ($self, $config) = @_;
-    my $cache_config  = $self->config(CACHE) || return $self->warn('no cache');
+    my $cache_config  = $self->metadata(CACHE) || return $self->warn('no cache');
     my $cache_manager = delete $config->{ cache_manager } 
         || $cache_config->{ manager }
         || $self->CACHE_MANAGER;
@@ -137,8 +130,8 @@ sub init_cache {
     $self->debug("created new cache manager: $cache") if DEBUG;
     $self->{ cache } = $cache;
 
-    # we must notify the config object that it has a cache to work with
-    $self->config->configure( cache => $cache );
+    # we must notify the metadata object that it has a cache to work with
+    $self->metadata->configure( cache => $cache );
 }
 
 sub init_collections {
@@ -168,7 +161,7 @@ sub init_collection {
     # Then read any additional configuration data from the config object
     # e.g. config/components.yaml
     $self->configure_collection(
-        $type => $self->config($type)
+        $type => $self->metadata($type)
     );
 
     $self->debug(
@@ -188,9 +181,9 @@ sub configure {
     if ($item = delete $config->{ parent }) {
         # if we change the parent workspace we must also re-attach the 
         # workspace config manager to the parent workspace config manager
-        $self->{ parent } = $item;
-        $self->{ config }->configure(
-            parent => $item->config
+        $self->{ parent   } = $item;
+        $self->{ metadata }->configure(
+            parent => $item->metadata
         );
         $self->debug(
             "attached workspace to new parent workspace @", 
@@ -342,12 +335,12 @@ sub prepare_components {
 # fetch config data from the config object
 #-----------------------------------------------------------------------------
 
-sub config {
-    my $self   = shift;
-    my $config = $self->{ config }; return $config unless @_;
-    my @names  = map { ref $_ eq ARRAY ? @$_ : split /\./ } @_;
-    my $name   = shift @names;
-    my $data   = $config->get($name) 
+sub metadata {
+    my $self  = shift;
+    my $meta  = $self->{ metadata }; return $meta unless @_;
+    my @names = map { ref $_ eq ARRAY ? @$_ : split /\./ } @_;
+    my $name  = shift @names;
+    my $data  = $meta->get($name) 
         || return $self->decline_msg( not_found => 'configuration option' => $name );
 
     if ($data) {
@@ -355,7 +348,7 @@ sub config {
     }
 
     return @names
-        ? $config->dot($name, $data, \@names)
+        ? $meta->dot($name, $data, \@names)
         : $data;
 }
 

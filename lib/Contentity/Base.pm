@@ -35,18 +35,6 @@ sub debug_data {
     );
 }
 
-sub attach_project {
-    my ($self, $config) = @_;
-
-    $self->{ project } = delete $config->{_project_}
-        || return $self->error_msg( missing => 'project' );
-
-    # avoid circular refs from keeping the project alive
-    weaken $self->{ project };
-
-    return $self;
-}
-
 
 1;
 
@@ -67,8 +55,6 @@ All methods are inherited from the L<Badger::Base> base class.
 
 It also imports the C<debugf> method and C<:dump> methods from 
 L<Badger::Debug>.
-
-TODO: attach_project
 
 =head1 AUTHOR
 

@@ -16,7 +16,7 @@ use warnings;
 use lib qw( ./lib ../lib ../../lib );
 use Badger::Debug ':all';
 use Badger::Test 
-    tests => 6,
+    tests => 5,
     debug => 'Contentity::Metadata Contentity::Metadata::Filesystem',
     args  => \@ARGV;
 
@@ -45,13 +45,13 @@ my $child = $pkg->new(
 );
 ok( $child, "Created child $pkg object" );
 
-my $wibble = $child->config('wibble');
+my $wibble = $child->metadata('wibble');
 ok( $wibble, 'got wibble' );
 
-my $two = $child->config('two');
+my $two = $child->metadata('two');
 ok( ! $two, 'did NOT get two (correctly)' );
 
-my $pages = $child->config('pages');
+my $pages = $child->metadata('pages');
 ok( $pages, 'got pages' );
 
 main->debug(

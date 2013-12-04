@@ -7,17 +7,10 @@ use Contentity::Class
     base        => 'Contentity::Workspace',
     import      => 'class',
     utils       => 'params extend self_params',
-    filesystem  => 'Dir VFS',
     accessors   => 'root hub XXXconfig',
-    #autolook    => 'autoload_component autoload_resource autoload_delegate autoload_config autoload_master',
-    #autolook    => 'autoload_config',
     constants   => 'DOT DELIMITER HASH ARRAY MIDDLEWARE',
     constant    => {
-        SITEMAP           => 'Contentity::Sitemap',
-        CONFIG_FILE       => 'project',
-        DIRS              => 'dirs',
-        WORKSPACE_TYPE    => 'project',
-        COMPONENT_FACTORY => 'Contentity::Components',
+        WORKSPACE_TYPE  => 'project',
     },
     messages => {
         load_fail => 'Failed to load data from %s: %s',
@@ -27,35 +20,6 @@ use Contentity::Class
  #   auto_can    => 'auto_can';
 
 
-
-#-----------------------------------------------------------------------------
-# Initialisation methods
-#-----------------------------------------------------------------------------
-
-sub init {
-    my ($self, $config) = @_;
-    $self->init_workspace($config);
-
-    # Careful now!  init_workspace() will have modified the $config hash
-    $self->debug("intermediate config: ", $self->dump_data($config)) if DEBUG;
-    $self->init_project($config);
-
-    return $self;
-}
-
-sub init_project {
-    my ($self, $config) = @_;
-    return $self
-        ->init_components($config)
-        ->init_resources($config)
-}
-
-sub init_components {
-    my ($self, $config) = @_;
-    my $comps = $config->{ components } || return $self;
-    $self->{ components } = $self->prepare_components($comps);
-    return $self;
-}
 
 sub init_resources {
     my ($self, $config) = @_;
@@ -97,46 +61,11 @@ sub init_resources {
     return $self;
 }
 
-
-sub prepare_components {
-    my ($self, $components) = @_;
-    my $component;
-
-    # text string is split to a list reference, 
-    # e.g. 'database sitemap' => ['database','sitemap']
-    $components = [ split(DELIMITER, $components) ]
-        unless ref $components;
-
-    # a list reference is mapped to a hash reference of hash refs
-    # e.g. ['database','sitemap'] => { database => { }, sitemap => { } }
-    $components = { 
-        map { $_ => { } }
-        @$components
-    }   if ref $components eq ARRAY;
-
-    # if it isn't a hash ref by this point then we can't handle it
-    return $self->error_msg( invalid => components => $components )
-        unless ref $components eq HASH;
-
-    # components can be set to any simple true value to enable them (e.g. 1) or 
-    # a false value to explicitly disable them (e.g. 0)
-    return {
-        map {
-            $component = $components->{ $_ };
-            ref $component ? ( $_ => $component )     # leave as is
-              : $component ? ( $_ => { }        )     # change true value to hash
-              : ( )                                   # ignore false values
-        }
-        keys %$components
-    };
-}
-
-
 #-----------------------------------------------------------------------------
 # Methods for loading component modules
 #-----------------------------------------------------------------------------
 
-sub component {
+sub OLD_component {
     my $self = shift;
     my $type = shift;
     
@@ -145,13 +74,13 @@ sub component {
     );
 }
 
-sub has_component {
+sub OLD_has_component {
     my $self = shift;
     my $type = shift;
     return $self->{ components }->{ $type };
 }
 
-sub component_config {
+sub OLD_component_config {
     my $self   = shift;
     my $type   = shift;
     my $config = $self->config($type);
@@ -163,7 +92,7 @@ sub component_config {
 }
 
 
-sub OLD_component_config {
+sub OLDER_component_config {
     my $self     = shift;
     my $type     = shift;
     my $params   = params(@_);
@@ -190,7 +119,7 @@ sub OLD_component_config {
     return $config;
 }
 
-sub component_factory {
+sub OLD_component_factory {
     my $self = shift;
 
     return  $self->{ component_factory }

@@ -7,7 +7,7 @@ use Badger::Rainbow     ANSI => 'red green cyan magenta yellow';
 use Carp;
 use POSIX               'floor';
 use Badger::Debug       'debug_caller';
-use Badger::Utils       'params numlike is_object plural permute_fragments xprintf';
+use Badger::Utils       'params numlike is_object plural permute_fragments xprintf TIMESTAMP';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,

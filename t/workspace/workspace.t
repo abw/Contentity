@@ -41,22 +41,22 @@ my $webdir = $wspace->dir('web');
 ok( $webdir, "Got webdir" );
 is( $webdir, $web1, "webdir is $webdir" );
 
-my $pages = $wspace->config->get('pages');
+my $pages = $wspace->metadata->get('pages');
 ok( $pages, "Got pages config data" );
 main->debug(
     "Pages: ",
     main->dump_data($pages)
 ) if DEBUG;
 
-my $wibble = $wspace->config('wibble');
+my $wibble = $wspace->metadata('wibble');
 ok( $wibble, "fetched wibble data" );
 
-my $pouch = $wspace->config('wibble.item');
-my $style = $wspace->config('wibble.wibbled');
+my $pouch = $wspace->metadata('wibble.item');
+my $style = $wspace->metadata('wibble.wibbled');
 is( $pouch, 'frusset pouch', "fetched wibble.item frusset pouch" );
 is( $style, 'pleasantly', "You have pleasantly wibbled my frusset pouch" );
 
-my $data = $wspace->config->data;
+my $data = $wspace->metadata->data;
 main->debug("config data: ", main->dump_data($data)) if DEBUG;
 
 #-----------------------------------------------------------------------------
@@ -68,23 +68,23 @@ ok( $subspace, "Created $subspace object" );
 is( $subspace->uri, 'workspace:wspace2', 'subspace uri' );
 is( $subspace->dir('web'), $web2, "subspace webdir is $web2" );
 
-my $swibble = $subspace->config('wibble');
+my $swibble = $subspace->metadata('wibble');
 ok( $swibble, "subspace fetched wibble data" );
 
 is( $swibble->{ item    }, 'frusset pouch', "subspace fetched wibble.item frusset pouch" );
 is( $swibble->{ wibbled }, 'pleasantly', "subspace pleasantly wibbled my frusset pouch" );
 
-my $again = $subspace->config('wibble');
+my $again = $subspace->metadata('wibble');
 ok( $again, "subspace fetched wibble data again" );
 
-main->debug("config data: ", main->dump_data($subspace->config->data)) if DEBUG;
+main->debug("config data: ", main->dump_data($subspace->metadata->data)) if DEBUG;
 
 
 #-----------------------------------------------------------------------------
 # components
 #-----------------------------------------------------------------------------
 
-my $comp_cfg = $subspace->config('components');
+my $comp_cfg = $subspace->metadata('components');
 main->debug(
     "components config: ",
     main->dump_data($comp_cfg)
