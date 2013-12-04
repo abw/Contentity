@@ -1,81 +1,152 @@
 package Contentity::Cache;
 
+use Badger::Codecs;
 use Contentity::Class
-    version => 0.01,
-    debug   => 0,
-    base    => 'Cache::Memcached Contentity::Base',
-    utils   => 'Timestamp';
+    version   => 0.01,
+    debug     => 0,
+    base      => 'Contentity::Base',
+    import    => 'class',
+    utils     => 'resolve_uri Duration numlike',
+    constants => 'SLASH',
+    constant  => {
+        CODEC        => 'storable',
+        CODECS       => 'Badger::Codecs',
+        CACHE_MODULE => 'Contentity::Cache::Memory',
+    };
 
-sub index_keys {
-    my $self  = shift;
-    my $index = $self->index;
-    my @keys  = keys %$index;
-    return wantarray
-        ?  @keys
-        : \@keys;
-}
 
-sub index {
-    my $self  = shift;
-    my @slabs = $self->slabs;
-    my $index = { };
+sub init {
+    my ($self, $config) = @_;
+    my $class   =  $self->class;
+    my $uri     =  delete $config->{ uri       } 
+               ||  delete $config->{ namespace };
+    my $codec   =  delete $config->{ codec     }
+               ||  $class->any_var('CODEC')
+               ||  $self->CODEC;
+    my $module   = delete $config->{ module       }
+               ||  delete $config->{ cache_module }
+               ||  $class->any_var('CACHE_MODULE')
+               ||  $self->CACHE_MODULE;
+    my $expires  = $config->{ default_expires }
+               ||= delete $config->{ expires };
 
-    foreach my $slab (@slabs) {
-        $self->slab_index($slab, $index);
+    $self->debug("uri: $uri\ncodec: $codec\nmodule: $module") if DEBUG;
+
+    class($module)->load;
+
+    # we're lazy when it comes to long option names
+    $config->{ default_expires } ||= $config->{ expires }
+        if $config->{ expires };
+
+    if ($expires) {
+        $self->{ expires } = Duration($expires)->seconds;
     }
-    $self->debug("INDEX: ", $self->dump_data($index));
 
-    return $index;
+    $self->{ uri   } = $uri;
+    $self->{ codec } = $self->CODECS->codec($codec);
+    $self->{ cache } = $module->new($config);
+
+    $self->debug("created new $module cache backend: $self->{ cache }") if DEBUG;
+
+    return $self;
 }
 
-sub slabs {
-    my $self  = shift;
-    my $stats = $self->stats('items');
-    my $hosts = $stats->{ hosts };
-    my $slabs = { };
 
-    while (my ($k, $v) = each %$hosts) {
-        my $items = $v->{ items };
-        my @items = grep { defined $_ && length $_ } split(/[\n\r]+/, $items);
-        foreach my $item (@items) {
-            next unless $item =~ /items:(\d+):/;
-            $slabs->{ $1 } = $1;
+sub get {
+    my ($self, $urn) = @_;
+    my $uri  = $self->uri($urn);
+    my $text = $self->{ cache }->get($uri) || return;
+    return $self->{ codec }->decode($text);
+}
+
+
+sub set {
+    my ($self, $urn, $data, $expires) = @_;
+    my $uri  = $self->uri($urn);
+    my $text = $self->{ codec }->encode($data);
+    if ($expires) {
+        $expires = Duration($expires)->seconds
+            unless numlike $expires;
+        $self->debug("expires in $expires seconds") if DEBUG;
+    }
+    else {
+        $expires = $self->{ expires };
+    }
+    return $self->{ cache }->set($uri, $text, $expires);
+}
+
+
+sub uri {
+    my $self = shift;
+    my $path = resolve_uri(SLASH, @_);
+    my $base = $self->{ uri } || return $path;
+    return sprintf("%s:/%s", $base, $path);
+}
+
+
+1;
+
+__END__
+
+=head1 NAME
+
+Contentity::Cache - wrapper around Cache::* modules with data encoding
+
+=head1 SYNOPSIS
+
+    use Contentity::Cache;
+    
+    my $cache = Contentity::Cache->new(
+        # options for Contentity::Cache
+        uri    => 'my:namespace',
+        codec  => 'json',
+        module => 'Cache::Memcached',
+
+        # any other options for back-end cache module
+        servers => [ ... ],
+    );
+
+    $cache->set(
+        complex_data => {
+            foo => 'bar',
+            baz => [10, 20, 30],
         }
-    }
+    );
 
-    my @slabs = keys %$slabs;
+    my $complex = $cache->get('complex_data');
 
-    $self->debug("SLABS: ", join(', ', @slabs));
+=head1 DESCRIPTION
 
-    return wantarray
-        ?  @slabs
-        : \@slabs;
-}
+This module provides a simple wrapper around a C<Cache::*> compatible 
+cache module.  
 
-sub slab_index {
-    my $self  = shift;
-    my $slab  = shift;
-    my $index = shift || { };
-    my $stats = $self->stats("cachedump $slab 0");
-    my $hosts = $stats->{ hosts };
+It uses L<Badger::Codecs> to automatically encode and decode data using a 
+codec of your choice.  This allows data to be encoded using an open format
+(e.g. JSON) that can be shared across servers using different programming
+languages or versions of Perl.  The L<Storable> module which is hard-coded
+into the L<Cache::Entry> module's C<freeze()> and C<thaw()> methods is not
+suitable for either of these purposes.
 
-    while (my ($k, $v) = each %$hosts) {
-        foreach my $stat (values %$v) {
-            my @items = grep { defined $_ && length $_ } split(/[\n\r]+/, $stat);
-            foreach my $item (@items) {
-                next unless $item =~ /ITEM\s+(\S+)\s\[(\d+) b; (\d+) s\]/;
-                my ($key, $bytes, $secs) = ($1, $2, $3);
-                $self->debug("$key: $bytes bytes  $secs seconds");
-                $index->{ $key } = {
-                    bytes   => $bytes,
-                    seconds => $secs,
-                    expires => Timestamp($secs),
-                };
-            }
-        }
-    }
+It also reinstates the equivalent of the 'namespace' concept (originally in 
+L<Cache::Cache> but removed in the more recent L<Cache> interface) via the 
+L<uri> option.  This allows you to have multiple C<Contentity::Cache> objects
+caching different sets of data via the same back-end cache (e.g. a 
+L<Cache::Memcached> instance).
 
-    return $index;
-}
+NOTE: this module is a work in progress and is currently lacking adequate
+documentation and testing.
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2001-2013 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
 
 1;
