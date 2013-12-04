@@ -4,7 +4,8 @@ use Carp;
 use warnings            qw( FATAL utf8 );
 use open                qw< :std :utf8 >;
 use Badger::Rainbow     ANSI => 'red green cyan magenta yellow';
-use Badger::Timestamp   'TIMESTAMP';
+use Carp;
+use POSIX               'floor';
 use Badger::Debug       'debug_caller';
 use Badger::Utils       'params numlike is_object plural permute_fragments xprintf';
 use Contentity::Class
@@ -23,7 +24,7 @@ use Contentity::Class
             H html_elem html_attrs data_attrs
             datestamp today format_date
             ordinal ordinate commas
-            find_program prompt confirm 
+            find_program prompt confirm floor
         }
     };
 use Contentity::Colour  'Colour';
