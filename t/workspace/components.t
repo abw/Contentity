@@ -1,14 +1,15 @@
 #============================================================= -*-perl-*-
 #
-# t/modules.t
+# t/workspace/components.t
 #
-# Test module loading functionality.
+# Test workspace functionality to load and instantiate components.
 #
-# Written by Andy Wardley, October 2012, May 2013
+# Written by Andy Wardley, May 2013, Dec 2013
 #
 #========================================================================
+
 use Badger
-    lib        => '../lib lib',
+    lib        => 'lib ../lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
@@ -23,9 +24,9 @@ use Contentity::Project;
 # Instantiate project object
 #-----------------------------------------------------------------------------
 
-my $root    = Bin->parent->dir( t => projects => 'alpha' );
+my $root    = Bin->dir( test_files => projects => 'alpha' );
 my $project = Contentity::Project->new( 
-    root            => $root,
+    directory       => $root,
     component_path  => 'Wibble::Component',
 );
 ok( $project, "created contentity project: $project" );

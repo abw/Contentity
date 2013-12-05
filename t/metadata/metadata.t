@@ -11,10 +11,11 @@
 #
 #========================================================================
 
-use strict;
-use warnings;
-use lib qw( ./lib ../lib ../../lib );
-use Badger::Debug ':all';
+use Badger
+    lib    => '../../lib',
+    Utils  => 'Bin',
+    Debug  => [import => ':all'];
+
 use Badger::Test 
     tests => 4,
     debug => 'Contentity::Metadata',

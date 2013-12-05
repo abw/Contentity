@@ -12,16 +12,16 @@
 #
 #========================================================================
 
-use strict;
-use warnings;
-use lib qw( ./lib ../lib ../../lib );
-use Badger::Debug ':all';
+use Badger
+    lib    => '../../lib',
+    Utils  => 'Bin',
+    Debug  => [import => ':all'];
+
 use Badger::Test 
     tests => 6,
     debug => 'Contentity::Metadata Contentity::Metadata::Filesystem',
     args  => \@ARGV;
 
-use Badger::Utils 'Bin';
 use Contentity::Metadata::Filesystem;
 use Contentity::Cache;
 

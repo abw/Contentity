@@ -11,23 +11,23 @@
 #
 #========================================================================
 
-use strict;
-use warnings;
-use lib qw( ./lib ../lib ../../lib );
-use Badger::Debug ':all';
+use Badger
+    lib    => '../../lib',
+    Utils  => 'Bin',
+    Debug  => [import => ':all'];
+
 use Badger::Test 
     tests => 5,
     debug => 'Contentity::Metadata Contentity::Metadata::Filesystem',
     args  => \@ARGV;
 
-use Badger::Utils 'Bin';
 use Contentity::Workspace;
 use Contentity::Cache;          # TODO: skip if not found...
 
 my $cache  = Contentity::Cache->new;
 my $pkg    = 'Contentity::Workspace';
-my $dir1   = Bin->dir('test_files/wspace1');
-my $dir2   = Bin->dir('test_files/wspace2');
+my $dir1   = Bin->dir('test_files/workspace/space1');
+my $dir2   = Bin->dir('test_files/workspace/space2');
 my $parent = $pkg->new( 
     cache     => $cache,
     directory => $dir1,

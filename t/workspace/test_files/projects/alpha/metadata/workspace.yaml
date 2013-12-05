@@ -10,12 +10,11 @@ more_stuff:
 
 components:
     - database 
-    - entities 
     - frusset
     - middleware
-resources:
-    - forms
-    - apps
-    - entities
-    - projects
-    - sites
+#resources:
+#    - forms
+#    - apps
+#    - entities
+#    - projects
+#    - sites

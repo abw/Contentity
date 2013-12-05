@@ -1,6 +1,6 @@
 #============================================================= -*-perl-*-
 #
-# t/colour.t
+# t/core/colour.t
 #
 # Test the Contentity::Colour module.
 #
@@ -9,7 +9,7 @@
 #========================================================================
 
 use Badger
-    lib        => '../lib lib',
+    lib        => '../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 

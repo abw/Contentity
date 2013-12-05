@@ -1,0 +1,5 @@
+---
+greeting:       Sub-project setup
+
+inherit:
+  exclude: components resources

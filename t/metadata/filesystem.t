@@ -11,17 +11,16 @@
 #
 #========================================================================
 
-use strict;
-use warnings;
+use Badger
+    lib    => '../../lib',
+    Utils  => 'Bin',
+    Debug  => [import => ':all'];
 
-use lib qw( ./lib ../lib ../../lib );
-use Badger::Debug ':all';
 use Badger::Test 
     tests => 41,
     debug => 'Contentity::Metadata Contentity::Metadata::Filesystem',
     args  => \@ARGV;
 
-use Badger::Utils 'Bin';
 use Contentity::Metadata::Filesystem;
 my $pkg  = 'Contentity::Metadata::Filesystem';
 my $dir1 = Bin->dir('test_files/dir1');

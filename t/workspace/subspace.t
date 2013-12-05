@@ -37,7 +37,7 @@ ok( $project, "created contentity project: $project" );
 # Fetch sub-project
 #-----------------------------------------------------------------------------
 
-my $sub = $project->workspace('bravo');
+my $sub = $project->workspace('bravo') || die "No bravo: ", $project->reason;
 
 ok( $sub, 'got sub-project' );
 is( $sub->get('name'), 'The Bravo Project', 'got project name' );

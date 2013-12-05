@@ -5,14 +5,16 @@ my %opts = (
     VERSION      => 0.01,
     PMLIBDIRS    => [ 'lib' ], 
     PREREQ_PM    => {
-        Badger   => 0.09,
+        Badger   => 0.092,
+        'JSON::XS' => 3.01,
+        'YAML::XS' => 0.41,
     },
     dist         => {
         COMPRESS => 'gzip',
         SUFFIX   => 'gz',
     },
     test         => {
-        TESTS    => 't/*.t',
+        TESTS    => 't/*/*.t',
     },
 );
 
