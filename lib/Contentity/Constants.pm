@@ -17,10 +17,6 @@ use Badger::Class
     base     => 'Badger::Constants',
     import   => 'class',
     constant => {
-        METADATA_DIR        => 'metadata',
-        METADATA_FILE       => 'workspace',
-        METADATA_MODULE     => 'Contentity::Metadata::Filesystem',
-
         RESOURCES_DIR       => 'resources',
         MIDDLEWARE          => 'middleware',
         INDEX_HTML          => 'index.html',
@@ -61,7 +57,6 @@ use Badger::Class
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
             html            => 'INDEX_HTML DOT_HTML',
-            metadata        => 'METADATA_DIR METADATA_FILE METADATA_MODULE',
         },
     };
 

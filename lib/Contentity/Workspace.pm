@@ -8,15 +8,24 @@ use Contentity::Class
     import      => 'class',
     utils       => 'Dir resolve_uri truelike falselike self_params extend',
     accessors   => 'root parent config_dir urn type',
-    constants   => ':metadata ARRAY HASH SLASH DELIMITER NONE',
+    constants   => 'ARRAY HASH SLASH DELIMITER NONE',
     constant    => {
+        # configuration directory and file
+        CONFIG_DIR        => 'config',
+        CONFIG_FILE       => 'workspace',
+        # default metadata engine and seed file
+        METADATA_MODULE   => 'Contentity::Metadata::Filesystem',
+        METADATA_FILE     => '',
+        # caching options
         CACHE             => 'cache',
         CACHE_MANAGER     => 'Contentity::Cache',
-        WORKSPACE_TYPE    => 'workspace',
-        COMPONENTS        => 'components',
-        RESOURCES         => 'resources',
-        DELEGATES         => 'delegates',
+        # components
         COMPONENT_FACTORY => 'Contentity::Components',
+        COMPONENTS        => 'components',
+        DELEGATES         => 'delegates',
+        RESOURCES         => 'resources',
+        # used to generate uri
+        WORKSPACE_TYPE    => 'workspace',
     },
     alias       => {
         config  => \&metadata,
@@ -70,29 +79,40 @@ sub init_workspace {
 
 sub init_metadata {
     my ($self, $config) = @_;
-    my $class    = $self->class;
-    my $meta_mod = delete $config->{ metadata_module    } 
-                || $self->METADATA_MODULE;
-    my $mdir     = delete $config->{ metadata_dir       }
-                || delete $config->{ metadata_directory }
-                || $self->METADATA_DIR;
-    my $mfile    = delete $config->{ metadata_file } 
-                || $self->METADATA_FILE;
-    my $mdata    = delete $config->{ metadata };
-    my $parent   = $self->{ parent };
+    my $parent    = $self->parent;
+    my $class     = $self->class;
+    my $conf_dir  = $self->dir(
+            delete $config->{ config_dir       }
+        ||  delete $config->{ config_directory }
+        ||  $self->CONFIG_DIR
+    );
+    my $conf_file = (
+            delete $config->{ config_file } 
+        ||  $self->CONFIG_FILE
+    );
+    my $meta_file = (
+            delete $config->{ metadata_file } 
+        ||  $self->METADATA_FILE
+    );
+    my $meta_mod = (
+            delete $config->{ metadata_module } 
+        ||  $self->METADATA_MODULE
+    );
+    my $meta_data = (
+        delete $config->{ metadata }
+    );
 
     # load the configuration module (e.g. Badger::Config::Directory)
     class($meta_mod)->load;
 
     # config directory and filesystem
-    my $meta_dir = $self->dir($mdir);
     my $meta_opt = {
-        directory => $meta_dir,
-        file      => $mfile,
+        directory => $conf_dir,
+        file      => $conf_file,
     };
 
-    if ($mdata) {
-        $meta_opt->{ data } = $mdata;
+    if ($meta_data) {
+        $meta_opt->{ data } = $meta_data;
     }
     if ($parent) {
         $meta_opt->{ parent } = $parent->metadata;
@@ -105,8 +125,10 @@ sub init_metadata {
     # contain the root directory reference and leave all the config data to
     # be defined in the config dir/file.
 
-    $self->{ metadata_dir } = $meta_dir;
-    $self->{ metadata     } = $meta_obj;
+    $self->{ config_dir } = $conf_dir;
+    $self->{ metadata   } = $meta_obj;
+
+    # TODO: deal with metadata_file
 
     return $self;
 }

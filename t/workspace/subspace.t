@@ -39,6 +39,8 @@ ok( $project, "created contentity project: $project" );
 
 my $sub = $project->workspace('bravo') || die "No bravo: ", $project->reason;
 
+exit;
+
 ok( $sub, 'got sub-project' );
 is( $sub->get('name'), 'The Bravo Project', 'got project name' );
 is( $sub->get('mastermsg'), 'The master message', 'got master project message' );
@@ -46,7 +48,6 @@ is( $sub->get('mastermsg'), 'The master message', 'got master project message' )
 is( $sub->name, 'The Bravo Project', 'got project name' );
 is( $sub->mastermsg, 'The master message', 'got master project message' );
 
-exit;
 
 #-----------------------------------------------------------------------------
 # Check that a config tree merge includes both slave and master project
