@@ -1,23 +1,26 @@
 package Contentity::Workspace;
 
+use Contentity::Components;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Base',
     import      => 'class',
-    utils       => 'resolve_uri truelike falselike Dir self_params',
+    utils       => 'Dir resolve_uri truelike falselike self_params extend',
     accessors   => 'root parent config_dir urn type',
-    constants   => 'ARRAY HASH SLASH DELIMITER',
+    constants   => ':metadata ARRAY HASH SLASH DELIMITER NONE',
     constant    => {
-        CACHE           => 'cache',
-        CACHE_MANAGER   => 'Contentity::Cache',
-        METADATA_DIR    => 'metadata',
-        METADATA_FILE   => 'workspace',
-        METADATA_MODULE => 'Contentity::Metadata::Filesystem',
-        WORKSPACE_TYPE  => 'workspace',
-        COMPONENTS      => 'components',
-        RESOURCES       => 'resources',
-        DELEGATES       => 'delegates',
+        CACHE             => 'cache',
+        CACHE_MANAGER     => 'Contentity::Cache',
+        WORKSPACE_TYPE    => 'workspace',
+        COMPONENTS        => 'components',
+        RESOURCES         => 'resources',
+        DELEGATES         => 'delegates',
+        COMPONENT_FACTORY => 'Contentity::Components',
+    },
+    alias       => {
+        config  => \&metadata,
+    #   get     => \&metadata,
     },
     messages => {
         no_module  => 'No %s module defined.',
@@ -110,7 +113,7 @@ sub init_metadata {
 
 sub init_cache {
     my ($self, $config) = @_;
-    my $cache_config  = $self->metadata(CACHE) || return $self->warn('no cache');
+    my $cache_config  = $self->metadata(CACHE) || return; # $self->warn('no cache');
     my $cache_manager = delete $config->{ cache_manager } 
         || $cache_config->{ manager }
         || $self->CACHE_MANAGER;
@@ -170,6 +173,7 @@ sub init_collection {
     ) if DEBUG;
 }
 
+
 #-----------------------------------------------------------------------------
 # Configuration methods that can be called at init() time or some time later
 #-----------------------------------------------------------------------------
@@ -212,11 +216,49 @@ sub configure_components {
 }
 
 sub configure_resources {
-    shift->configure_collection(RESOURCES, @_);
+    my ($self, $resources) = @_;
+    my $components = $self->prepare_components(RESOURCES, $resources) || return;
+    my $collection = $self->{ components } ||= { };
+    my $singles    = $self->{ resource   } ||= { };
+    my $plurals    = $self->{ resources  } ||= { };
+    my ($key, $value, $single, $plural, $component, $schema);
+
+    # merge all resource components into the main components hash
+    @$collection{ keys %$components } = values %$components;
+
+    $self->debug(
+        "Merged components+resources: ", 
+        $self->dump_data($collection)
+    ) if DEBUG;
+
+    while (($key, $value) = each %$components) {
+        # metadata for resources should not be loaded as a tree
+        #my $schema = $self->metadata->schema($key);  #
+        #$self->debug("schema for $key: ", $self->dump_data($schema)) if DEBUG;
+        #$schema->{ tree_type } = NONE;
+
+        # now fetch the component, loading any metadata file for the resource
+        # name, but not the sub-directory containing further resource data
+        $component = $self->component($key) || return $self->error_msg( invalid => 'resource component' => $key);
+        $single    = $component->resource;
+        $plural    = $component->resources;
+        $singles->{ $single } = $component;
+        $plurals->{ $plural } = $component;
+    }
+
+    if (DEBUG) {
+        $self->debug(
+            "single resources: ", $self->dump_data1($self->{ resource }), "\n",
+            "plural resources: ", $self->dump_data1($self->{ resources }), "\n",
+        );
+    }
+
+    return $collection;
 }
 
 sub configure_collection {
     my ($self, $type, $source) = @_;
+    return $self->configure_resources($source) if $type eq RESOURCES;       # HACK
     my $collection = $self->{ $type } ||= { };
     my $components = $self->prepare_components($type, $source) || return;
 
@@ -230,6 +272,8 @@ sub configure_collection {
     if (DEBUG) {
         $self->debug("NEW $type collection: ", $self->dump_data($collection));
     }
+
+    return $collection;
 }
 
 sub prepare_components {
@@ -294,8 +338,316 @@ sub prepare_components {
 
 
 #-----------------------------------------------------------------------------
-# tmp
+# fetch config data from the config object
 #-----------------------------------------------------------------------------
+
+sub metadata {
+    my $self  = shift;
+    my $meta  = $self->{ metadata }; return $meta unless @_;
+    my @names = map { ref $_ eq ARRAY ? @$_ : split /\./ } @_;
+    my $name  = shift @names;
+    my $data  = $meta->get($name) 
+        || return $self->decline_msg( not_found => 'configuration option' => $name );
+
+    if ($data) {
+        $self->dump_data("got data for $name: ", $self->dump_data($data));
+    }
+
+    return @names
+        ? $meta->dot($name, $data, \@names)
+        : $data;
+}
+
+
+#-----------------------------------------------------------------------------
+# Components are things that plugin into a workspace framework.  In a typical
+# web application, that might be things like a database, session manager,
+# localisation framework, and so on.
+#-----------------------------------------------------------------------------
+
+sub component {
+    my ($self, $name) = @_;
+    my $config = $self->component_config($name)
+        || return $self->error_msg( invalid => component => $name );
+    my $single = truelike($config->{ singleton });
+    my $singleton;
+
+    $self->debug(
+        "$name component config: ", 
+        $self->dump_data($config)
+    ) if DEBUG;
+
+    # A component configuration can specify 'singleton' if we should create
+    # a single instance of this component and cache it in memory
+    if ($single && ($singleton = $self->{ singleton_components })) {
+        # return existing singleton
+        $self->debug("found existing singleton $name component: $singleton");
+        return $singleton;
+    }
+
+    # see if a module name is specified in $args, config hash or use $pkgmod
+    my $module = $config->{ module };
+
+    if ($module) {
+        # load the module
+        $self->debug("instantiating $module for $name component") if DEBUG;
+        $LOADED->{ $name } ||= class($module)->load;
+        return $module->new($config);
+    }
+    else {
+        # component name may have been re-mapped by config
+        $name = $config->{ component } || $name;
+        return $self->COMPONENT_FACTORY->item(
+            $name => $config
+        );
+    }
+}
+
+sub component_config {
+    my ($self, $name) = @_;
+    my $comp   = $self->{ components }->{ $name } || return;
+    my $meta   = $self->metadata($name);
+    my $config = extend(
+        { 
+            component => $name, # This can be over-ridden by config
+        },
+        $comp,
+        $meta,
+        workspace => $self,     # This can't
+    );
+
+    $self->debug(
+        "config for component $name:\n",
+        "- component config (\$self->{ components }->{ $name }): ", $self->dump_data1($comp), "\n",
+        "- metadata (\$self->metadata($name)): ", $self->dump_data1($meta), "\n",
+        "= Merged config ({} < component < meta < ...): ", $self->dump_data1($config), "\n",
+    ) if DEBUG;
+
+    return $config;
+}
+
+sub has_component {
+    my ($self, $name) = @_;
+    return $self->{ components }->{ $name };
+}
+
+
+#-----------------------------------------------------------------------------
+# Resources are a special kind of component.  
+#-----------------------------------------------------------------------------
+
+sub resources {
+    my ($self, $type) = @_;
+
+    return $self->{ resources }->{ $type }
+        || $self->{ resource  }->{ $type }
+        || return $self->error_msg( invalid => resources => $type );
+}
+
+sub resource {
+    my ($self, $type, $name, @args) = @_;
+
+    return $self->resources($type)->resource($name, @args)
+        || return $self->error_msg( invalid => $type => $name );
+}
+
+sub resource_data {
+    my ($self, $type, $urn) = @_;
+    my $uri  = join(SLASH, $type, $urn);
+    my $data = $self->metadata($uri);
+    $self->debug(
+        "fetched metadata for $uri resource: ", 
+        $self->dump_data($data)
+    ) if DEBUG;
+    return $data;
+}
+
+sub has_resource {
+    my ($self, $name) = @_;
+    return $self->{ resources }->{ $name }
+        || $self->{ resource  }->{ $name };
+}
+
+
+#-----------------------------------------------------------------------------
+# relative workspaces
+#-----------------------------------------------------------------------------
+
+sub subspace {
+    my ($self, $params) = self_params(@_);
+    my $class = ref $self;
+    $params->{ parent } = $self;
+    return $class->new($params);
+}
+
+sub superspace {
+    return shift->{ parent };
+}
+
+sub uberspace {
+    my $self = shift;
+    return $self->{ uberspace } 
+       ||= $self->{ parent }
+         ? $self->{ parent }->uberspace
+         : $self;
+}
+
+
+#-----------------------------------------------------------------------------
+# Miscellaneous methods
+#-----------------------------------------------------------------------------
+
+sub hub {                   # needs sorting out
+    my $self = shift;
+
+    if (@_) {
+        # got passed an argument (a new hub) which we connect $self to
+        my $hub = shift;
+
+        unless (ref $hub) {
+            class($hub)->load;
+            $self->debug("creating new hub, config is ", $self->config) if DEBUG;
+            $hub = $hub->new(
+                config => $self->config,
+            );
+        }
+        $self->{ hub } = $hub;
+    }
+
+    return $self->{ hub };
+}
+
+sub uri {
+    my $self = shift;
+    return @_
+        ? sprintf("%s%s", $self->{ uri }, resolve_uri(SLASH, @_))
+        : $self->{ uri };
+}
+
+sub dir {
+    my $self = shift;
+
+    return @_
+        ? $self->root->dir(@_)    # ? $self->resolve_dir(@_)
+        : $self->root;
+}
+
+sub collection_names {
+    my $self = shift;
+    my $cols = $self->{ collections } || [ ];
+    return wantarray
+        ? @$cols
+        :  $cols;
+}
+
+
+#-----------------------------------------------------------------------------
+# can() and AUTOLOAD() methods to Do The Right Thing when undefined methods
+# are called against a workspace object
+#-----------------------------------------------------------------------------
+
+our $AUTOLOAD;
+
+sub AUTOLOAD {
+    my ($self, @args) = @_;
+    my ($name) = ($AUTOLOAD =~ /([^:]+)$/ );
+    my $method;
+
+    $self->debug("$self AUTOLOAD($name)") if DEBUG;
+
+    return if $name eq 'DESTROY';
+
+    # We must cache generated methods into the object, not the package/class.
+    # This is because $workspace->thingy might map to a component for one 
+    # object, a resource for another, a config item for a third, and so on.
+    # It all depends on the workspace configuration.
+
+    if ($method = $self->{ methods }->{ $name } ||= $self->can($name)) {
+        $self->debug("$self can $name") if DEBUG;
+        return $method->($self, @args);
+    }
+
+    return $self->error_msg( 
+        bad_method => $name, ref $self, (caller())[1,2] 
+    );
+}
+
+sub can {
+    my ($self, $name) = @_;
+
+    $self->debug("looking to see if $self can $name()") if DEBUG;
+
+    # This avoids runaways where can() calls itself repeatedly, but 
+    # doesn't prevent can() from being called several times for the
+    # same item. 
+    my $check = $self->{ can_calling } ||= { };
+    return if $check->{ $name };
+    local $check->{ $name } = 1;
+
+    return $self->SUPER::can($name)
+        || $self->ican($name);
+}
+
+sub ican {
+    my ($self, $name) = @_;
+
+    $self->debug("looking to see if $self ican $name()") if DEBUG;
+
+    if ($self->has_component($name)) {
+        $self->debug("has $name component") if DEBUG;
+        return sub {
+            shift->component( $name => @_ );
+        }
+    }
+
+    if ($self->has_resource($name)) {
+        $self->debug("has $name resource") if DEBUG;
+        return sub {
+            shift->resource( $name => @_ );
+        }
+    }
+
+    if ($self->metadata($name)) {
+        $self->debug("has $name metadata") if DEBUG;
+        return sub {
+            shift->metadata( $name => @_ );
+        }
+    }
+}
+
+sub get {
+    my $self = shift;
+    my $name = $_[0];
+    $self->debug("get($name)");
+    $self->metadata(@_);
+}
+
+#-----------------------------------------------------------------------------
+# Cleanup methods
+#-----------------------------------------------------------------------------
+
+sub destroy {
+    my $self = shift;
+    if ($self->{ hub }) {
+        $self->debug("cleaning up hub") if DEBUG;
+        $self->{ hub }->destroy;
+        delete $self->{ hub };
+    }
+    delete $self->{ parent    };
+    delete $self->{ uberspace };
+}
+
+sub DESTROY {
+    shift->destroy;
+}
+
+1;
+
+__END__
+#    # default the config_file parameter
+#    $config->{ config_file } ||= $self->CONFIG_FILE;
+
+
 #sub init_config_files {
 #    my ($self, $files) = @_;
 #    foreach my $file (@$files) {
@@ -329,200 +681,28 @@ sub prepare_components {
 #}
 
 
-
-
-#-----------------------------------------------------------------------------
-# fetch config data from the config object
-#-----------------------------------------------------------------------------
-
-sub metadata {
-    my $self  = shift;
-    my $meta  = $self->{ metadata }; return $meta unless @_;
-    my @names = map { ref $_ eq ARRAY ? @$_ : split /\./ } @_;
-    my $name  = shift @names;
-    my $data  = $meta->get($name) 
-        || return $self->decline_msg( not_found => 'configuration option' => $name );
-
-    if ($data) {
-        $self->dump_data("got data for $name: ", $self->dump_data($data));
-    }
-
-    return @names
-        ? $meta->dot($name, $data, \@names)
-        : $data;
-}
-
-#-----------------------------------------------------------------------------
-# components
-#-----------------------------------------------------------------------------
-
-sub component {
-    my ($self, $name) = @_;
-    my $config = $self->{ components }->{ $name }
-        || return $self->error_msg( invalid => component => $name );
-
-    $config = {
-        module => $config,
-    } unless ref $config;
-
-    $self->debug("$name component config: ", $self->dump_data($config));
-
-    # see if a module name is specified in $args, config hash or use $pkgmod
-    my $module = $config->{ module }
-        || return $self->error_msg( no_module => $name );
-
-    # load the module
-    $LOADED->{ $name } ||= class($module)->load;
-
-    $self->debug(
-        "$name module config: ", 
-        $self->dump_data($config)
-    ) if DEBUG;
-
-    $config->{ workspace } = $self;
-
-    return $module->new($config);
-}
-
-sub auto_component {
-    my ($self, $name, $comp) = @_;
-    my $class = ref $self || $self;
-
-
-    return sub {
-        my $self = shift;
-        my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
-        $self = $self->prototype unless ref $self;
-
-        return $self->{ $name } 
-            ||= $self->construct( 
-                $name => { 
-                    # TODO: figure out what's going on here in terms of
-                    # possible combinations of configuration options
-                    %$args, 
-                    hub    => $self, 
-                    module => $comp 
-                } 
-            );
-    }
-}
-
-
-#-----------------------------------------------------------------------------
-# relative workspaces
-#-----------------------------------------------------------------------------
-
-sub subspace {
-    my ($self, $params) = self_params(@_);
-    my $class = ref $self;
-    $params->{ parent } = $self;
-    return $class->new($params);
-}
-
-sub superspace {
-    return shift->{ parent };
-}
-
-sub uberspace {
-    my $self = shift;
-    return $self->{ uberspace } 
-       ||= $self->{ parent }
-         ? $self->{ parent }->uberspace
-         : $self;
-}
-
-#-----------------------------------------------------------------------------
-# Miscellaneous methods
-#-----------------------------------------------------------------------------
-
-sub hub {
-    my $self = shift;
-
-    if (@_) {
-        # got passed an argument (a new hub) which we connect $self to
-        my $hub = shift;
-
-        unless (ref $hub) {
-            class($hub)->load;
-            $self->debug("creating new hub, config is ", $self->config) if DEBUG;
-            $hub = $hub->new(
-                config => $self->config,
-            );
-        }
-        $self->{ hub } = $hub;
-    }
-
-    return $self->{ hub };
-}
-
-
-sub uri {
-    my $self = shift;
-    return @_
-        ? sprintf("%s%s", $self->{ uri }, resolve_uri(SLASH, @_))
-        : $self->{ uri };
-}
-
-sub dir {
-    my $self = shift;
-
-    return @_
-        ? $self->root->dir(@_)
-#        ? $self->resolve_dir(@_)
-        : $self->root;
-}
-
-sub collection_names {
-    my $self = shift;
-    my $cols = $self->{ collections } || [ ];
-    return wantarray
-        ? @$cols
-        :  $cols;
-}
-
-sub destroy {
-    my $self = shift;
-    if ($self->{ hub }) {
-        $self->debug("cleaning up hub") if DEBUG;
-        $self->{ hub }->destroy;
-        delete $self->{ hub };
-    }
-    delete $self->{ parent    };
-    delete $self->{ uberspace };
-}
-
-
-sub DESTROY {
-    shift->destroy;
-}
-
-1;
-
-__END__
-=============
-#-----------------------------------------------------------------------------
-# Initialisation methods
-#-----------------------------------------------------------------------------
-
-    $self->{ urn        } = delete $config->{ urn } || $root_dir->name;
-    $self->{ uri        } = delete $config->{ uri } || sprintf("%s:%s", $type, $self->{ urn });
-    $self->{ config_dir } = $conf_dir;
-    $self->{ config_fs  } = $config_fs;
-    $self->{ config     } = $config;
-    $self->{ schemas    } = { };
-    $self->{ metadata   } = { };
-    $self->{ loaders    } = $class->hash_vars(
-        LOADERS => $config->{ loaders }
-    );
-
-    # default the config_file parameter
-    $config->{ config_file } ||= $self->CONFIG_FILE;
-
-    $self->configure_workspace($config);
-
-
-    return $self;
-}
+#sub OLD_auto_component {
+#    my ($self, $name, $comp) = @_;
+#    my $class = ref $self || $self;
+#
+#
+#    return sub {
+#        my $self = shift;
+#        my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
+#        $self = $self->prototype unless ref $self;
+#
+#        return $self->{ $name } 
+#            ||= $self->construct( 
+#                $name => { 
+#                    # TODO: figure out what's going on here in terms of
+#                    # possible combinations of configuration options
+#                    %$args, 
+#                    hub    => $self, 
+#                    module => $comp 
+#                } 
+#            );
+#    }
+#}
 
 
 sub dir {
@@ -586,7 +766,6 @@ sub resolve_dir {
     $self->debug("resolving: ", $self->dump_data(\@path)) if DEBUG;
     return $self->root->dir(@path);
 }
-
 
 sub file {
     my $self = shift;

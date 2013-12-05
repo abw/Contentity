@@ -270,7 +270,7 @@ sub tail {
 
     $self->debug("merged data for $name: ", $self->dump_data($data)) if DEBUG;
 
-    if ($self->{ cache } && ($duration = $schema->{ cache })) {
+    if ($data && $self->{ cache } && ($duration = $schema->{ cache })) {
         $self->debug("found cache duration option: $duration") if DEBUG;
         $self->cache_store($name, $data, $duration, $schema);
     }
@@ -450,7 +450,7 @@ sub merge_data {
     my @keys = keys %$parent;
 
     if (DEBUG) {
-        $self->debug("TODO: merge_data()");
+        $self->debug("merge_data($name)");
         $self->debug("  PARENT: ", $self->dump_data($parent));
         $self->debug("  CHILD: ", $self->dump_data($child));
         $self->debug("  SCHEMA: ", $self->dump_data($schema));

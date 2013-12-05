@@ -9,12 +9,12 @@
 #========================================================================
 
 use Badger
-    lib        => '../lib lib',
+    lib        => 'lib ../lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 4,
+    tests => 13,
     debug => 'Contentity::Project',
     args  => \@ARGV;
 
@@ -25,9 +25,9 @@ use Contentity::Project;
 # Fetch project
 #-----------------------------------------------------------------------------
 
-my $root    = Bin->parent->dir( t => projects => 'alpha' );
+my $root    = Bin->dir( test_files => projects => 'alpha' );
 my $project = Contentity::Project->new( 
-    root => $root,
+    directory => $root,
 );
 ok( $project, "created contentity project: $project" );
 
@@ -59,15 +59,3 @@ ok( $prefs, 'got prefs' );
 is( $prefs->{ beer }, 'Tangle Foot', 'A nice glass of beer' );
 is( $project->config('prefs.transport'), 'Skateboard', 'Got my skateboard' );
 
-
-#-----------------------------------------------------------------------------
-# Fetch metadata
-#-----------------------------------------------------------------------------
-
-# Hmmm... no, this is right.  Everything is metadata, including config data.
-# It's only when we get to sites that we want to store metadata about the
-# site (suitable for using in templates) separately from the config data.
-# Hmmm... on second thoughts, I'm not even sure about that any more.
-
-#my $meta = $project->metadata;
-#ok( $meta, 'got site metadata' );

@@ -10,13 +10,14 @@ use Contentity::Class
 
 sub init {
     my ($self, $config) = @_;
-    my $component = delete $config->{_component_} || 'component';
-    my $workspace = delete $config->{_workspace_} || return $self->error_msg( missing => '_workspace_' );
 
     $self->debug(
         "initialising $config->{ component } component module: ", 
-        $self->dump_data($config)
+        $self->dump_data1($config)
     ) if DEBUG;
+
+    my $component = delete $config->{ component } || 'component';
+    my $workspace = delete $config->{ workspace } || return $self->error_msg( missing => 'workspace' );
 
     $self->{ workspace } = $workspace;
     $self->{ component } = $component;

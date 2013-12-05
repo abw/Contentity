@@ -1,21 +1,21 @@
 #============================================================= -*-perl-*-
 #
-# t/subproject.t
+# t/workspace/subspace.t
 #
-# Test sub-projects loaded by a master project.
+# Test sub-workspaces loaded by a master project.
 #
 # Written by Andy Wardley, May 2013
 #
 #========================================================================
 
 use Badger
-    lib        => '../lib lib',
+    lib        => 'lib ../lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
     tests => 21,
-    debug => 'Contentity::Project',
+    debug => 'Contentity::Project Contentity::Workspace',
     args  => \@ARGV;
 
 use Contentity::Project;
@@ -25,9 +25,9 @@ use Contentity::Project;
 # Instantiate master project object
 #-----------------------------------------------------------------------------
 
-my $root    = Bin->parent->dir( t => projects => 'alpha' );
+my $root    = Bin->dir( test_files => projects => 'alpha' );
 my $project = Contentity::Project->new( 
-    root        => $root,
+    directory      => $root,
     component_path => 'Wibble::Component',
 );
 ok( $project, "created contentity project: $project" );
@@ -37,12 +37,16 @@ ok( $project, "created contentity project: $project" );
 # Fetch sub-project
 #-----------------------------------------------------------------------------
 
-my $sub = $project->project('bravo');
+my $sub = $project->workspace('bravo');
 
 ok( $sub, 'got sub-project' );
+is( $sub->get('name'), 'The Bravo Project', 'got project name' );
+is( $sub->get('mastermsg'), 'The master message', 'got master project message' );
+
 is( $sub->name, 'The Bravo Project', 'got project name' );
 is( $sub->mastermsg, 'The master message', 'got master project message' );
 
+exit;
 
 #-----------------------------------------------------------------------------
 # Check that a config tree merge includes both slave and master project

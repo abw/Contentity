@@ -1,0 +1,13 @@
+name: login_form
+title: Login Form
+fields:
+  -
+    name:  username
+    type:  text
+  -
+    name:  password
+    type:  password
+  -
+    name:  submit
+    type:  button
+    value: Login

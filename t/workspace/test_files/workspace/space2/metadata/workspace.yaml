@@ -1,18 +1,28 @@
+name:      Workspace Example 2
+
+inherit:   all
+
+schema:
+  cache:   3 seconds
+
 schemas:
-  _default_:
-    loader:  file
-    inherit: all
-  _common_:
-    cache:   1 minute
+  components:
+    inherit:
+      exclude: trouble
+
   site:
     loader:  tree
     inherit: -private -hidden +urls +css
     cache:   5 minutes
+
   forms:
+    tree_type: none
     inherit: all
     cache:   5 minutes
+
   forms/admin:
     inherit: none
+
   forms/search:
     cache:   2 hours
     inherit:

@@ -9,6 +9,7 @@ use Contentity::Class
 sub return_resource {
     my ($self, $data) = @_;
     $data->{ EXTRA_STUFF } = 'Just Testing';
+    $self->debug("Form init: ", $self->dump_data($data)) if DEBUG;
     return $data;
 }
 

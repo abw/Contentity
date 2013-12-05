@@ -5,3 +5,5 @@ schemas:
   pages:
     tree_type:  join
     tree_joint: _
+  forms:
+    tree_type: none

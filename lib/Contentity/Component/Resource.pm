@@ -9,7 +9,7 @@ use Contentity::Class
     constant  => {
         RESOURCE        => undef,
         RESOURCES       => undef,
-        CACHE_INSTANCES => 1,
+        CACHE_INSTANCES => 0,
     };
 
 
@@ -95,7 +95,7 @@ sub fetch_resource {
 sub resource_data {
     my ($self, $name) = @_;
 
-    return $self->project->resource_data(
+    return $self->workspace->resource_data(
         $self->{ resources } => $name
     );
 }
@@ -106,15 +106,15 @@ sub return_resource {
     return $data;
 }
 
-sub files {
+sub OLD_files {
     my $self = shift;
 
-    return $self->project->resource_files(
+    return $self->workspace->resource_files(
         $self->{ resources }
     );
 }
 
-sub names {
+sub OLD_names {
     my $self = shift;
 
     return $self->project->resource_names(
@@ -122,7 +122,7 @@ sub names {
     );
 }
 
-sub all {
+sub OLD_all {
     my $self  = shift;
     my @names = $self->names;
     my @items = map { $self->resource($_) } sort $self->names;

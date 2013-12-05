@@ -1,6 +1,6 @@
 #============================================================= -*-perl-*-
 #
-# t/project.t
+# t/workspace/project.t
 #
 # Test project loading functionality.
 #
@@ -27,7 +27,7 @@ use Contentity::Project;
 
 my $root    = Bin->dir( test_files => projects => 'alpha' );
 my $project = Contentity::Project->new( 
-    root        => $root,
+    directory      => $root,
     component_path => 'Wibble::Component',
 );
 ok( $project, "created contentity project: $project" );

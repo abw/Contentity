@@ -4,7 +4,7 @@ use Badger::Factory::Class
     version => 0.01,
     debug   => 0,
     item    => 'component',
-    path    => 'Contentity(X)::Component',
+    path    => 'Contentity(X)::Component Contentity(X)',
     utils   => 'params';
 
 sub type_args {
@@ -12,7 +12,7 @@ sub type_args {
     my $type   = shift;
     my $params = params(@_);
 
-    if ($params->{ component}) {
+    if ($params->{ component }) {
         $type = $params->{ component };
         $self->debug(
             $params->{_component_}, 

@@ -5,118 +5,19 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Workspace',
-    import      => 'class',
-    utils       => 'params extend self_params',
-    accessors   => 'root hub XXXconfig',
-    constants   => 'DOT DELIMITER HASH ARRAY MIDDLEWARE',
     constant    => {
-        WORKSPACE_TYPE  => 'project',
-    },
-    messages => {
-        load_fail => 'Failed to load data from %s: %s',
-        no_config => 'No configuration file or directory for %s',
-        no_domain_site => "There isn't any site defined for the '%s' domain",
+        WORKSPACE_TYPE => 'project',
     };
- #   auto_can    => 'auto_can';
 
-
-
-sub init_resources {
-    my ($self, $config) = @_;
-    my $resources = $config->{ resources }                || return $self;
-    my $rcomps    = $self->prepare_components($resources) || return $self;
-    my $comps     = $self->{ components };
-    my $singles   = $self->{ resource   } = { };
-    my $plurals   = $self->{ resources  } = { };
-    my ($key, $value, $single, $plural, $component);
-
-    if ($comps) {
-        # merge resource components into regular components
-        $self->{ components } = { %$comps, %$rcomps };
-        $self->debug(
-            "Merged components+resources: ", 
-            $self->dump_data($self->{ components })
-        ) if DEBUG;
-    }
-    else {
-        # we only have resources, no components
-        $self->{ components } = $rcomps;
-    }
-
-    while (($key, $value) = each %$rcomps) {
-        $component = $self->component($key) || return $self->error_msg( invalid => 'resource component' => $key);
-        $single    = $component->resource;
-        $plural    = $component->resources;
-        $singles->{ $single } = $component;
-        $plurals->{ $plural } = $component;
-    }
-
-    if (DEBUG) {
-        $self->debug(
-            "single resources: ", $self->dump_data($self->{ resource }), "\n",
-            "plural resources: ", $self->dump_data($self->{ resources }), "\n",
-        );
-    }
-
-    return $self;
-}
 
 #-----------------------------------------------------------------------------
 # Methods for loading component modules
 #-----------------------------------------------------------------------------
 
-sub OLD_component {
-    my $self = shift;
-    my $type = shift;
-    
-    return $self->component_factory->item(
-        $type => $self->component_config($type)
-    );
-}
-
 sub OLD_has_component {
     my $self = shift;
     my $type = shift;
     return $self->{ components }->{ $type };
-}
-
-sub OLD_component_config {
-    my $self   = shift;
-    my $type   = shift;
-    my $config = $self->config($type);
-
-    $config->{ _workspace_} = $self;
-
-    $self->debug("component config for $type: ", $self->dump_data($config)) if DEBUG;
-    return $config;
-}
-
-
-sub OLDER_component_config {
-    my $self     = shift;
-    my $type     = shift;
-    my $params   = params(@_);
-    my $component = $self->{ components }->{ $type } || { };
-        #|| return $self->error_msg( invalid => component => $type );
-    my $master   = $self->{ config }->{ $type };
-    my $merged   = extend({ _component_ => $type }, $component, $master, $params);
-    my $cfg_data = $self->config($type);
-    my $config   = extend($cfg_data, $merged);
-
-    $self->debug(
-        "config for component $type:\n",
-        "- component config ($self->{ config_file }/components/$type): ", $self->dump_data($component), "\n",
-        "- Master config ($type): ", $self->dump_data($master), "\n",
-        "- Local params (component_config(...)): ", $self->dump_data($params), "\n",
-        "= Merged config ({} < component < master < local): ", $self->dump_data($merged), "\n",
-        "- Config data from workspace ($type): ", $self->dump_data($cfg_data), "\n",
-        "= Fully merged (file < merged): ", $self->dump_data($config), "\n",
-    ) if DEBUG or 1;
-
-    $config->{_workspace_} = $self;     # new?
-    $config->{_project_} = $self;       # old
-
-    return $config;
 }
 
 sub OLD_component_factory {
