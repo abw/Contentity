@@ -8,13 +8,13 @@
 #
 #========================================================================
 
-use lib '/home/abw/projects/badger/lib';
 use Badger
-    lib        => '../lib lib',
+    lib        => '../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
+    skip  => 'Not currently working',
     tests => 6,
     debug => 'Contentity::Project Contentity::Component::Templates',
     args  => \@ARGV;

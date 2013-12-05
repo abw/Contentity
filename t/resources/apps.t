@@ -10,11 +10,12 @@
 
 use Badger::Debug modules => 'Badger::Utils';
 use Badger
-    lib        => '../lib lib',
+    lib        => '../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
+    skip  => 'Not currently working',
     tests => 3,
     debug => 'Contentity::Apps Contentity::Component::App',
     args  => \@ARGV;

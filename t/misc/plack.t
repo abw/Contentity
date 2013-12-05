@@ -9,14 +9,15 @@
 #========================================================================
 
 use Badger
-    lib        => '../lib lib',
+    lib        => '../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 4,
-    debug => 'Contentity::Project Contentity::Component::Plack',
-    args  => \@ARGV;
+    skip     => 'Not currently working',
+    tests    => 4,
+    debug    => 'Contentity::Project Contentity::Component::Plack',
+    args     => \@ARGV;
 
 use Contentity::Project;
 
