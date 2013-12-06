@@ -39,6 +39,8 @@ sub init_scaffold {
     my $dest = $config->{ output_dir    } || $root;
     my $data = $config->{ data };
 
+    $self->debug("data: ", $self->dump_data($self->data)) if DEBUG;
+
     $self->{ root } = $root;
     $self->{ tdir } = $tdir = $root->dir($tdir)->must_exist;
     $self->{ tlib } = $tlib = $tdir->dir($tlib)->must_exist;
@@ -72,7 +74,6 @@ sub scaffold {
 
     $self->debug("quiet: $quiet   verbose: $verbose  nothing: $nothing") if DEBUG;
 
-
     if ($nothing) {
         $self->info("Dry run...");
 
@@ -93,9 +94,9 @@ sub scaffold {
             else {
                 $self->fail($file, $teng->error);
             }
-            #my $outfile = $root->file($path);
-            #chmod( (stat $file)[2] & 07777, $outfile )
-            #   || $self->fail("chmod($outfile)", $!);
+            $dest->file($path)->chmod(
+                $file->perms
+            );
         }
     }
 }
@@ -126,6 +127,7 @@ sub fail {
 
 sub template_engine {
     my $self = shift;
+    $self->debug("vars: ", $self->dump_data($self->data)) if DEBUG;
     return $self->TEMPLATE_ENGINE->new({
         path         => [$self->tsrc, $self->tlib],
         OUTPUT_PATH  => $self->dest,

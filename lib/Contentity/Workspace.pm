@@ -519,7 +519,7 @@ sub uberspace {
 # Miscellaneous methods
 #-----------------------------------------------------------------------------
 
-sub hub {                   # needs sorting out
+sub OLD_hub {                   # needs sorting out
     my $self = shift;
 
     if (@_) {

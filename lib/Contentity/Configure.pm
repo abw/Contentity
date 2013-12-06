@@ -57,7 +57,7 @@ sub init {
 
     # set the current root directory, but note that it may be modified by 
     # a value set in config/config_save.yaml
-    $data->{ root     } = $root->definitive;
+    $data->{ root } ||= $root->definitive;
 
     if ($sfile && ! $self->{ reset }) {
         my $lastrun = $metamod->get($sfile);
@@ -71,7 +71,6 @@ sub init {
                 if $self->{ verbose };
         }
     }
-
 
     #$self->debug("root: $root");
     #$self->debug("loaded metadata: ", $self->dump_data($metadata));
@@ -489,10 +488,15 @@ sub scaffold {
 
 sub scaffold_module {
     my $self = shift;
+    my $conf = $self->{ config };
+
+#    $conf = { 
+#        %$conf,
+##        data => $self->{ data }
+#    };
+
     return  $self->{ scaffold_module }
-        ||= $self->SCAFFOLD_MODULE->new( 
-                $self->{ config } 
-            );
+        ||= $self->SCAFFOLD_MODULE->new($conf);
 }
 
 sub note {
