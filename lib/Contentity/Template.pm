@@ -71,5 +71,14 @@ sub render {
     return $output;
 }
 
+sub process {
+    my $self   = shift;
+    my $name   = shift;
+    my $engine = $self->engine;
+    $self->debug("PROCESS $name") if DEBUG;
+    return $engine->process($name, @_)
+        || $self->error_msg( engine_render => $name, $engine->error );
+}
+
 
 1;

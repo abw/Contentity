@@ -1,0 +1,196 @@
+-
+    - intro:
+        title:      Example Project
+        about:      |
+            This script prompts the user to confirm a number of configuration values
+            before processing the templates in the 'skeleton/project' directory to 
+            generate various project files. Note that this overwrites any existing files 
+            so you probably want to do a dry run (-n option) first to check what it's 
+            going to do.
+
+-
+    - section:
+        title:      Project Configuration
+
+    - root:
+        title:      Project root directory
+        cmdarg:     path
+-
+    - section:
+        title:      Database
+        name:       database
+        cmdarg:     db
+
+    - name:
+        title:      Database name
+        default:    cog
+        cmdargs:    name
+
+    - username:
+        title:      Database username
+        default:    mydbuser
+        cmdargs:    username
+
+    - password:
+        title:      Database password
+        default:    mydbpass
+        cmdargs:    password
+
+    - hostname:
+        title:      Database hostname
+        default:    localhost
+        cmdargs:    hostname
+
+    - port:
+        title:      Database port
+        default:    3306
+        cmdargs:    port
+
+    - module:
+        title:      Database module
+        default:    My::Database
+        cmdargs:    module
+-
+    - section:
+        title:      MySQL Administration
+        name:       mysql
+
+    - mysql:
+        title:      Path to mysql program
+        cmdarg:     mysql
+        cmdargs:    path
+        default:    program:mysql
+
+    - mysqladmin:
+        title:      Path to mysqladmin program
+        cmdarg:     mysqladmin
+        cmdargs:    path
+        default:    program:mysqladmin
+
+    - mysqldump:
+        title:      Path to mysqldump program
+        cmdarg:     mysqldump
+        cmdargs:    path
+        default:    program:mysqldump
+
+    - username:
+        title:      MySQL root user
+        cmdargs:    user
+        default:    root
+
+    - password:
+        title:      MySQL root password
+        cmdargs:    password
+        comment:    This should only be used in development.  It's better to leave it blank
+-
+    - section:
+        title:      Apache Web Server
+        name:       apache
+
+    - hostname:
+        title:      Apache host name
+        cmdargs:    hostname
+        default:    localhost
+
+    - ip_addr:
+        title:      Apache IP address
+        cmdargs:    address
+        default:    127.0.0.1
+
+    - port:
+        title:      Apache port
+        cmdargs:    port
+        default:    80
+
+    - user:
+        title:      Apache user
+        cmdargs:    user
+        default:    abw
+
+    - group:
+        title:      Apache group
+        cmdargs:    group
+        default:    abw
+
+    - apachectl:
+        title:      Apache control script
+        cmdarg:     apachectl
+        cmdargs:    path
+        default:    program:apachectl
+
+    - a2ensite:
+        title:      Apache site enabling script
+        cmdarg:     a2ensite
+        cmdargs:    path
+        default:    program:a2ensite
+
+    - a2dissite:
+        title:      Apache site disabling script
+        cmdarg:     a2dissite
+        cmdargs:    path
+        default:    program:a2dissite
+-
+    - section:
+        title:      External Programs
+        name:       program
+
+    - convert:
+        title:      Image Magick convert program
+        cmdarg:     convert
+        cmdargs:    path
+        default:    program:convert
+-
+    - section:
+        title:      File and Directory Permissions
+        name:       perms
+
+    - dir:
+        title:      Permissions for new directories
+        cmdarg:     dir_perms
+        cmdargs:    perms
+        default:    0775
+    - file:
+        title:      Permissions for new files (e.g. uploads)
+        cmdarg:     file_perms
+        cmdargs:    perms
+        default:    0664
+-
+    - section:
+        title:      Any Other Business
+
+    - deployment:
+        title:      Deployment mode
+        cmdargs:    type
+        options:  
+            - development
+            - staging
+            - production
+    - yes:
+        title:      Accept all options
+        short:      y
+        prompt:     0
+
+    - nothing:
+        title:      Do nothing (dry run)
+        short:      n
+        prompt:     0
+
+    - verbose:
+        title:      Enable verbose mode
+        short:      v
+        prompt:     0
+
+    - quiet:
+        title:      Enable quiet mode
+        short:      q
+        prompt:     0
+
+    - debug:
+        title:      Enable debugging mode
+        short:      d
+        prompt:     0
+
+    - help:
+        title:      This help
+        short:      h
+        prompt:     0

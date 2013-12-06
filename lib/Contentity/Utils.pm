@@ -7,7 +7,7 @@ use Badger::Rainbow     ANSI => 'red green cyan magenta yellow';
 use Carp;
 use POSIX               'floor';
 use Badger::Debug       'debug_caller';
-use Badger::Utils       'params numlike is_object plural permute_fragments xprintf TIMESTAMP';
+use Badger::Utils       'params numlike is_object plural permute_fragments xprintf TIMESTAMP split_to_list';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
@@ -353,19 +353,40 @@ sub find_program {
 
 
 sub prompt {
-    my ($msg, $def, $yes) = @_;
+    my ($msg, $def, $yes, $params) = @_;
     my $ans = '';
     $def = '' unless defined $def;
     my $defprompt = $def 
-        ? ' ' . yellow("[") . green($def) . yellow("]") 
+        ? yellow("[") . green($def) . yellow("]") . ' ' 
         : "";
 
-    print cyan($msg) . $defprompt . ' ';
+    my $comment = $params->{ comment };
+    my $options = $params->{ options };
+#    print cyan($msg) . $defprompt . "\n";
+    print cyan($msg) . " ";
 
     if ($yes) {    # accept default
-        print "$def\n";
+        print " ", $defprompt, "\n";
     }
     else {           # read user input
+        if ($comment) {
+            print "\n", yellow($comment) . "\n";
+        }
+
+        if ($options) {
+            $options = split_to_list($options);
+            print "\n", yellow('Valid options: '), 
+                join(', ', map { green($_) } @$options),
+                "\n";
+        }
+
+        print "$defprompt> ";
+        #if ($def) {
+        #    print "Enter a new value or press RETURN to accept default\n> ",
+        #}
+        #else {
+        #    print "Enter a new value:\n> ",
+        #}
         chomp($ans = <STDIN>);
     }
 

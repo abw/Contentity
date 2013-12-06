@@ -332,6 +332,18 @@ sub find_config_file {
     );
 }
 
+sub write_config_file {
+    my ($self, $name, $data) = @_;
+    my $root = $self->root;
+    my $exts = $self->extensions;
+    my $ext  = $exts->[0];
+    my $path = $name.DOT.$ext;
+    my $file = $self->file($path);
+
+    $file->codec($self->codec($ext));
+    $file->data($data);
+}
+
 
 sub codec {
     my ($self, $name) = @_;
