@@ -11,7 +11,7 @@ use Contentity::Class
     debug       => 0,
     base        => 'Contentity::Base',
     accessors   => 'script data',
-    utils       => 'Bin Dir prompt',
+    utils       => 'Bin Dir prompt split_to_list floor',
     constants   => 'HASH BLANK',
     constant    => {
         INTRO           => 'intro',
@@ -389,19 +389,91 @@ sub option_group_blurb {
 sub option_prompt {
     my ($self, $name, $option) = @_;
     return if defined $option->{ prompt } && ! $option->{ prompt };
-    my $cmdargs = $option->{ cmdargs } || '';
-    my $title   = $option->{ title   } || '';
-    my $path    = $option->{ path    };
-    my $default = $option->{ default };
+    my $cmdargs = $option->{ cmdargs   } || '';
+    my $title   = $option->{ title     } || '';
+    my $path    = $option->{ path      };
+    my $default = $option->{ default   };
+    my $mandy   = $option->{ mandatory };
+    my $options = $option->{ options   };
     my $value   = $self->get($path);
     my $yes     = $self->{ data }->{ yes };
+    my $attempt = 0;
+    my ($result, $valid);
     $self->debug("DEF: $default   VAL: $value  PATH: ", $self->dump_data($path)) if DEBUG;
     $self->debug("DATA: ", $self->dump_data($self->{data})) if DEBUG;
-    my $result  = prompt($title, $value || $default, $yes, $option);
+
+    if ($options) {
+        $options = split_to_list($options);
+        $options = { map { $_ => $_ } @$options };
+        $self->debug("options: ", $self->dump_data($options)) if DEBUG;
+    }
+
+    while (1) {
+        $result = prompt($title, $value || $default, $yes, $option);
+        $self->debug("read: $result") if DEBUG;
+
+        if (! length($result)) {
+            if ($mandy || $options) {
+                print red $self->random_insult($attempt++), "\n";
+                print red "You must enter a value for this configuration option\n";
+            }
+            else {
+                last;
+            }
+        }
+        elsif ($options && ! $options->{ $result }) {
+            print red $self->random_insult($attempt++), "\n";
+            print red "That's not an acceptable value for this configuration option\n";
+        }
+        else {
+            last;
+        }
+    }
 
     $self->set($path, $result);
 }
 
+our $INSULTS = [
+    [
+        'Please try again.', 
+        'Oops, you made a mistake!', 
+        "Oh dear, I'm afraid that's not good enough."
+    ],
+    [
+        'You muppet!',
+        'Are you on drugs?', 
+        'Do you have trouble typing or did someone cut your fingers off?', 
+    ],
+    [
+        'Are you taking the piss?', 
+        "I'm getting rather annoyed with you.", 
+        "I'm tutting quietly under my breath."
+    ],
+    [
+        "Look, I may be a dumb computer but I've got better things to be doing with my time.",
+        "Now I know you're just doing this to see all the silly error messages.",
+        "Your mother was a hamster and your father smelled of elderberries.",
+        "I blow my nose at you and all your silly ker-nig-herts.",
+    ],
+    [
+        "Stop it!",
+        "Bugger off!",
+    ],
+    [
+        "Seriously, stop messing!",
+        "Get lost!",
+    ],
+    [
+        "I'm not playing any more.",
+    ]
+];
+
+sub random_insult {
+    my ($self, $level) = @_;
+    $level = floor($level / 5);
+    my $set = $INSULTS->[$level] || $INSULTS->[-1];
+    return $set->[rand @$set];
+}
 
 sub scaffold {
     shift->scaffold_module->scaffold;
