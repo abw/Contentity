@@ -11,7 +11,8 @@
 #
 #========================================================================
 
-use lib '/home/abw/projects/badger/lib';
+#use lib '/home/abw/projects/badger/lib';
+
 use Badger
     lib    => '../../lib',
     Utils  => 'Bin',
@@ -25,11 +26,9 @@ use Badger::Test
 use Contentity::Configure;
 
 my $script = Contentity::Configure->new(
-#    args   => \@ARGV,
-#    prompt => 1,
-    data   => {
-        root => Bin,
-    },
+    directory => Bin->parent,
+    args      => \@ARGV,
+    prompt    => 1,
 );
 
 ok( $script, 'created configure script' );

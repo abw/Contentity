@@ -23,7 +23,7 @@ use Contentity::Class
             self_key self_keys
             H html_elem html_attrs data_attrs
             datestamp today format_date
-            ordinal ordinate commas
+            ordinal ordinate commas trim
             find_program prompt confirm floor
         }
     };
@@ -318,6 +318,15 @@ sub commas {
 }
 
 
+sub trim {
+    my $text = shift;
+    for ($text) {
+        s/^\s+//;
+        s/\s+$//;
+    }
+    return $text;
+}
+
 
 
 #-----------------------------------------------------------------------------
@@ -388,6 +397,11 @@ sub prompt {
         #    print "Enter a new value:\n> ",
         #}
         chomp($ans = <STDIN>);
+        $ans = trim($ans);
+        if ($ans eq '-') {
+            $ans = '';
+            $def = '';
+        }
     }
 
     return length($ans) ? $ans : $def;

@@ -50,11 +50,16 @@ sub init {
         $self->{ verbose } = grep { /^--?v(erbose)?$/ } @$args;
         $self->{ quiet   } = grep { /^--?q(uiet)?$/   } @$args;
         $self->{ white   } = grep { /^--?w(hite)?$/   } @$args;
+        $self->{ reset   } = grep { /^--?r(eset)?$/   } @$args;
     }
 
     $config->{ script } ||= $metadata;
 
-    if ($sfile) {
+    # set the current root directory, but note that it may be modified by 
+    # a value set in config/config_save.yaml
+    $data->{ root     } = $root->definitive;
+
+    if ($sfile && ! $self->{ reset }) {
         my $lastrun = $metamod->get($sfile);
         if ($lastrun) {
             $self->note("Loaded saved configuration values from $cdir/$sfile");
@@ -67,6 +72,7 @@ sub init {
         }
     }
 
+
     #$self->debug("root: $root");
     #$self->debug("loaded metadata: ", $self->dump_data($metadata));
     $self->{ root     } = $root;
@@ -75,7 +81,6 @@ sub init {
     $self->{ data     } = $config->{ data   } || { };
     $self->{ colour   } = $config->{ colour } // ($self->{ white } ? 0 : 1);
     $self->{ config   } = $config;
-    $data->{ root     } = $root->definitive;
 
     if ($config->{ args }) {
         $self->args($config->{ args });
@@ -379,10 +384,13 @@ sub option_group_prompt {
 sub option_group_blurb {
     my $self = shift;
     print info_colour("Please provide values for the following configuration options."), "\n";
-    print info_colour("Press "), 
-          green("ENTER"), 
-          info_colour(" to accept the "), 
+    print info_colour('Press '), 
+          green('RETURN'), 
+          info_colour(' to accept the '), 
           $self->colour_default('default value'),
+          info_colour('. Enter '),
+          green('-'),
+          info_colour(' to clear any current value.'),
           "\n\n";
 
 }
