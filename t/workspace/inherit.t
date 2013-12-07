@@ -29,19 +29,19 @@ my $pkg    = 'Contentity::Workspace';
 my $dir1   = Bin->dir('test_files/workspace/space1');
 my $dir2   = Bin->dir('test_files/workspace/space2');
 my $parent = $pkg->new( 
-    cache     => $cache,
-    directory => $dir1,
-    file      => 'config',
-    uri       => 'workspace:parent',
+    cache  => $cache,
+    root   => $dir1,
+    file   => 'config',
+    uri    => 'workspace:parent',
 );
 ok( $parent, "Created parent $pkg object" );
 
 my $child = $pkg->new( 
-    cache     => $cache,
-    directory => $dir2,
-    file      => 'config',
-    uri       => 'workspace:child',
-    parent    => $parent,
+    cache  => $cache,
+    root   => $dir2,
+    file   => 'config',
+    uri    => 'workspace:child',
+    parent => $parent,
 );
 ok( $child, "Created child $pkg object" );
 

@@ -28,8 +28,9 @@ use Contentity::Class
         WORKSPACE_TYPE    => 'workspace',
     },
     alias       => {
-        config  => \&metadata,
-    #   get     => \&metadata,
+        config    => \&metadata,
+    #   get       => \&metadata,
+        directory => \&dir,
     },
     messages => {
         no_module  => 'No %s module defined.',
@@ -58,13 +59,13 @@ sub init {
 sub init_workspace {
     my ($self, $config) = @_;
     my $class = $self->class;
-    my $type  = $config->{ type      } || $self->WORKSPACE_TYPE;
-    my $dir   = $config->{ directory } || $config->{ dir } || return $self->error_msg( missing => 'directory' );
+    my $type  = $config->{ type } || $self->WORKSPACE_TYPE;
+    my $rdir  = $config->{ root } || return $self->error_msg( missing => 'root' );
 
     # must have a root directory
-    my $root = Dir($dir);
+    my $root = Dir($rdir);
 
-    return $self->error_msg( invalid => directory => $dir )
+    return $self->error_msg( invalid => directory => $rdir )
         unless $root->exists;
 
     $self->{ root   } = $root;
@@ -261,6 +262,7 @@ sub configure_resources {
 
         # now fetch the component, loading any metadata file for the resource
         # name, but not the sub-directory containing further resource data
+        $self->debug("loading $key resource: ", $self->dump_data($value)) if DEBUG;
         $component = $self->component($key) || return $self->error_msg( invalid => 'resource component' => $key);
         $single    = $component->resource;
         $plural    = $component->resources;
@@ -475,12 +477,16 @@ sub resource {
 
 sub resource_data {
     my ($self, $type, $urn) = @_;
-    my $uri  = join(SLASH, $type, $urn);
-    my $data = $self->metadata($uri);
+    # data may already be loaded in the metadata tree, e.g. workspaces.foo
+    # or may need to be loaded from a separate file, e.g. workspsaces/foo
+    my $data = $self->metadata( [$type, $urn] ) 
+            || $self->metadata( join(SLASH, $type, $urn) );
+
     $self->debug(
-        "fetched metadata for $uri resource: ", 
+        "fetched metadata for $type:$urn resource: ", 
         $self->dump_data($data)
     ) if DEBUG;
+
     return $data;
 }
 

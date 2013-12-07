@@ -12,9 +12,14 @@ components:
     - database 
     - frusset
     - middleware
-#resources:
+resources:
+     - workspaces
 #    - forms
 #    - apps
 #    - entities
 #    - projects
 #    - sites
+
+schemas: 
+  urls:
+    tree_type: uri

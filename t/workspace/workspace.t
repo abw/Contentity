@@ -32,7 +32,7 @@ my $web2 = $dir2->dir('web');
 # Top level workspace
 #-----------------------------------------------------------------------------
 
-my $wspace = $pkg->new( directory => $dir1 );
+my $wspace = $pkg->new( root => $dir1 );
 ok( $wspace, "Created $wspace object" );
 is( $wspace->uri, 'workspace:space1', 'workspace uri' );
 
@@ -62,7 +62,7 @@ main->debug("config data: ", main->dump_data($data)) if DEBUG;
 # Subspace
 #-----------------------------------------------------------------------------
 
-my $subspace = $wspace->subspace( directory => $dir2 );
+my $subspace = $wspace->subspace( root => $dir2 );
 ok( $subspace, "Created $subspace object" );
 is( $subspace->uri, 'workspace:space2', 'subspace uri' );
 is( $subspace->dir('web'), $web2, "subspace webdir is $web2" );

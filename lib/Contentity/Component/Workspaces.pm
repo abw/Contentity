@@ -13,7 +13,14 @@ use Contentity::Class
 sub return_resource {
     my ($self, $data) = @_;
     my $space = $self->workspace;
-    my $base  = delete $data->{ parent } || delete $data->{ base };
+    my $base  = delete $data->{ base };
+    my $root  = delete $data->{ root }
+        || return $self->error_msg( missing => 'directory' );
+
+    $root = $space->directory($root);
+
+    $self->debug("Real directory is $root") if DEBUG;
+    $data->{ root } = $root;
 
     $self->debug(
         "subspace URI is $data->{ uri }\n",
@@ -22,7 +29,7 @@ sub return_resource {
 
     # attach project to intermediary base class if there is one specified
     if ($base) {
-        $self->debug("Intermediary space: $base");
+        $self->debug("Intermediary space: $base") if DEBUG;
         $space = $space->workspace($base);
     }
 

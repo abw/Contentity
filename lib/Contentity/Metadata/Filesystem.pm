@@ -145,7 +145,7 @@ sub config_tree {
     my $file    = $self->config_file($name);
     my $dir     = $root->dir($name);
     my $do_tree = TRUE;
-    my $data    = { };
+    my $data    = undef; #{ };
     my ($file_data, $binder, $more);
 
     unless ($file && $file->exists || $dir->exists) {
@@ -156,7 +156,7 @@ sub config_tree {
     if ($file && $file->exists) {
         $file_data = $file->try->data;
         return $self->error_msg( load_fail => $file => $@ ) if $@;
-        $self->debug("Read metadata from file '$file':", $self->dump_data($data)) if DEBUG;
+        $self->debug("Read metadata from file '$file':", $self->dump_data($file_data)) if DEBUG;
     }
 
     # fetch a schema for this data item constructed from the default schema
@@ -186,6 +186,7 @@ sub config_tree {
 
     if ($do_tree) {
         # merge file data using binder
+        $data ||= { };
         $binder->($self, $data, [ ], $file_data, $schema);
  
         if ($dir->exists) {

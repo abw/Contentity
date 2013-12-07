@@ -1,5 +1,10 @@
 ---
 greeting:       Sub-project setup
+name:           The Bravo Project
 
 inherit:
-  exclude: components resources
+  exclude: all
+
+schemas:
+  urls:
+    tree_type: uri

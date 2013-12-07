@@ -402,7 +402,7 @@ sub parent_fetch {
     # The schema for this particular data item may have rules about the 
     # items within it that should be inherited and/or merged from the 
     # parent data into the (empty) child
-    $data = $self->merge_data($name, $data, { }, $schema);
+    $data = $self->merge_data($name, $data, undef, $schema);
 
     $self->debug("merged data for $name: ", $self->dump_data($data)) if DEBUG;
 
@@ -447,7 +447,11 @@ sub parent_head {
 sub merge_data {
     my ($self, $name, $parent, $child, $schema) = @_;
     my $merged = { };
-    my @keys = keys %$parent;
+
+    $parent = { 
+        map { $_ => 1 }
+        @$parent
+    } if ref $parent eq ARRAY;
 
     if (DEBUG) {
         $self->debug("merge_data($name)");
@@ -455,6 +459,13 @@ sub merge_data {
         $self->debug("  CHILD: ", $self->dump_data($child));
         $self->debug("  SCHEMA: ", $self->dump_data($schema));
     }
+
+    return $child || $parent
+        unless $child && $parent 
+            && ref($child)  eq HASH 
+            && ref($parent) eq HASH;
+
+    my @keys = keys %$parent;
     my $inherit = $schema->{ inherit_filter };
     my $merge   = $schema->{ merge_filter   };
 
@@ -598,7 +609,7 @@ sub uri_binder {
     # site as "bar/foo", but an entry "/bam" will be stored as "/bam" because 
     # it's an absolute URI rather than a relative one (relative to the $base)
     while (my ($key, $value) = each %$child) {
-        my $uri = resolve_uri($base, $key);
+        my $uri = $base ? resolve_uri($base, $key) : $key;
         if ($opt) {
             $uri = $self->fix_uri_path($uri, $opt);
         }
