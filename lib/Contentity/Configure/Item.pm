@@ -8,7 +8,7 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Base',
-    accessors   => 'name urn path prompt options optional',
+    accessors   => 'name urn path options optional',
     utils       => 'falselike split_to_list',
     constants   => 'HASH BLANK',
     constant    => {

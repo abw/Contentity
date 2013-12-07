@@ -34,4 +34,4 @@ my $item = ITEM->new(
 ok( $item, 'created item for the foo thing' );
 print $item->help;
 
-$item->prompt;
+#$item->prompt;

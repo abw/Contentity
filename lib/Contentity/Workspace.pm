@@ -24,6 +24,8 @@ use Contentity::Class
         COMPONENTS        => 'components',
         DELEGATES         => 'delegates',
         RESOURCES         => 'resources',
+        # subspace module
+        SUBSPACE_MODULE   => __PACKAGE__,
         # used to generate uri
         WORKSPACE_TYPE    => 'workspace',
     },
@@ -503,9 +505,10 @@ sub has_resource {
 
 sub subspace {
     my ($self, $params) = self_params(@_);
-    my $class = ref $self;
+    my $module = $self->SUBSPACE_MODULE;
+    class($module)->load;
     $params->{ parent } = $self;
-    return $class->new($params);
+    return $module->new($params);
 }
 
 sub superspace {
@@ -640,6 +643,14 @@ sub ican {
         return sub {
             shift->metadata( $name => @_ );
         }
+    }
+
+    my $parent = $self->parent       || return;
+    my $method = $parent->can($name) || return;
+
+    return sub {
+        $self->debug("delegating $name to parent: $parent") if DEBUG;
+        $method->($parent, @_);
     }
 }
 
