@@ -396,7 +396,7 @@ sub component {
     my $config = $self->component_config($name)
         || return $self->error_msg( invalid => component => $name );
     my $single = truelike($config->{ singleton });
-    my $singleton;
+    my ($singleton, $object);
 
     $self->debug(
         "$name component config: ", 
@@ -405,9 +405,9 @@ sub component {
 
     # A component configuration can specify 'singleton' if we should create
     # a single instance of this component and cache it in memory
-    if ($single && ($singleton = $self->{ singleton_components })) {
+    if ($single && ($singleton = $self->{ singleton_components }->{ $name })) {
         # return existing singleton
-        $self->debug("found existing singleton $name component: $singleton");
+        $self->debug("found existing singleton $name component: $singleton") if DEBUG;
         return $singleton;
     }
 
@@ -418,15 +418,19 @@ sub component {
         # load the module
         $self->debug("instantiating $module for $name component") if DEBUG;
         $LOADED->{ $name } ||= class($module)->load;
-        return $module->new($config);
+        $object = $module->new($config) || return;
     }
     else {
         # component name may have been re-mapped by config
         $name = $config->{ component } || $name;
-        return $self->COMPONENT_FACTORY->item(
-            $name => $config
-        );
+        $object = $self->COMPONENT_FACTORY->item( $name => $config ) || return;
     }
+
+    if ($single) {
+        $self->{ singleton_components }->{ $name } = $object;
+    }
+
+    return $object;
 }
 
 sub component_config {
