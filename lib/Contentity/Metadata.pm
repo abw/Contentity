@@ -164,7 +164,9 @@ sub configure_data {
 
     if (%$data) {
         $self->debug(
-            "merging data: ", 
+            "merging data, OLD: ", 
+            $self->dump_data($self->{ data }),
+            "\nNEW: ",
             $self->dump_data($data)
         ) if DEBUG;
         my $main_data = $self->{ data };
@@ -218,6 +220,7 @@ sub set {
     my $self = shift->prototype;
     my $name = shift;
     my $data = @_ == 1 ? shift : { @_ };
+    $self->debug("set $name => $data") if DEBUG;
     $self->{ data }->{ $name } = $data;
     return $data;
 }
@@ -357,7 +360,16 @@ sub cache {
 sub cache_fetch {
     my ($self, $name) = @_;
     my $cache = $self->cache || return;
-    return $cache->get($name);
+    my $data  = $cache->get($name);
+    if (DEBUG) {
+        if ($data) {
+            $self->debug("cache_fetch($name) got data: ", $self->dump_data($data));
+        }
+        else {
+            $self->debug("cache_fetch($name) found nothing");
+        }
+    }
+    return $data;
 }
 
 sub cache_store {

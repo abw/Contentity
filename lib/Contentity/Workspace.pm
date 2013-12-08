@@ -7,7 +7,7 @@ use Contentity::Class
     base        => 'Contentity::Base',
     import      => 'class',
     utils       => 'Dir resolve_uri truelike falselike self_params extend',
-    accessors   => 'root parent config_dir urn type',
+    accessors   => 'root config_dir urn type',
     constants   => 'ARRAY HASH SLASH DELIMITER NONE',
     constant    => {
         # configuration directory and file
@@ -375,9 +375,9 @@ sub metadata {
     my $data  = $meta->get($name) 
         || return $self->decline_msg( not_found => 'configuration option' => $name );
 
-    if ($data) {
-        $self->dump_data("got data for $name: ", $self->dump_data($data));
-    }
+    #if ($data) {
+    #    $self->dump_data("got data for $name: ", $self->dump_data($data));
+    #}
 
     return @names
         ? $meta->dot($name, $data, \@names)
@@ -477,6 +477,8 @@ sub resources {
 sub resource {
     my ($self, $type, $name, @args) = @_;
 
+    $self->debug("resource(type=$type, name=$name, ", join(', ', @_), ")") if DEBUG;
+
     return $self->resources($type)->resource($name, @args)
         || return $self->error_msg( invalid => $type => $name );
 }
@@ -485,6 +487,18 @@ sub resource_data {
     my ($self, $type, $urn) = @_;
     # data may already be loaded in the metadata tree, e.g. workspaces.foo
     # or may need to be loaded from a separate file, e.g. workspsaces/foo
+#    my $one = $self->metadata( [$type, $urn] );
+#    if ($one) {
+#        $self->debug("ONE: $type => ", $self->dump_data($one));
+#        return $one;
+#    }
+#
+#    my $two = $self->metadata( join(SLASH, $type, $urn) );
+#    if ($two) {
+#        $self->debug("TWO: $type => ", $self->dump_data($two));
+#        return $two;
+#    }
+
     my $data = $self->metadata( [$type, $urn] ) 
             || $self->metadata( join(SLASH, $type, $urn) );
 
@@ -527,6 +541,14 @@ sub uberspace {
          : $self;
 }
 
+sub parent {
+    my $self = shift;
+    my $n    = shift || 0;
+    my $rent = $self->{ parent } || return;
+    return $n
+        ? $rent->parent(--$n)
+        : $rent;
+}
 
 #-----------------------------------------------------------------------------
 # Miscellaneous methods
@@ -624,7 +646,8 @@ sub can {
 }
 
 sub ican {
-    my ($self, $name) = @_;
+    my $self = shift;
+    my $name = shift;
 
     $self->debug("looking to see if $self ican $name()") if DEBUG;
 
@@ -638,14 +661,17 @@ sub ican {
     if ($self->has_resource($name)) {
         $self->debug("has $name resource") if DEBUG;
         return sub {
-            shift->resource( $name => @_ );
+            my $that = shift;
+            $that->debug("** AUTOGEN ($name) args: ", join(', ', @_));
+            $that->resource( $name => @_ );
         }
     }
 
     if ($self->metadata($name)) {
         $self->debug("has $name metadata") if DEBUG;
         return sub {
-            shift->metadata( $name => @_ );
+            #$self->debug("AUTOGEN ->$name calling ->metadata($name)");
+            shift->metadata($name);
         }
     }
 
@@ -659,11 +685,18 @@ sub ican {
 }
 
 sub get {
-    my $self = shift;
-    my $name = $_[0];
-    $self->debug("get($name)");
-    $self->metadata(@_);
+    shift->metadata(@_);
 }
+
+
+#-----------------------------------------------------------------------------
+# Debugging
+#-----------------------------------------------------------------------------
+
+#sub dump {
+#    my $self = shift;
+#    $self->dump_hash($self);
+#}
 
 #-----------------------------------------------------------------------------
 # Cleanup methods
@@ -815,6 +848,9 @@ sub file {
     return $self->root->file(@_);
 }
 
+sub dumper {
+    shift->dump_hash($self);
+}
 
 1;
 

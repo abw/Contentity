@@ -91,7 +91,7 @@ sub configure {
 sub configure_file {
     my ($self, $name) = @_;
     my $data = $self->config_file_data($name)
-        || return $self->error_msg( invalid => file => $name );
+        || return $self->error_msg( invalid => file => "[$self->{root}]/$name");
 
     $self->debug(
         "Config file data from $name: ",
