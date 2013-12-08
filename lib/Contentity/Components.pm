@@ -15,7 +15,7 @@ sub type_args {
     if ($params->{ component }) {
         $type = $params->{ component };
         $self->debug(
-            $params->{_component_}, 
+            $params->{ component }, 
             " component set type to '$type' from component configuration option"
         ) if DEBUG;
     }

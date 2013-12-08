@@ -79,7 +79,7 @@ sub fetch_resource {
     my $params = extend(
         { 
             urn => $name,
-            uri => $self->uri( $self->{ resources }, $name ),
+        #   uri => $self->uri( $self->{ resources }, $name ),
         },
         $data, 
         @_

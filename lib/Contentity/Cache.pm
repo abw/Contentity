@@ -56,6 +56,7 @@ sub get {
     my ($self, $urn) = @_;
     my $uri  = $self->uri($urn);
     my $text = $self->{ cache }->get($uri) || return;
+    $self->debug("$urn ($uri) fetched from cache") if DEBUG;
     return $self->{ codec }->decode($text);
 }
 

@@ -23,7 +23,7 @@ sub return_resource {
     $data->{ root } = $root;
 
     $self->debug(
-        "subspace URI is $data->{ uri }\n",
+        "subspace URN is $data->{ urn }\n",
         "superspace URI is $space->{ uri }\n",
     ) if DEBUG;
 

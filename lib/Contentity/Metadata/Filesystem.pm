@@ -64,8 +64,8 @@ sub init_metadata {
         CODECS => delete $config->{ extensions } 
     );
 
+    $self->{ data       } = { };
     $self->{ root       } = $root;
-    $self->{ data       } = $root;
     $self->{ extensions } = $exts;
     $self->{ match_ext  } = $ext_re;
     $self->{ codecs     } = $codecs;
