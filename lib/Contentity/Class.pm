@@ -6,7 +6,7 @@ use Badger::Class
     debug     => 0,
     uber      => 'Badger::Class',
     hooks     => 'constructor component resource resources autolook',
-    utils     => 'is_object',
+    utils     => 'is_object split_to_list camel_case',
     constants => 'CODE',
     constant  => {
         UTILS            => 'Contentity::Utils',
@@ -14,7 +14,7 @@ use Badger::Class
         COMPONENT_FORMAT => 'Contentity::Component::%s',
     };
 
-use Contentity::Utils 'camel_case split_to_list';
+#use Contentity::Utils 'camel_case';
 
 sub constructor {
     my ($self, $name) = @_;

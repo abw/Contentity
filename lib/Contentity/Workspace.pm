@@ -226,6 +226,11 @@ sub configure {
         }
     }
 
+    if ($item = (delete($config->{ dirs }) || delete($config->{ directories }))) {
+        $self->debug_data("setting dirs: ", $item);
+        $self->dirs($item);
+    }
+
     # Other things in Contentity::Workspace that we might want to merge
     # back upstream at some point
     #   my $dirs    = delete($config->{ dirs         });
@@ -581,12 +586,76 @@ sub uri {
         : $self->{ uri };
 }
 
-sub dir {
+
+sub OLD_dir {
     my $self = shift;
 
     return @_
         ? $self->root->dir(@_)    # ? $self->resolve_dir(@_)
         : $self->root;
+}
+
+
+sub dir {
+    my $self = shift;
+
+    return @_
+        ? $self->resolve_dir(@_)
+        : $self->root;
+}
+
+sub dirs {
+    my $self = shift;
+    my $dirs = $self->{ dirs } ||= { };
+
+    if (@_) {
+        # resolve all new directories relative to workspace directory
+        my $root  = $self->root;
+        my $addin = params(@_);
+
+        while (my ($key, $value) = each %$addin) {
+            my $subdir = $root->dir($value);
+            if ($subdir->exists) {
+                $dirs->{ $key } = $subdir;
+            }
+            else {
+                return $self->error_msg( 
+                    invalid => "directory for $key" => $value 
+                );
+            }
+        }
+        $self->debug(
+            "set dirs: ", 
+            $self->dump_data($dirs)
+        ) if DEBUG;
+    }
+
+    return $dirs;
+}
+
+sub resolve_dir {
+    my ($self, @path) = @_;
+    my $dirs = $self->dirs;
+    my $path = join(SLASH, @path);
+    my @pair = split(SLASH, $path, 2); 
+    my $head = $pair[0];
+    my $tail = $pair[1];
+    my $alias;
+
+    $self->debug("[HEAD:$head] [TAIL:$tail]") if DEBUG or 1;
+
+    # the first element of a directory path can be an alias defined in dirs
+    if ($alias = $dirs->{ $head }) {
+        $self->debug(
+            "resolve_dir($path) => [HEAD:$head=$alias] + [TAIL:$tail]"
+        ) if DEBUG or 1;
+        return defined($tail)
+            ? $alias->dir($tail)
+            : $alias;
+    }
+
+    $self->debug("resolving: ", $self->dump_data(\@path)) if DEBUG or 1;
+    return $self->root->dir(@path);
 }
 
 sub collection_names {
@@ -792,67 +861,6 @@ __END__
 #}
 
 
-sub dir {
-    my $self = shift;
-
-    return @_
-        ? $self->resolve_dir(@_)
-        : $self->root;
-}
-
-sub dirs {
-    my $self = shift;
-    my $dirs = $self->{ dirs } ||= { };
-
-    if (@_) {
-        # resolve all new directories relative to workspace directory
-        my $root  = $self->root;
-        my $addin = params(@_);
-
-        while (my ($key, $value) = each %$addin) {
-            my $subdir = $root->dir($value);
-            if ($subdir->exists) {
-                $dirs->{ $key } = $subdir;
-            }
-            else {
-                return $self->error_msg( 
-                    invalid => "directory for $key" => $value 
-                );
-            }
-        }
-        $self->debug(
-            "set dirs: ", 
-            $self->dump_data($dirs)
-        ) if DEBUG;
-    }
-
-    return $dirs;
-}
-
-sub resolve_dir {
-    my ($self, @path) = @_;
-    my $dirs = $self->dirs;
-    my $path = join(SLASH, @path);
-    my @pair = split(SLASH, $path, 2); 
-    my $head = $pair[0];
-    my $tail = $pair[1];
-    my $alias;
-
-    $self->debug("[HEAD:$head] [TAIL:$tail]") if DEBUG;
-
-    # the first element of a directory path can be an alias defined in dirs
-    if ($alias = $dirs->{ $head }) {
-        $self->debug(
-            "resolve_dir($path) => [HEAD:$head=$alias] + [TAIL:$tail]"
-        ) if DEBUG;
-        return defined($tail)
-            ? $alias->dir($tail)
-            : $alias;
-    }
-
-    $self->debug("resolving: ", $self->dump_data(\@path)) if DEBUG;
-    return $self->root->dir(@path);
-}
 
 sub file {
     my $self = shift;
