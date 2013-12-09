@@ -94,8 +94,11 @@ sub autolook {
                 #print STDERR "tried $method got ", $value // '<undef>', "\n";
                 return $value if defined $value;
             }
-
-            return $this->error_msg( bad_method => $name, ref $this, (caller($CALLUP))[1,2] );
+            my @caller = caller($CALLUP) || caller(0);
+            return $this->error_msg( 
+                bad_method => $name, ref($this) || $this, 
+                (@caller)[1,2] 
+            );
         }
     );
 
