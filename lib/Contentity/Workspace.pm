@@ -67,7 +67,7 @@ sub init_workspace {
     # must have a root directory
     my $root = Dir($rdir);
 
-    return $self->error_msg( invalid => directory => $rdir )
+    return $self->error_msg( invalid => root => $rdir )
         unless $root->exists;
 
     $self->{ root   } = $root;

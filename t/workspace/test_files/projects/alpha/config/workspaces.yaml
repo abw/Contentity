@@ -1,2 +1,7 @@
 bravo:
   root: ../bravo
+charlie:
+  root: ../charlie
+delta:
+  root: ../delta
+  base: charlie

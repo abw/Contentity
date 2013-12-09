@@ -30,19 +30,19 @@ my $pkg    = 'Contentity::Metadata::Filesystem';
 my $dir2   = Bin->dir('test_files/dir2');
 my $dir3   = Bin->dir('test_files/dir3');
 my $parent = $pkg->new( 
-    cache => $cache,
-    root  => $dir2,
-    file  => 'config',
-    uri   => 'config:parent',
+    cache     => $cache,
+    directory => $dir2,
+    file      => 'config',
+    uri       => 'config:parent',
 );
 ok( $parent, "Created parent $pkg object" );
 
 my $child = $pkg->new( 
-    cache  => $cache,
-    root   => $dir3,
-    file   => 'config',
-    uri    => 'config:child',
-    parent => $parent,
+    cache     => $cache,
+    directory => $dir3,
+    file      => 'config',
+    uri       => 'config:child',
+    parent    => $parent,
 );
 ok( $child, "Created child $pkg object" );
 

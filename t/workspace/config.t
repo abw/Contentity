@@ -9,7 +9,7 @@
 #========================================================================
 
 use Badger
-    lib        => 'lib ../lib ../../lib',
+    lib        => 'lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 

@@ -2,3 +2,6 @@
 greeting:      Delta greeting
 resources:
     - entities
+
+inherit:
+  include: all

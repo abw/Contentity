@@ -15,7 +15,7 @@ sub return_resource {
     my $space = $self->workspace;
     my $base  = delete $data->{ base };
     my $root  = delete $data->{ root }
-        || return $self->error_msg( missing => 'directory' );
+        || return $self->error_msg( missing => 'root' );
 
     $root = $space->directory($root);
 

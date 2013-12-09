@@ -9,7 +9,7 @@
 #========================================================================
 
 use Badger
-    lib        => 'lib ../lib ../../lib',
+    lib        => 'lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
@@ -26,7 +26,7 @@ use Contentity::Project;
 
 my $root    = Bin->dir( test_files => projects => 'alpha' );
 my $project = Contentity::Project->new( 
-    directory       => $root,
+    root            => $root,
     component_path  => 'Wibble::Component',
 );
 ok( $project, "created contentity project: $project" );

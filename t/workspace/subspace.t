@@ -9,12 +9,12 @@
 #========================================================================
 
 use Badger
-    lib        => 'lib ../lib ../../lib',
+    lib        => 'lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 21,
+    tests => 24,
     debug => 'Contentity::Project Contentity::WorkspaceXX Contentity::Metadata::Filesystem Contentity::Metadata',
     args  => \@ARGV;
 
@@ -36,7 +36,7 @@ my $tree1 = $project->get('urls');
 ok( $tree1, 'got config urls uri tree' );
 main->debug(
     'tree1: ', main->dump_data($tree1)
-);
+) if DEBUG;
 
 
 #-----------------------------------------------------------------------------
@@ -61,7 +61,7 @@ my $tree = $sub->get('urls');
 ok( $tree, 'got config urls uri tree' );
 main->debug(
     'tree: ', main->dump_data($tree)
-);
+) if DEBUG;
 
 # URLs defined by master project
 is( $tree->{ foo }, '/path/to/foo', 'got foo url in uri tree: ' . $tree->{ foo });
@@ -98,7 +98,7 @@ is( $chas->mastermsg, 'The master message', 'chas got alpha message' );
 # Fetch a sub-project that declares that it's based on another project
 #-----------------------------------------------------------------------------
 
-my $delta = $project->project('delta');
+my $delta = $project->workspace('delta');
 ok( $delta, 'got delta project' );
 is( $delta->greeting, 'Delta greeting', 'got delta greeeting' );
 
