@@ -35,7 +35,8 @@ use Contentity::Class
         directory => \&dir,
     },
     messages => {
-        no_module  => 'No %s module defined.',
+        no_module        => 'No %s module defined.',
+        no_resource_data => 'No resource data for %s/%s',
     };
 
 our $LOADED      = { };
@@ -513,7 +514,8 @@ sub resource_data {
 #    }
 
     my $data = $self->metadata( [$type, $urn] ) 
-            || $self->metadata( join(SLASH, $type, $urn) );
+            || $self->metadata( join(SLASH, $type, $urn) )
+            || return $self->error_msg( no_resource_data => $type, $urn );
 
     $self->debug(
         "fetched metadata for $type:$urn resource: ", 
@@ -562,6 +564,23 @@ sub parent {
         ? $rent->parent(--$n)
         : $rent;
 }
+
+sub ancestors {
+    my $self = shift;
+    my $list = shift || [ ];
+    unshift(@$list, $self);
+    return $self->{ parent }
+        ?  $self->{ parent }->parents($list)
+        :  $list;
+}
+
+sub heritage {
+    my $self = shift;
+    my $ancs = $self->ancestors;
+    $self->debug("heritage");
+    return [ reverse @$ancs ];
+}
+
 
 #-----------------------------------------------------------------------------
 # Miscellaneous methods

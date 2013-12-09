@@ -72,6 +72,11 @@ sub scaffold {
     #$data->{ production  } = $data->{ deployment } eq 'production';
     #$data->{ development } = $data->{ deployment } eq 'development';
 
+    $self->{ data }->{ dir } ||= {
+        src  => $self->{ tsrc },
+        dest => $self->{ dest },
+    };
+
     $self->debug("quiet: $quiet   verbose: $verbose  nothing: $nothing") if DEBUG;
 
     if ($nothing) {
@@ -130,6 +135,7 @@ sub fail {
 sub template_engine {
     my $self = shift;
     $self->debug("vars: ", $self->dump_data($self->data)) if DEBUG;
+    $self->debug("output path: ", $self->dest) if DEBUG;
     return $self->TEMPLATE_ENGINE->new({
         path         => [$self->tsrc, $self->tlib],
         OUTPUT_PATH  => $self->dest,
