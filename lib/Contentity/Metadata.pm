@@ -434,7 +434,7 @@ sub parent_head {
     # for the top-level config items.  This tells us if we're allowed
     # to inherit/merge from the parent
     if (! $rules) {
-        $self->debug("No merge rules");
+        $self->debug("No merge rules") if DEBUG;
         return undef;
     }
 

@@ -661,9 +661,7 @@ sub ican {
     if ($self->has_resource($name)) {
         $self->debug("has $name resource") if DEBUG;
         return sub {
-            my $that = shift;
-            $that->debug("** AUTOGEN ($name) args: ", join(', ', @_));
-            $that->resource( $name => @_ );
+            shift->resource( $name => @_ );
         }
     }
 
