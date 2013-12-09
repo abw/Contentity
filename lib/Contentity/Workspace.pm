@@ -6,7 +6,7 @@ use Contentity::Class
     debug       => 0,
     base        => 'Contentity::Base',
     import      => 'class',
-    utils       => 'Dir resolve_uri truelike falselike self_params extend',
+    utils       => 'Dir resolve_uri truelike falselike params self_params extend',
     accessors   => 'root config_dir urn type',
     constants   => 'ARRAY HASH SLASH DELIMITER NONE',
     constant    => {
@@ -55,6 +55,8 @@ sub init {
     # so we don't really need to pass $config, but it can't hurt, right?
     $self->init_cache($config);
     $self->init_collections($config);
+    $self->init_dirs($config);
+#   $self->configure($config);
     return $self;
 }
 
@@ -198,6 +200,12 @@ sub init_collection {
     ) if DEBUG;
 }
 
+
+sub init_dirs {
+    my ($self, $config) = @_;
+    my $dirs = $self->metadata('dirs') || return;
+    $self->dirs($dirs);
+}
 
 #-----------------------------------------------------------------------------
 # Configuration methods that can be called at init() time or some time later
@@ -642,19 +650,19 @@ sub resolve_dir {
     my $tail = $pair[1];
     my $alias;
 
-    $self->debug("[HEAD:$head] [TAIL:$tail]") if DEBUG or 1;
+    $self->debug("[HEAD:$head] [TAIL:$tail]") if DEBUG;
 
     # the first element of a directory path can be an alias defined in dirs
     if ($alias = $dirs->{ $head }) {
         $self->debug(
             "resolve_dir($path) => [HEAD:$head=$alias] + [TAIL:$tail]"
-        ) if DEBUG or 1;
+        ) if DEBUG;
         return defined($tail)
             ? $alias->dir($tail)
             : $alias;
     }
 
-    $self->debug("resolving: ", $self->dump_data(\@path)) if DEBUG or 1;
+    $self->debug("resolving: ", $self->dump_data(\@path)) if DEBUG;
     return $self->root->dir(@path);
 }
 
