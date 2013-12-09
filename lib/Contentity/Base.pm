@@ -1,16 +1,32 @@
 package Contentity::Base;
 
 use Badger::Debug ':all';
+use Badger::Rainbow
+    ANSI      => 'cyan yellow grey green magenta bold';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     utils     => 'weaken',
     base      => 'Badger::Base',
+    constants => 'SPACE',
     messages  => {
         invalid_in      => "Invalid %s specified: '%s' in %s",
         invalid_in_item => "Invalid %s specified: '%s' in %s: %s",
     };
 
+our $DEBUG_FORMAT = 
+    cyan('[').
+    bold(yellow('<where> ')).
+    bold(cyan('line <line>')).
+    cyan(']').
+    "\n<msg>";
+
+sub debug_magic {
+    # called by Badger::Base to allow debugging messages to be customised
+    return { 
+        format => $DEBUG_FORMAT,
+    };
+}
 
 sub dump_data_depth {
     my ($self, $data, $depth) = @_;
@@ -26,13 +42,40 @@ sub dump_data2 {
     shift->dump_data_depth(shift, 2);
 }
 
-sub debug_data {
+sub OLD_debug_data {
     my $self = shift;
-    local $Badger::Debug::CALLER_UP = 1;
     $self->debug(
         map { ref $_ ? $self->dump_data($_) : $_ }
         @_
     );
+}
+
+sub debug_data {
+    my ($self, $msg, $data) = @_;
+    local $Badger::Debug::CALLER_UP = 1;
+    local $Badger::Debug::CALLER_AT = $self->debug_magic;
+    my $dump = $self->dump_data($data);
+    for ($dump) {
+        s/(=>)\s([^\{\}\[\]]\S+)/$1.SPACE.yellow($2)/ge;
+        s/(\S+)\s(=>)/bold(green($1)).SPACE.cyan($2)/ge;
+        s/([{}]+)/green($1)/ge;
+    }
+    $self->debug(
+        bold(cyan($msg)), 
+        ': ',
+        $dump
+    );
+}
+
+# Darn, the debug() method is inserted into each class by Badger::Class 
+# (via the "debug => 0" hook so we can't redefine the debug() method and
+# expect subclasses to find it.
+
+sub dbg {
+    my $self = shift;
+    local $Badger::Debug::CALLER_UP = 1;
+    local $Badger::Debug::CALLER_AT = $self->debug_magic;
+    $self->debug(@_);
 }
 
 

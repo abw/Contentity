@@ -691,10 +691,23 @@ sub get {
 # Debugging
 #-----------------------------------------------------------------------------
 
-#sub dump {
-#    my $self = shift;
-#    $self->dump_hash($self);
-#}
+
+use Badger::Rainbow ANSI => 'cyan yellow magenta bold';
+our $DEBUG_FORMAT = 
+    cyan('[').
+    bold(magenta('<uri> ')).
+    bold(yellow('<where> ')).
+    bold(cyan('line <line>')).
+    cyan(']').
+    "\n<msg>";
+
+sub debug_magic {
+    my $self = shift;
+    return { 
+        format => $DEBUG_FORMAT,
+        uri    => $self->uri,
+    };
+}
 
 #-----------------------------------------------------------------------------
 # Cleanup methods
