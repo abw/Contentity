@@ -21,23 +21,25 @@ sub init {
     my $ttcfg = { };
     my (@pre, @post);
 
-    $ttcfg->{ INCLUDE_PATH } = $config->{ path }
+    $ttcfg->{ INCLUDE_PATH } = delete $config->{ path }
         || return $self->error_msg( missing => 'path' );
 
     for (qw( config before header )) {
         push(@pre, $config->{ $_ })
-            if $config->{ $_ };
+            if delete $config->{ $_ };
     }
 
     for (qw( footer after )) {
         push(@post, $config->{ $_ })
-            if $config->{ $_ };
+            if delete $config->{ $_ };
     }
 
+    @$ttcfg{ keys %$config } = values %$config;
     $ttcfg->{ ENCODING     } = $config->{ encoding };
     $ttcfg->{ WRAPPER      } = $config->{ wrapper  };
     $ttcfg->{ PRE_PROCESS  } = \@pre  if @pre;
     $ttcfg->{ POST_PROCESS } = \@post if @post;
+    $ttcfg->{ OUTPUT_PATH  } = \@post if @post;
 
     $self->debug("Template config: ", $self->dump_data($ttcfg)) if DEBUG;
 

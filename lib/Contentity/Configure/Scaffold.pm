@@ -83,6 +83,8 @@ sub scaffold {
     }
     else {
         $self->info("Processing skeleton templates...");
+        $self->info("From: $self->{ tsrc }");
+        $self->info("  To: $self->{ dest }");
 
         foreach my $file (@$files) {
             my $path = $file->absolute;
@@ -110,19 +112,19 @@ sub info {
 sub skip {
     my $self = shift;
     return if $self->{ quiet } || ! $self->{ verbose };
-    print STDERR yellow('  - ', @_), "\n";
+    print STDERR yellow('    - ', @_), "\n";
 }
 
 sub pass {
     my $self = shift;
     return if $self->{ quiet } || ! $self->{ verbose };
-    print STDERR green('  + ', @_), "\n";
+    print STDERR green('    + ', @_), "\n";
 }
 
 sub fail {
     my $self = shift;
     return if $self->{ quiet };
-    print STDERR red('  ! ', shift, ':', @_), "\n";
+    print STDERR red('    ! ', shift, ':', @_), "\n";
 }
 
 sub template_engine {
