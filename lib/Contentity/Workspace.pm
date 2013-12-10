@@ -409,7 +409,7 @@ sub component {
     my ($self, $name) = @_;
     my $config = $self->component_config($name)
         || return $self->error_msg( invalid => component => $name );
-    my $single = truelike($config->{ singleton });
+    my $single = truelike(delete $config->{ singleton });
     my ($singleton, $object);
 
     $self->debug(
@@ -568,16 +568,15 @@ sub parent {
 sub ancestors {
     my $self = shift;
     my $list = shift || [ ];
-    unshift(@$list, $self);
+    push(@$list, $self);
     return $self->{ parent }
-        ?  $self->{ parent }->parents($list)
+        ?  $self->{ parent }->ancestors($list)
         :  $list;
 }
 
 sub heritage {
     my $self = shift;
     my $ancs = $self->ancestors;
-    $self->debug("heritage");
     return [ reverse @$ancs ];
 }
 
@@ -683,6 +682,20 @@ sub resolve_dir {
 
     $self->debug("resolving: ", $self->dump_data(\@path)) if DEBUG;
     return $self->root->dir(@path);
+}
+
+sub file {
+    my ($self, @path) = @_;
+    my $path = join(SLASH, @path);
+    my @bits = split(SLASH, $path);
+    my $file = pop(@bits);
+
+    if (@bits) {
+        return $self->dir(@bits)->file($file);
+    }
+    else {
+        return $self->dir->file($file);
+    }
 }
 
 sub collection_names {

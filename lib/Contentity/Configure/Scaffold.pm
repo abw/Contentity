@@ -9,7 +9,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base',
     accessors => 'root data tdir tlib tsrc dest',
-    utils     => 'Dir VFS',
+    utils     => 'Dir VFS Now',
     constant  => {
         PROJECT_TYPE    => 'project',
         TEMPLATES_DIR   => 'skeleton',
@@ -72,7 +72,10 @@ sub scaffold {
     #$data->{ production  } = $data->{ deployment } eq 'production';
     #$data->{ development } = $data->{ deployment } eq 'development';
 
-    $self->{ data }->{ dir } ||= {
+    $data->{ date } ||= Now->date;
+    $data->{ time } ||= Now->time;
+    $data->{ when } ||= Now;
+    $data->{ dir  } ||= {
         src  => $self->{ tsrc },
         dest => $self->{ dest },
     };
