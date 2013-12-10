@@ -48,6 +48,13 @@ sub init_scaffold {
     $self->{ dest } = $root->dir($dest);
     $self->{ data } = $data;
 
+    $data->{ dir } ||= {
+        root => $root,
+        src  => $self->{ tsrc },
+        lib  => $self->{ tlib },
+        dest => $self->{ dest },
+    };
+
     $self->{ quiet   } = $data->{ quiet   } || 0;
     $self->{ verbose } = $data->{ verbose } || 0;
     $self->{ nothing } = $data->{ nothing } || 0;
