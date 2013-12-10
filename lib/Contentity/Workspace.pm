@@ -122,6 +122,7 @@ sub init_metadata {
     }
     if ($parent) {
         $meta_opt->{ parent } = $parent->metadata;
+        $self->debug("added parent metadata object: ", $meta_opt->{ parent }) if DEBUG;
     };
     my $meta_obj = $meta_mod->new($meta_opt);
 
@@ -386,8 +387,8 @@ sub metadata {
     my $meta  = $self->{ metadata }; return $meta unless @_;
     my @names = map { ref $_ eq ARRAY ? @$_ : split /\./ } @_;
     my $name  = shift @names;
-    my $data  = $meta->get($name) 
-        || return $self->decline_msg( not_found => 'configuration option' => $name );
+    my $data  = $meta->get($name)
+        // return $self->decline_msg( not_found => 'configuration option' => $name );
 
     #if ($data) {
     #    $self->dump_data("got data for $name: ", $self->dump_data($data));
@@ -774,13 +775,14 @@ sub ican {
         }
     }
 
-    if ($self->metadata($name)) {
+    if (defined $self->metadata($name)) {
         $self->debug("has $name metadata") if DEBUG;
         return sub {
             #$self->debug("AUTOGEN ->$name calling ->metadata($name)");
             shift->metadata($name);
         }
     }
+    $self->debug("no $name component, resource or metadata") if DEBUG;
 
     my $parent = $self->parent       || return;
     my $method = $parent->can($name) || return;

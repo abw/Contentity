@@ -207,7 +207,7 @@ sub get {
     
     # fetch the head item
     my $data = $self->head($name) 
-        ||  return $self->decline_msg( 
+        //  return $self->decline_msg( 
                 no_metadata => $name
             );
 
@@ -240,9 +240,9 @@ sub set {
 sub head {
     my ($self, $name) = @_;
     return $self->{ data }->{ $name }
-        || $self->cache_fetch($name)
-        || $self->fetch($name)
-        || $self->parent_fetch($name);
+        // $self->cache_fetch($name)
+        // $self->fetch($name)
+        // $self->parent_fetch($name);
 }
 
 sub tail {
@@ -259,7 +259,8 @@ sub tail {
     ) if DEBUG;
 
     $self->debug(
-        "parent data: ", $self->dump_data($pdata), 
+        "parent=", ($self->{ parent } ?  $self->{ parent }->uri : 'none'), " ",
+        "parent_head($name): ", $self->dump_data($pdata), 
     ) if DEBUG;
 
     # if we've got some data from the parent item (implying that there is a 
@@ -401,7 +402,7 @@ sub parent_fetch {
     my ($self, $name) = @_;
     my $parent = $self->{ parent  }                     || return;
     my $rules  = $self->{ inherit } || $self->{ merge } || return;
-    my $data   = $self->parent_head($name, $rules)      || return;
+    my $data   = $self->parent_head($name, $rules)      // return;
     my $schema = $self->schema($name);
     my $duration;
 
@@ -428,7 +429,7 @@ sub parent_fetch {
 
 sub parent_head {
     my ($self, $name, $rules) = @_;
-    my $parent = $self->{ parent  } || return;
+    my $parent = $self->{ parent } || return;
 
     # The $rules option is either the "inherit" or "merge" Filter 
     # for the top-level config items.  This tells us if we're allowed
@@ -683,7 +684,7 @@ sub prepare_schema {
     if ($schema->{ merge }) {
         $self->debug("adding merge filter: ", $self->dump_data($schema->{ merge })) if DEBUG;
         $schema->{ merge_filter } = $self->configure_filter(
-            inherit => $schema->{ inherit }
+            merge => $schema->{ merge }
         );
     }
     return $schema;
