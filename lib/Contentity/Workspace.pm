@@ -13,12 +13,15 @@ use Contentity::Class
         # configuration directory and file
         CONFIG_DIR        => 'config',
         CONFIG_FILE       => 'workspace',
+
         # default metadata engine and seed file
         METADATA_MODULE   => 'Contentity::Metadata::Filesystem',
         METADATA_FILE     => '',
+
         # caching options
         CACHE             => 'cache',
         CACHE_MANAGER     => 'Contentity::Cache',
+
         # components
         COMPONENT_FACTORY => 'Contentity::Components',
         COMPONENTS        => 'components',
@@ -108,7 +111,7 @@ sub init_metadata {
         delete $config->{ metadata }
     );
 
-    # load the configuration module (e.g. Badger::Config::Directory)
+    # load the configuration module (e.g. Contentity::Metadata::Filesystem)
     class($meta_mod)->load;
 
     # config directory and filesystem

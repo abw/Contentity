@@ -5,43 +5,98 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Workspace',
+    utils     => 'self_params',
     constant    => {
-        WORKSPACE_TYPE => 'project',
+        SUBSPACE_MODULE => 'Contentity::Workspace',
+        WORKSPACE_TYPE  => 'project',
+   #     CONFIG_FILE     => 'project',
+        DOMAINS         => 'domains',
+        WORKSPACES      => 'workspaces',
+    },
+    messages => {
+        no_domain_site => "There isn't any site defined for the '%s' domain",
     };
 
 
 #-----------------------------------------------------------------------------
-# Methods for loading component modules
+# Workspace management
 #-----------------------------------------------------------------------------
 
-sub OLD_has_component {
-    my $self = shift;
-    my $type = shift;
-    return $self->{ components }->{ $type };
+sub all_workspaces {
+    my $self   = shift;
+    my $names  = $self->workspace_names;
+    my @spaces;
+    foreach my $name (@$names) {
+        push(@spaces, $self->workspace($name));
+    }
+    return wantarray
+        ?  @spaces
+        : \@spaces;
 }
 
-sub OLD_component_factory {
-    my $self = shift;
+sub all_workspaces_hash {
+    my $self   = shift;
+    my $names  = $self->workspace_names;
+    my $spaces = { };
+    foreach my $name (@$names) {
+        $spaces->{ $name } = $self->workspace($name);
+    }
+    return $spaces;
+}
 
-    return  $self->{ component_factory }
-        ||= $self->COMPONENT_FACTORY->new(
-                path => $self->{ config }->{ component_path }
-            );
+sub workspace_names {
+    my $self   = shift;
+    my $spaces = $self->metadata(WORKSPACES);
+    return [ sort keys %$spaces ];
+}
+
+sub workspace_name_hash {
+    my $self  = shift;
+    my $names = $self->workspace_names;
+    return {
+        map { $_ => $_ } 
+        @$names
+    };
+}
+
+sub has_workspace {
+    my $self = shift;
+    my $hash = $self->workspace_name_hash;
+    return $hash unless @_;
+    my $name = shift;
+    return $hash->{ $name };
+}
+
+
+#-----------------------------------------------------------------------------
+# Domains
+#-----------------------------------------------------------------------------
+
+sub domains {
+    shift->component(DOMAINS);
+}
+
+sub domain {
+    shift->domains->domain(@_);
+}
+
+
+sub site_domains {
+    shift->domains->site_domains(@_);
+}
+
+sub domain_site {
+    my ($self, $name) = @_;
+    my $domain  = $self->domain($name) || return;
+    my $siteurn = $domain->{ site }    || return $self->error_msg( no_domain_site => $name );
+    return $self->workspace($siteurn);
 }
 
 
 1;
 
+
 __END__
-
-
-
-
-
-#-----------------------------------------------------------------------------
-# General purpose methods
-#-----------------------------------------------------------------------------
-
 
 
 #-----------------------------------------------------------------------------
@@ -241,33 +296,6 @@ sub roots {
 
 sub plack {
     shift->component('plack');
-}
-
-sub domains {
-    shift->component('domains');
-}
-
-sub domain {
-    shift->domains->domain(@_);
-}
-
-sub domain_site {
-    my ($self, $name) = @_;
-    my $domain  = $self->domain($name) || return;
-    my $siteurn = $domain->{ site }    || return $self->error_msg( no_domain_site => $name );
-    return $self->site($siteurn);
-}
-
-sub site_domains {
-    shift->domains->site_domains(@_);
-}
-
-sub OLD_sites {
-    shift->component('sites');
-}
-
-sub OLD_site {
-    shift->sites->resource(@_);
 }
 
 sub lists {

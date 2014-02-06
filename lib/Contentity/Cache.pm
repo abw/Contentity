@@ -12,19 +12,18 @@ use Contentity::Class
         CODEC        => 'storable',
         CODECS       => 'Badger::Codecs',
         CACHE_MODULE => 'Contentity::Cache::Memory',
+        URI_FORMAT   => '%s:/%s',
     };
 
 
 sub init {
     my ($self, $config) = @_;
     my $class   =  $self->class;
-    my $uri     =  delete $config->{ uri       } 
-               ||  delete $config->{ namespace };
-    my $codec   =  delete $config->{ codec     }
+    my $uri     =  delete $config->{ uri   };
+    my $codec   =  delete $config->{ codec }
                ||  $class->any_var('CODEC')
                ||  $self->CODEC;
-    my $module   = delete $config->{ module       }
-               ||  delete $config->{ cache_module }
+    my $module   = delete $config->{ module }
                ||  $class->any_var('CACHE_MODULE')
                ||  $self->CACHE_MODULE;
     my $expires  = $config->{ default_expires }
@@ -81,7 +80,7 @@ sub uri {
     my $self = shift;
     my $path = resolve_uri(SLASH, @_);
     my $base = $self->{ uri } || return $path;
-    return sprintf("%s:/%s", $base, $path);
+    return sprintf($self->URI_FORMAT, $base, $path);
 }
 
 
@@ -134,8 +133,73 @@ L<uri> option.  This allows you to have multiple C<Contentity::Cache> objects
 caching different sets of data via the same back-end cache (e.g. a 
 L<Cache::Memcached> instance).
 
-NOTE: this module is a work in progress and is currently lacking adequate
-documentation and testing.
+=head1 CONFIGURATION OPTIONS
+
+The following configuration options can be specified when a 
+C<Contentity::Cache> object is created.
+
+=head2 codec
+
+This can be used to specify the data codec that should be used to serialise
+and deserialise data when storing and fetching from the back-end cache.  It
+should be set to any valid coded recognised by L<Badger::Codecs>.  It defaults
+to C<json>.
+
+=head2 uri
+
+If specified, this value will be added to all keys stored in and fetched from
+the cache.  This can be useful when using shared memory caches (e.g. memcached).
+
+The L<URI_FORMAT> defines an C<sprintf()> format that is used to combine the
+base C<uri> and cache C<$key>.  The default value is C<%s:/%s>.  For example:
+
+    my $cache = Contentity::Cache->new(
+        uri => 'foo',
+    );
+
+The following method calls using C<bar> as a key will result in items named 
+C<foo:/bar> being stored in and fetch from the back-end cache:
+
+    $cache->store( bar => [10,20,30] );
+    $cache->fetch('bar');
+
+=head2 expires
+
+This can be used to specify a default expiry time for items stored in the 
+cache.  The C<$expires> parameter can be passed to L<store()> to over-ride it.
+
+It should be specified as a number of seconds or a duration recognised by 
+L<Badger::Duration>.
+
+=head2 module
+
+This should be used to specify the name of the backend C<Cache::*> module
+that C<Contentity::Cache> should delegate to.  If unspecified it defaults 
+to L<Contenty::Cache::Memory> which implements a simple memory cache.
+
+Any other configuration options specified (exluding those listed here) will
+be passed to the module constructor when the back-end object is created.
+
+=head1 METHODS
+
+The module inherits all methods from L<Contentity::Base> and L<Badger::Base>.
+The following methods are also defined.
+
+=head2 init($config)
+
+Internal method handling the initialisation and configuration of the cache 
+object(s).  This method is called automatically when a C<Contentity::Cache>
+object is created via C<new()>.
+
+=head2 get($key)
+
+Fetch the data associated with L<$key>.  Returns a reference to the data or
+C<undef> is the item is not in the cache. 
+
+=head2 set($key, $data, $expires)
+
+Store the C<$data> associated with L<$key>.  The optional C<$expires> argument
+can be provided to set the expiry time.
 
 =head1 AUTHOR
 
@@ -143,7 +207,7 @@ Andy Wardley L<http://wardley.org/>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2001-2013 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2013-2014 Andy Wardley.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

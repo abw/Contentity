@@ -746,7 +746,7 @@ Contentity::Metadata - metadata management module
 
 =head1 DESCRIPTION
 
-This module implements a metadata management system.
+This module implements a metadata management system. 
 
 =head1 CONFIGURATION OPTIONS
 

@@ -296,8 +296,8 @@ See L<Contentity::Colour>
 
 =head1 DESCRIPTION
 
-See L<Contentity::Plugin::Colour::HSV> until I get around to updating
-the docs to show examples of use from Perl.
+This module defines a colour object using the Hue/Saturation/Value (HSV)
+colour space.
 
 =head1 AUTHOR
 
@@ -305,7 +305,7 @@ Andy Wardley E<lt>abw@cpan.orgE<gt>, L<http://wardley.org>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2006-2013 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2006-2014 Andy Wardley.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

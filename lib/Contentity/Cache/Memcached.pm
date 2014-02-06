@@ -80,3 +80,27 @@ sub slab_index {
 }
 
 1;
+
+=head1 NAME
+
+Contentity::Cache::Memcached - wrapper around Cache::Memcached
+
+=head1 DESCRIPTION
+
+This module implements a wrapper around L<Cache::Memcached>, providing some
+additional methods for debugging purposed.
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2013-2014 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
+
+1;

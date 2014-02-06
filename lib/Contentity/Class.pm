@@ -107,3 +107,25 @@ sub autolook {
 
 
 1;
+=head1 NAME
+
+Contentity::Class - Contentity metaclass construction module
+
+=head1 DESCRIPTION
+
+This module is a subclass of L<Badger::Class>.
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2013-2014 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
+
+1;

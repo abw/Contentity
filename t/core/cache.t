@@ -1,6 +1,6 @@
 #============================================================= -*-perl-*-
 #
-# t/config/cache.t
+# t/core/cache.t
 #
 # Test the Contentity::Cache module
 #
