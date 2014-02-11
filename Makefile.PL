@@ -6,8 +6,8 @@ my %opts = (
     PMLIBDIRS    => [ 'lib' ], 
     PREREQ_PM    => {
         Badger   => 0.092,
-        'JSON::XS' => 3.01,
-        'YAML::XS' => 0.41,
+        'JSON'   => 2.59,
+        'YAML'   => 0.84,
     },
     dist         => {
         COMPRESS => 'gzip',
