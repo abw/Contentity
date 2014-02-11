@@ -26,9 +26,9 @@ use Badger::Test
 use Contentity::Configure;
 
 my $script = Contentity::Configure->new(
-    directory => Bin->parent,
+    directory => Bin,
     args      => \@ARGV,
-    prompt    => 1,
+    prompt    => 0,
 );
 
 ok( $script, 'created configure script' );

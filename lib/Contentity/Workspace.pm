@@ -4,7 +4,7 @@ use Contentity::Components;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
-    base        => 'Contentity::Base',
+    base        => 'Badger::Workplace Contentity::Base',
     import      => 'class',
     utils       => 'Dir resolve_uri truelike falselike params self_params extend',
     accessors   => 'root config_dir urn type',
@@ -15,7 +15,7 @@ use Contentity::Class
         CONFIG_FILE       => 'workspace',
 
         # default metadata engine and seed file
-        METADATA_MODULE   => 'Contentity::Metadata::Filesystem',
+        METADATA_MODULE   => 'Contentity::Metadata',
         METADATA_FILE     => '',
 
         # caching options
@@ -52,8 +52,11 @@ our $COLLECTIONS = [COMPONENTS, RESOURCES];
 
 sub init {
     my ($self, $config) = @_;
+    $self->init_workplace($config);
     $self->init_workspace($config);
     $self->init_metadata($config);
+
+    $self->debug("initialised metadata: $self->{ metadata }") if DEBUG;
 
     # from this point on, all configuration is read from the config object
     # so we don't really need to pass $config, but it can't hurt, right?
@@ -66,23 +69,10 @@ sub init {
 
 sub init_workspace {
     my ($self, $config) = @_;
-    my $class = $self->class;
-    my $type  = $config->{ type } || $self->WORKSPACE_TYPE;
-    my $rdir  = $config->{ root } || return $self->error_msg( missing => 'root' );
-
-    # must have a root directory
-    my $root = Dir($rdir);
-
-    return $self->error_msg( invalid => root => $rdir )
-        unless $root->exists;
-
-    $self->{ root   } = $root;
-    $self->{ type   } = $type;
-    $self->{ urn    } = $config->{ urn } || $root->name;
-    $self->{ uri    } = $config->{ uri } || sprintf("%s:%s", $self->type, $self->urn);
+    my $type = $config->{ type } || $self->WORKSPACE_TYPE;
     $self->{ type   } = $type;
     $self->{ parent } = $config->{ parent };
-
+    $self->{ uri    } = "$type:$self->{uri}";
     return $self;
 }
 
@@ -589,40 +579,11 @@ sub heritage {
 # Miscellaneous methods
 #-----------------------------------------------------------------------------
 
-sub OLD_hub {                   # needs sorting out
-    my $self = shift;
-
-    if (@_) {
-        # got passed an argument (a new hub) which we connect $self to
-        my $hub = shift;
-
-        unless (ref $hub) {
-            class($hub)->load;
-            $self->debug("creating new hub, config is ", $self->config) if DEBUG;
-            $hub = $hub->new(
-                config => $self->config,
-            );
-        }
-        $self->{ hub } = $hub;
-    }
-
-    return $self->{ hub };
-}
-
 sub uri {
     my $self = shift;
     return @_
         ? sprintf("%s%s", $self->{ uri }, resolve_uri(SLASH, @_))
         : $self->{ uri };
-}
-
-
-sub OLD_dir {
-    my $self = shift;
-
-    return @_
-        ? $self->root->dir(@_)    # ? $self->resolve_dir(@_)
-        : $self->root;
 }
 
 
@@ -829,11 +790,6 @@ sub debug_magic {
 
 sub destroy {
     my $self = shift;
-    if ($self->{ hub }) {
-        $self->debug("cleaning up hub") if DEBUG;
-        $self->{ hub }->destroy;
-        delete $self->{ hub };
-    }
     delete $self->{ parent    };
     delete $self->{ uberspace };
 }
@@ -881,29 +837,6 @@ __END__
 #    $self->configure($data);
 #}
 
-
-#sub OLD_auto_component {
-#    my ($self, $name, $comp) = @_;
-#    my $class = ref $self || $self;
-#
-#
-#    return sub {
-#        my $self = shift;
-#        my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
-#        $self = $self->prototype unless ref $self;
-#
-#        return $self->{ $name } 
-#            ||= $self->construct( 
-#                $name => { 
-#                    # TODO: figure out what's going on here in terms of
-#                    # possible combinations of configuration options
-#                    %$args, 
-#                    hub    => $self, 
-#                    module => $comp 
-#                } 
-#            );
-#    }
-#}
 
 
 

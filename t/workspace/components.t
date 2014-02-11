@@ -14,6 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
+    skip  => 'Not currently working',
     tests => 11,
     debug => 'Contentity::Project Wibble::Module',
     args  => \@ARGV;

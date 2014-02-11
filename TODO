@@ -1,0 +1,9 @@
+* Move Contentity::Component to Contentity::Worker
+  (workers exist in workspaces)
+
+* And/or hub/cog
+
+* Clean up Contentity::Configure to integrate with new Cog::PHP script.
+  Try to make question script definition more like a form definition so
+  it can be repurposed for the web?
+

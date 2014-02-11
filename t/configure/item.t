@@ -17,7 +17,7 @@ use Badger
     Debug  => [import => ':all'];
 
 use Badger::Test 
-    tests => 2,
+    tests => 1,
     debug => 'Contentity::Configure::Item',
     args  => \@ARGV;
 
@@ -32,6 +32,7 @@ my $item = ITEM->new(
 );
 
 ok( $item, 'created item for the foo thing' );
-print $item->help;
+
+print $item->help if DEBUG;
 
 #$item->prompt;

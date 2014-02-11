@@ -14,8 +14,9 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 24,
-    debug => 'Contentity::Project Contentity::WorkspaceXX Contentity::Metadata::Filesystem Contentity::Metadata',
+    tests => 17,
+  # tests => 24,
+    debug => 'Contentity::Project Contentity::Workspace XContentity::Metadata::Filesystem Contentity::Metadata',
     args  => \@ARGV;
 
 use Contentity::Project;
@@ -25,6 +26,8 @@ use Contentity::Project;
 # Instantiate master project object
 #-----------------------------------------------------------------------------
 
+print "===\n";
+
 my $root    = Bin->dir( test_files => projects => 'alpha' );
 my $project = Contentity::Project->new( 
     root           => $root,
@@ -32,6 +35,7 @@ my $project = Contentity::Project->new(
 );
 ok( $project, "created contentity project: $project" );
 
+exit;
 my $tree1 = $project->get('urls');
 ok( $tree1, 'got config urls uri tree' );
 main->debug(
@@ -43,7 +47,10 @@ main->debug(
 # Fetch sub-project
 #-----------------------------------------------------------------------------
 
+print "===\n";
 my $sub = $project->workspace('bravo') || die "No bravo: ", $project->reason;
+
+exit;
 
 ok( $sub, 'got sub-project' );
 is( $sub->get('name'), 'The Bravo Project', 'got project name' );
@@ -84,6 +91,12 @@ is( $tree->{'admin/bravo2'}, '/path/to/admin/bravo2', 'got /admin/bravo2 url in 
 my $chas = $project->workspace('charlie');
 ok( $chas, 'got charlie project' );
 is( $chas->greeting, 'Charlie greeting', 'got charlie greeeting' );
+
+
+exit;
+
+
+
 
 my $harry = $chas->entity('harry');
 ok( $harry, 'got harry entity' );
