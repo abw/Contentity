@@ -1,6 +1,7 @@
 package Contentity::Workspace;
 
 use Contentity::Components;
+use Contentity::Workspaces;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
@@ -27,8 +28,11 @@ use Contentity::Class
         COMPONENTS        => 'components',
         DELEGATES         => 'delegates',
         RESOURCES         => 'resources',
+
         # subspace module
         SUBSPACE_MODULE   => __PACKAGE__,
+        WORKSPACE_FACTORY => 'Contentity::Workspaces',
+
         # used to generate uri
         WORKSPACE_TYPE    => 'workspace',
     },
@@ -41,6 +45,7 @@ use Contentity::Class
         no_module        => 'No %s module defined.',
         no_resource_data => 'No resource data for %s/%s',
     };
+
 
 our $LOADED      = { };
 our $COLLECTIONS = [COMPONENTS, RESOURCES];
@@ -532,10 +537,22 @@ sub has_resource {
 
 sub subspace {
     my ($self, $params) = self_params(@_);
-    my $module = $self->SUBSPACE_MODULE;
-    class($module)->load;
+    my $type = $params->{ type };
+
     $params->{ parent } = $self;
-    return $module->new($params);
+
+    $self->debug("subspace() params: ", $self->dump_data($params)) if DEBUG;
+
+    if ($type) {
+        $self->debug("subspace() found workspace type: $type") if DEBUG;
+        return $self->WORKSPACE_FACTORY->workspace(
+            $type => $params
+        );
+    }
+
+    $self->debug("No type, using default: ", $self->SUBSPACE_MODULE) if DEBUG;
+
+    return class($self->SUBSPACE_MODULE)->load->instance($params);
 }
 
 sub superspace {
@@ -548,6 +565,10 @@ sub uberspace {
        ||= $self->{ parent }
          ? $self->{ parent }->uberspace
          : $self;
+}
+
+sub project {
+    shift->uberspace;
 }
 
 sub parent {

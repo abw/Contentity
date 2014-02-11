@@ -33,6 +33,8 @@ sub return_resource {
         $space = $space->workspace($base);
     }
 
+    $self->debug("creating subspace via [$space]: ", $self->dump_data($data)) if DEBUG;
+
     # create a new slave hanging off the master, either main project or base
     return $space->subspace($data);
 }

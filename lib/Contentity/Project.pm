@@ -9,7 +9,7 @@ use Contentity::Class
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
         WORKSPACE_TYPE  => 'project',
-   #     CONFIG_FILE     => 'project',
+        CONFIG_FILE     => 'project',
         DOMAINS         => 'domains',
         WORKSPACES      => 'workspaces',
     },
