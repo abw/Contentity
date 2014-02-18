@@ -3,12 +3,13 @@ package Contentity;
 use Badger::Debug ':all';
 use Contentity::Config;
 use Contentity::Class
-    version    => 0.01,
+#   version    => 0.01,
     debug      => 0,
     base       => 'Badger::Prototype Contentity::Base',
     import     => 'class',
     autolook   => 'autoload_hub';
 
+our $VERSION = 0.01;
 our $HUB = 'Contentity::Hub' unless defined $HUB;
 
 
