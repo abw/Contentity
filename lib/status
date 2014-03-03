@@ -35,8 +35,8 @@
 [ ] Contentity/Constants.pm
 [ ] Contentity/Context.pm
 [ ] Contentity/Hub.pm
-[x] Contentity/Metadata/Filesystem.pm
-[x] Contentity/Metadata.pm
+[x] Contentity/Metadata/Filesystem.pm -> Badger::Config::Filesystem
+[x] Contentity/Metadata.pm -> refactored out of existence
 [ ] Contentity/Middleware/Error.pm
 [ ] Contentity/Middleware/Site.pm
 [ ] Contentity/Middleware.pm

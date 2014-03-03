@@ -8,10 +8,21 @@ more_stuff:
       wibble:   pleasantly
       frusset:  pouch
 
-components:
-    - database 
-    - frusset
-    - middleware
+# schemas for data items and components
+items:
+  urls:
+    tree_type:  uri
+
+  test_one:
+    component:  test
+    singleton:  1
+
+# no longer used
+#components:
+#    - database 
+#    - frusset
+#    - middleware
+
 resources:
      - workspaces
 #    - forms
@@ -20,6 +31,3 @@ resources:
 #    - projects
 #    - sites
 
-schemas: 
-  urls:
-    tree_type: uri

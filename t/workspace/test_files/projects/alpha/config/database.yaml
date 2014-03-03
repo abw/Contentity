@@ -1,3 +1,5 @@
 name:       wibble
 username:   wobble
 password:   fandangle
+component:  test
+singleton:  true

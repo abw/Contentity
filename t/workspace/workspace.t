@@ -17,8 +17,8 @@ use Badger
     Debug  => [import => ':all'];
 
 use Badger::Test 
-    tests => 33,
-    debug => 'Contentity::Workspace Contentity::Cache Contentity::Metadata Contentity::Metadata::Filesystem',
+    tests => 15,
+    debug => 'Contentity::Workspace Contentity::Cache Badger::Config::Filesystem',
     args  => \@ARGV;
 
 use Contentity::Workspace;
@@ -32,115 +32,50 @@ my $web2 = $dir2->dir('web');
 # Top level workspace
 #-----------------------------------------------------------------------------
 
-my $wspace = $pkg->new( root => $dir1 );
-ok( $wspace, "Created $wspace object" );
-is( $wspace->uri, 'workspace:space1', 'workspace uri' );
+my $space1 = $pkg->new( root => $dir1 );
+ok( $space1, "Created $space1 object" );
+is( $space1->uri, 'space1', 'workspace uri' );
 
-my $webdir = $wspace->dir('web');
+my $webdir = $space1->dir('web');
 ok( $webdir, "Got webdir" );
 is( $webdir, $web1, "webdir is $webdir" );
 
-my $pages = $wspace->metadata->get('pages');
+my $pages = $space1->config('pages');
 ok( $pages, "Got pages config data" );
 main->debug(
     "Pages: ",
     main->dump_data($pages)
 ) if DEBUG;
 
-my $wibble = $wspace->metadata('wibble');
+my $wibble = $space1->config('wibble');
 ok( $wibble, "fetched wibble data" );
 
-my $pouch = $wspace->metadata('wibble.item');
-my $style = $wspace->metadata('wibble.wibbled');
+my $pouch = $space1->config('wibble.item');
+my $style = $space1->config('wibble.wibbled');
 is( $pouch, 'frusset pouch', "fetched wibble.item frusset pouch" );
 is( $style, 'pleasantly', "You have pleasantly wibbled my frusset pouch" );
 
-my $data = $wspace->metadata->data;
+my $data = $space1->config->data;
 main->debug("config data: ", main->dump_data($data)) if DEBUG;
+
 
 #-----------------------------------------------------------------------------
 # Subspace
 #-----------------------------------------------------------------------------
 
-my $subspace = $wspace->subspace( root => $dir2 );
+my $subspace = $space1->subspace( root => $dir2, uri => 'sub2' );
 ok( $subspace, "Created $subspace object" );
-is( $subspace->uri, 'workspace:space2', 'subspace uri' );
+is( $subspace->uri, 'sub2', 'subspace uri' );
 is( $subspace->dir('web'), $web2, "subspace webdir is $web2" );
 
-my $swibble = $subspace->metadata('wibble');
+my $swibble = $subspace->config('wibble');
 ok( $swibble, "subspace fetched wibble data" );
 
 is( $swibble->{ item    }, 'frusset pouch', "subspace fetched wibble.item frusset pouch" );
 is( $swibble->{ wibbled }, 'pleasantly', "subspace pleasantly wibbled my frusset pouch" );
 
-my $again = $subspace->metadata('wibble');
+my $again = $subspace->config('wibble');
 ok( $again, "subspace fetched wibble data again" );
 
-main->debug("config data: ", main->dump_data($subspace->metadata->data)) if DEBUG;
+main->debug("config data: ", main->dump_data($subspace->config->data)) if DEBUG;
 
-
-#-----------------------------------------------------------------------------
-# components
-#-----------------------------------------------------------------------------
-
-my $comp_cfg = $subspace->metadata('components');
-main->debug(
-    "components config: ",
-    main->dump_data($comp_cfg)
-) if DEBUG;
-
-is( $comp_cfg->{ flibble }, 'My::Flibble', 'flibble component config' );
-is( $comp_cfg->{ wibble }, 'My::Wibble', 'wibble component config' );
-is( $comp_cfg->{ tribble }, 'My::Tribble', 'tribble component config' );
-is( $comp_cfg->{ flobble }->{ module }, 'My::Flobble', 'flobble component config' );
-is( $comp_cfg->{ wobble }->{ module }, 'My::Wobble', 'wobble component config' );
-
-# trouble component is excluded by inherit/exclude rule in workspace.yaml
-ok( ! $comp_cfg->{ trouble }, 'no trouble' );
-
-
-my $wobble = $subspace->component('wobble');
-ok( $wobble, 'got a wobble component' );
-is( $wobble->name, 'WOBBLE', 'wobble name' );
-
-my $w2 = $subspace->wobble;
-ok( $w2, 'got a wobble component via AUTOLOAD method' );
-is( $w2->name, 'WOBBLE', 'AUTOLOAD wobble name' );
-
-#-----------------------------------------------------------------------------
-# resources
-#-----------------------------------------------------------------------------
-
-my $login = $subspace->resource( form => 'login' );
-ok( $login, 'got login form' );
-is( $login->{ name }, 'login_form', 'got form name' );
-
-my $l2 = $subspace->form('login');
-ok( $l2, 'got login form via AUTOLOAD method' );
-is( $l2->{ name }, 'login_form', 'AUTOLOAD login form name' );
-
-my $l3 = $subspace->form('login');
-ok( $l3, 'got login form via AUTOLOAD method' );
-is( $l3->{ name }, 'login_form', 'AUTOLOAD login form name' );
-
-my $fcfg = $subspace->metadata('forms');
-main->debug(
-    "forms metadata: ",
-    main->dump_data($fcfg)
-) if DEBUG;
-
-#-----------------------------------------------------------------------------
-# auto-generated method to access metadata
-#-----------------------------------------------------------------------------
-
-is( $subspace->name, 'Workspace Example 2', 'got name via autogenerated method' );
-
-eval {
-    $subspace->no_such_name;
-};
-if ($@) {
-    ok( $@ =~ /Invalid method 'no_such_name' called on Contentity::Workspace/, 'got no_such_name() error' );
-}
-else {
-    fail("should have failed on no_such_name() method")
-}

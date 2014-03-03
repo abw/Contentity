@@ -33,7 +33,7 @@ my $project = Contentity::Project->new(
 );
 ok( $project, "created contentity project: $project" );
 
-my $tree1 = $project->get('urls');
+my $tree1 = $project->config('urls');
 ok( $tree1, 'got config urls uri tree' );
 main->debug(
     'tree1: ', main->dump_data($tree1)

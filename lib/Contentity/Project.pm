@@ -5,15 +5,16 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Workspace',
-    utils     => 'self_params',
+    utils       => 'self_params',
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
         WORKSPACE_TYPE  => 'project',
-        CONFIG_FILE     => 'project',
+        #CONFIG_FILE     => 'project',
         DOMAINS         => 'domains',
         WORKSPACES      => 'workspaces',
     },
     messages => {
+        no_workspaces  => "There aren't any other workspaces defined",
         no_domain_site => "There isn't any site defined for the '%s' domain",
     };
 
@@ -21,6 +22,45 @@ use Contentity::Class
 #-----------------------------------------------------------------------------
 # Workspace management
 #-----------------------------------------------------------------------------
+
+sub workspace {
+    my $self = shift;
+    my $uri  = shift;
+    return  $self->{ workspace }->{ $uri }
+        //= $self->subspace(
+                $self->workspace_config($uri)
+                    || return $self->error( $self->reason )
+            );
+}
+
+sub workspace_configs {
+    my $self = shift;
+    return $self->config(WORKSPACES)
+        || $self->decline_msg('no_workspaces');
+}
+
+sub workspace_config {
+    my $self    = shift;
+    my $uri     = shift;
+    my $configs = $self->workspace_configs || return;
+    return $configs->{ $uri }
+        || $self->error_msg( invalid => workspace => $uri );
+}
+
+sub workspace_names {
+    my $self   = shift;
+    my $spaces = $self->workspaces_config;
+    return [ sort keys %$spaces ];
+}
+
+sub workspace_name_hash {
+    my $self  = shift;
+    my $names = $self->workspace_names;
+    return {
+        map { $_ => $_ } 
+        @$names
+    };
+}
 
 sub all_workspaces {
     my $self   = shift;
@@ -44,20 +84,6 @@ sub all_workspaces_hash {
     return $spaces;
 }
 
-sub workspace_names {
-    my $self   = shift;
-    my $spaces = $self->metadata(WORKSPACES);
-    return [ sort keys %$spaces ];
-}
-
-sub workspace_name_hash {
-    my $self  = shift;
-    my $names = $self->workspace_names;
-    return {
-        map { $_ => $_ } 
-        @$names
-    };
-}
 
 sub has_workspace {
     my $self = shift;
@@ -344,11 +370,7 @@ sub autoload_delegate {
 sub autoload_config {
     my ($self, $name, @args) = @_;
     $self->debug("$self->{uri}: autoload_config($name)") if DEBUG;
-    my $config = $self->config;
-
-    return  exists $config->{ $name }
-        ?   $config->{ $name }
-        :   undef;
+    return $self->config($name);
 }
 
 sub autoload_master {

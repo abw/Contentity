@@ -1,6 +1,6 @@
 #============================================================= -*-perl-*-
 #
-# t/metadata/inherit.t
+# t/workspace/inherit.t
 #
 # Test the Contentity::Metatdata::Filesystem module with a parent config 
 # object to inherit from.
