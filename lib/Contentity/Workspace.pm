@@ -21,6 +21,7 @@ use Contentity::Class
         COMPONENT_FACTORY => 'Contentity::Components',
         WORKSPACE_FACTORY => 'Contentity::Workspaces',
         SUBSPACE_MODULE   => 'Contentity::Workspace',
+        WORKSPACE_TYPE    => '',
 
         #COMPONENTS        => 'components',
         #DELEGATES         => 'delegates',
@@ -48,6 +49,13 @@ sub init_workspace {
     my ($self, $config) = @_;
     $self->SUPER::init_workspace($config);
     $self->init_components($config);
+    $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
+    $self->{ uri  } = $config->{ uri  } || join(
+        ':', 
+        grep { defined $_ and length $_ }
+        $self->{ type },
+        $self->{ urn }
+    );
     return $self;
 }
 

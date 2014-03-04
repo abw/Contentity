@@ -8,6 +8,8 @@ use Contentity::Class
     utils       => 'self_params',
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
+        WORKSPACE_TYPE  => 'project',
+#        CONFIG_FILE     => 'project',
         DOMAINS         => 'domains',
         WORKSPACES      => 'workspaces',
     },
@@ -35,8 +37,10 @@ sub load_workspace {
     my $config = $self->workspace_config($uri)
         || return $self->error( $self->reason );
 
+    $self->debug("workspace config: ", $self->dump_data($config)) if DEBUG;
+
     if ($config->{ base }) {
-        $self->debug("fetching base workspace for $uri: $config->{ base }");
+        $self->debug("fetching base workspace for $uri: $config->{ base }") if DEBUG;
         $base = $self->workspace( $config->{ base } );
     }
 
@@ -59,7 +63,8 @@ sub workspace_config {
         || return $self->error_msg( invalid => workspace => $uri );
 
     # subspace root directory is relative to project workspace root
-    $config->{ root } = $self->dir( $config->{ root } );
+    $config->{ root }   = $self->dir( $config->{ root } );
+    $config->{ uri  } ||= $uri;
 
     return $config;
 }
