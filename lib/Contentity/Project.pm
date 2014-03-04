@@ -8,14 +8,12 @@ use Contentity::Class
     utils       => 'self_params',
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
-        WORKSPACE_TYPE  => 'project',
-        #CONFIG_FILE     => 'project',
         DOMAINS         => 'domains',
         WORKSPACES      => 'workspaces',
     },
     messages => {
-        no_workspaces  => "There aren't any other workspaces defined",
-        no_domain_site => "There isn't any site defined for the '%s' domain",
+        no_workspaces       => "There aren't any other workspaces defined",
+        no_domain_workspace => "There isn't any workspace defined for the '%s' domain",
     };
 
 
@@ -27,10 +25,24 @@ sub workspace {
     my $self = shift;
     my $uri  = shift;
     return  $self->{ workspace }->{ $uri }
-        //= $self->subspace(
-                $self->workspace_config($uri)
-                    || return $self->error( $self->reason )
-            );
+        //= $self->load_workspace($uri);
+}
+
+sub load_workspace {
+    my $self   = shift;
+    my $uri    = shift;
+    my $base   = $self;
+    my $config = $self->workspace_config($uri)
+        || return $self->error( $self->reason );
+
+    if ($config->{ base }) {
+        $self->debug("fetching base workspace for $uri: $config->{ base }");
+        $base = $self->workspace( $config->{ base } );
+    }
+
+    return $base->subspace(
+        $config
+    );
 }
 
 sub workspace_configs {
@@ -43,8 +55,13 @@ sub workspace_config {
     my $self    = shift;
     my $uri     = shift;
     my $configs = $self->workspace_configs || return;
-    return $configs->{ $uri }
-        || $self->error_msg( invalid => workspace => $uri );
+    my $config  = $configs->{ $uri }
+        || return $self->error_msg( invalid => workspace => $uri );
+
+    # subspace root directory is relative to project workspace root
+    $config->{ root } = $self->dir( $config->{ root } );
+
+    return $config;
 }
 
 sub workspace_names {
@@ -106,16 +123,30 @@ sub domain {
     shift->domains->domain(@_);
 }
 
-
 sub site_domains {
     shift->domains->site_domains(@_);
 }
 
 sub domain_site {
     my ($self, $name) = @_;
-    my $domain  = $self->domain($name) || return;
-    my $siteurn = $domain->{ site }    || return $self->error_msg( no_domain_site => $name );
-    return $self->workspace($siteurn);
+    my $domain = $self->domain($name) || return;
+    my $wsuri  = $self->domain_workspace_uri($domain);
+    return $self->workspace($wsuri);
+}
+
+sub domain_workspace_uri {
+    my ($self, $domain) = @_;
+
+    if ($domain->{ workspace }) {
+        return $domain->{ workspace };
+    }
+    elsif ($domain->{ site }) {
+        return "sites/$domain->{ site }";
+    }
+
+    return $self->error_msg(
+        no_domain_workspace => $domain->{ domain }
+    );
 }
 
 

@@ -8,6 +8,7 @@
 #
 #========================================================================
 
+use lib '/Users/abw/projects/badger/lib';
 use Badger
     lib        => 'lib ../../lib',
     Filesystem => 'Bin',
@@ -16,7 +17,7 @@ use Badger
 use Badger::Test
     tests => 17,
   # tests => 24,
-    debug => 'Contentity::Project Contentity::Workspace XContentity::Metadata::Filesystem Contentity::Metadata',
+    debug => 'Contentity::Project Contentity::Workspace Badger::Config::Filesystem',
     args  => \@ARGV;
 
 use Contentity::Project;
@@ -47,8 +48,8 @@ main->debug(
 my $sub = $project->workspace('bravo') || die "No bravo: ", $project->reason;
 
 ok( $sub, 'got sub-project' );
-is( $sub->get('name'), 'The Bravo Project', 'got project name' );
-is( $sub->get('mastermsg'), 'The master message', 'got master project message' );
+is( $sub->config('name'), 'The Bravo Project', 'got project name' );
+is( $sub->config('mastermsg'), 'The master message', 'got master project message' );
 
 is( $sub->name, 'The Bravo Project', 'got project name' );
 is( $sub->mastermsg, 'The master message', 'got master project message' );
@@ -58,7 +59,7 @@ is( $sub->mastermsg, 'The master message', 'got master project message' );
 # Check that a config tree merge includes both slave and master project
 #-----------------------------------------------------------------------------
 
-my $tree = $sub->get('urls');
+my $tree = $sub->config('urls');
 ok( $tree, 'got config urls uri tree' );
 main->debug(
     'tree: ', main->dump_data($tree)

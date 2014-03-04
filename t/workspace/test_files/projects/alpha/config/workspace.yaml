@@ -9,13 +9,18 @@ more_stuff:
       frusset:  pouch
 
 # schemas for data items and components
-items:
+schemas:
   urls:
     tree_type:  uri
 
   test_one:
     component:  test
-    singleton:  1
+    singleton:  true
+
+  database:
+    component:  test
+    singleton:  true
+
 
 # no longer used
 #components:
@@ -23,8 +28,8 @@ items:
 #    - frusset
 #    - middleware
 
-resources:
-     - workspaces
+#resources:
+#     - workspaces
 #    - forms
 #    - apps
 #    - entities

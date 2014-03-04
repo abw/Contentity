@@ -1,3 +1,4 @@
+# Moving into Contentity::Config
 package Contentity::Metadata;
 
 use Badger::Debug ':all';

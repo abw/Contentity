@@ -25,7 +25,7 @@ sub init_domains {
     my $sites   = { };
 
     while (my ($domain, $spec) = each %$config) {
-        #$self->debug("[$domain] => ", $self->dump_data($spec)) if DEBUG;
+        $self->debug("[$domain] => ", $self->dump_data($spec)) if DEBUG;
         my $site = $spec->{ site };
         my $akas = $spec->{ aliases } ||= [ ];
         my $doms = $sites->{ $site }  ||= [ ];

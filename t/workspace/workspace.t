@@ -18,7 +18,7 @@ use Badger
 
 use Badger::Test 
     tests => 15,
-    debug => 'Contentity::Workspace Contentity::Cache Badger::Config::Filesystem',
+    debug => 'Contentity::Workspace Contentity::Cache Contentity::Config',
     args  => \@ARGV;
 
 use Contentity::Workspace;

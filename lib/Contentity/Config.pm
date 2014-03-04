@@ -1,30 +1,76 @@
-# New attempt (Feb 11th 2014) to make subclass of Badger::Config with 
+# New attempt (Feb 11th 2014, March 4th) to make subclass of Badger::Config with 
 # additional caching
 
 # Work in progress
 
 package Contentity::Config;
 
+use Contentity::Cache;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Badger::Config Contentity::Base',
+    import    => 'class',
+    base      => 'Badger::Config::Filesystem Contentity::Base',
     utils     => 'truelike falselike extend Filter',
-    constants => 'HASH ARRAY';
+    accessors => 'parent',
+    constants => 'HASH ARRAY',
+    constant    => {
+        # caching options
+        CACHE_MANAGER     => 'Contentity::Cache',
+    };
 
-sub NOT_init {
+
+
+#-----------------------------------------------------------------------------
+# Initialisation methods
+#-----------------------------------------------------------------------------
+
+sub init {
     my ($self, $config) = @_;
+ 
+    # First call Badger::Config base class method to handle any 'items' 
+    # definitions and other general initialisation
     $self->init_config($config);
-#    $self->init_contentity($config);  # ??
-    $self->init_schemas($config);
-#    $self->configure($config);
+
+    # Then call the Badger::Config::Filesystem initialiser
+    $self->init_filesystem($config);
+
+    # Then call our own initialisation method
+    $self->init_contentity($config);
+
     return $self;
 }
 
 sub init_contentity {
     my ($self, $config) = @_;
+    $self->{ parent } = $config->{ parent };
+    $self->init_cache;
     return $self;
 }
+
+sub init_cache {
+    my $self    = shift;
+    my $config  = $self->get('cache') || return;
+    my $manager = $config->{ manager } || $self->CACHE_MANAGER;
+
+    class($manager)->load;
+
+    $self->debug(
+        "cache manager config for $manager: ",
+        $self->dump_data($config)
+    ) if DEBUG;
+
+    my $cache = $manager->new(
+        uri => $self->uri,
+        %$config,
+    );
+
+    $self->debug("created new cache manager: $cache") if DEBUG;
+    $self->{ cache } = $cache;
+
+    return $self;
+}
+
 
 # TODO: init_schema() init_schemas() and other configure_XXX() methods in 
 # Contentity::Metadata
@@ -45,11 +91,10 @@ sub head {
         // $self->parent_fetch($name);
 }
 
+# this is called after a successful fetch();
+
 sub tail {
     my ($self, $name, $data, $schema) = @_;
-    my $rules = $self->{ inherit } || $self->{ merge };
-    my $pdata = $self->parent_head($name, $rules);
-    my $duration;
 
     $schema ||= $self->schema($name);
 
@@ -58,37 +103,38 @@ sub tail {
         "\n SCHEMA: ", $self->dump_data($schema)
     ) if DEBUG;
 
-    $self->debug(
-        "parent=", ($self->{ parent } ?  $self->{ parent }->uri : 'none'), " ",
-        "parent_head($name): ", $self->dump_data($pdata), 
-    ) if DEBUG;
+    # should we merge this with any parent data?
 
-    # if we've got some data from the parent item (implying that there is a 
-    # parent and the rules in $self->{ merge } permit us to merge in data 
-    # from the parent) then we merge it into the child data set.
+    if ($schema->{ merge }) {
+        my $pdata = $self->parent_head($name);
 
-    if ($pdata) {
-        # we may fetch the parent data if the merge ruleset says we can 
-        $data = $self->merge_data($name, $pdata, $data, $schema);
+        $self->debug(
+            "MERGE\nparent=", ($self->{ parent } ?  $self->{ parent }->uri : 'none'), " ",
+            "parent_head($name): ", $self->dump_data($pdata), 
+        ) if DEBUG;
+
+        if ($pdata) {
+            # we may fetch the parent data if the merge ruleset says we can 
+            $data = $self->merge_data($name, $pdata, $data, $schema);
+        }
+
+        $self->debug("merged data for $name: ", $self->dump_data($data)) if DEBUG;
     }
 
-    $self->debug("merged data for $name: ", $self->dump_data($data)) if DEBUG;
+    return $self->tail_cache($name, $data, $schema);
+}
+
+sub tail_cache {
+    my ($self, $name, $data, $schema) = @_;
+    my $duration;
+
+    $schema ||= $self->schema($name);
 
     if ($data && $self->{ cache } && ($duration = $schema->{ cache })) {
         $self->debug("found cache duration option: $duration") if DEBUG;
         $self->cache_store($name, $data, $duration, $schema);
     }
     return $data;
-}
-
-
-#-----------------------------------------------------------------------------
-# Stub for subclasses
-#-----------------------------------------------------------------------------
-
-sub fetch {
-    my ($self, $uri) = @_;
-    return undef;
 }
 
 
@@ -117,7 +163,7 @@ sub cache_fetch {
             $self->debug("cache_fetch($name) got data: ", $self->dump_data($data));
         }
         else {
-            $self->debug("cache_fetch($name) found nothing");
+            $self->debug("cache_fetch($name) found nothing") if DEBUG;
         }
     }
     return $data;
@@ -150,57 +196,24 @@ sub cache_store {
 
 sub parent_fetch {
     my ($self, $name) = @_;
-    my $parent = $self->{ parent  }                     || return;
-    my $rules  = $self->{ inherit } || $self->{ merge } || return;
-    my $data   = $self->parent_head($name, $rules)      // return;
-    my $schema = $self->schema($name);
-    my $duration;
+    #$self->debug("parent_fetch($name)  parent:$self->{parent}");
+    my $parent = $self->{ parent  }   || return;
+    my $data   = $parent->head($name) // return;
 
     $self->debug(
         "parent_fetch($name)\n",
-        "DATA: ", $self->dump_data($data), "\n",
-        "SCHEMA: ", $self->dump_data($schema) 
+        "DATA: ", $self->dump_data($data), "\n"
     ) if DEBUG;
 
-    # The schema for this particular data item may have rules about the 
-    # items within it that should be inherited and/or merged from the 
-    # parent data into the (empty) child
-    $data = $self->merge_data($name, $data, undef, $schema);
-
-    $self->debug("merged data for $name: ", $self->dump_data($data)) if DEBUG;
-
-    if ($self->{ cache } && ($duration = $schema->{ cache })) {
-        $self->debug("found cache duration option: $duration") if DEBUG;
-        $self->cache_store($name, $data, $duration, $schema);
-    }
-
-    return $data;
+    return $self->tail_cache($name, $data);
 }
 
 sub parent_head {
-    my ($self, $name, $rules) = @_;
-    my $parent = $self->{ parent } || return;
-
-    # The $rules option is either the "inherit" or "merge" Filter 
-    # for the top-level config items.  This tells us if we're allowed
-    # to inherit/merge from the parent
-    if (! $rules) {
-        $self->debug("No merge rules") if DEBUG;
-        return undef;
-    }
-
-    if ($rules->item_accepted($name)) {
-        $self->debug("YES, we can inherit/merge $name from parent") if DEBUG;
-    }
-    else {
-        $self->debug("NO, we cannot inherit/merge $name from parent") if DEBUG;
-        return undef;
-    }
-
-    $self->debug("Asking parent for $name") if DEBUG;
-
+    my ($self, $name) = @_;
+    my $parent = $self->{ parent  }   || return;
     return $parent->head($name);
 }
+
 
 #-----------------------------------------------------------------------------
 # Methods for inheriting and/or merging data from child with data from parent
@@ -296,42 +309,23 @@ sub merge_data_item {
 # Data schema management
 #-----------------------------------------------------------------------------
 
+sub schemas {
+    # for now, schemas as the same thing as config items, but that may change 
+    # at some point in the future
+    shift->{ item };
+}
+
 sub schema {
-    my $self = shift;
-    my $name = shift || return $self->{ schema };
-    my $full = $self->{ merged_schemas } ||= { };
-    delete $full->{ $name } if @_;
-    return $full->{ $name } 
-        ||= $self->prepare_schema($name, @_);
+    # for now, schemas as the same thing as config items, but that may change 
+    # at some point in the future
+    shift->item(@_);
 }
 
-sub prepare_schema {
-    my ($self, $name, @args) = @_;
-    my $schema = extend(
-        { },
-        $self->{ schema  },
-        $self->lookup_schema($name),
-        @args
-    );
-    if ($schema->{ inherit }) {
-        $self->debug("adding inherit filter: ", $self->dump_data($schema->{ inherit })) if DEBUG;
-        $schema->{ inherit_filter } = $self->configure_filter(
-            inherit => $schema->{ inherit }
-        );
-    }
-    if ($schema->{ merge }) {
-        $self->debug("adding merge filter: ", $self->dump_data($schema->{ merge })) if DEBUG;
-        $schema->{ merge_filter } = $self->configure_filter(
-            merge => $schema->{ merge }
-        );
-    }
-    return $schema;
-}
-
-sub lookup_schema {
+sub lookup_item {
     my $self    = shift;
     my $name    = shift;
-    my $schemas = $self->{ schemas };
+    my $urn     = $name;
+    my $schemas = $self->schemas;
     my $schema  = $schemas->{ $name };
 
     while (! $schema && length $name) {
@@ -342,6 +336,20 @@ sub lookup_schema {
         $schema = $schemas->{ $name };
     }
     return $schema;
+}
+
+#-----------------------------------------------------------------------------
+# Parent management
+#-----------------------------------------------------------------------------
+
+sub attach {
+    my ($self, $parent) = @_;
+    $self->{ parent } = $parent;
+}
+
+sub detach {
+    my $self = shift;
+    delete $self->{ parent };
 }
 
 

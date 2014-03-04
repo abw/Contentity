@@ -1,30 +1,32 @@
 package Contentity::Workspace;
 
-#use Contentity::Workspaces;
+use Contentity::Config;
+use Contentity::Workspaces;
 use Contentity::Components;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Badger::Workspace Contentity::Base',
     import      => 'class',
-    utils       => 'truelike falselike extend params self_params',
+    utils       => 'truelike falselike extend params self_params reftype refaddr',
+    autolook    => 'config',
     accessors   => 'type component_factory',
+    as_text     => 'ident',
     constants   => '',
     constant    => {
-        # caching options
-        CACHE             => 'cache',
-        CACHE_MANAGER     => 'Contentity::Cache',
+        # configuration manager
+        CONFIG_MODULE     => 'Contentity::Config',
 
         # components
         COMPONENT_FACTORY => 'Contentity::Components',
+        WORKSPACE_FACTORY => 'Contentity::Workspaces',
+        SUBSPACE_MODULE   => 'Contentity::Workspace',
+
         #COMPONENTS        => 'components',
         #DELEGATES         => 'delegates',
         #RESOURCES         => 'resources',
         #WORKSPACE         => 'resources',
 
-        # subspace module
-        #SUBSPACE_MODULE   => __PACKAGE__,
-        #WORKSPACE_FACTORY => 'Contentity::Workspaces',
     },
     messages => {
         no_module        => 'No %s module defined.',
@@ -34,6 +36,7 @@ use Contentity::Class
 
 
 our $LOADED = { };
+
 #our $COLLECTIONS = [COMPONENTS, RESOURCES];
 
 
@@ -45,10 +48,6 @@ sub init_workspace {
     my ($self, $config) = @_;
     $self->SUPER::init_workspace($config);
     $self->init_components($config);
-
-    # all these read config from configuration object
-    $self->init_cache;
-
     return $self;
 }
 
@@ -56,82 +55,6 @@ sub init_workspace {
 sub init_components {
     my ($self, $config) = @_;
     $self->{ component_factory } = $self->COMPONENT_FACTORY->new($config);
-}
-
-sub init_cache {
-    my $self    = shift;
-    my $config  = $self->config(CACHE) || return;
-    my $manager = $config->{ manager } || $self->CACHE_MANAGER;
-
-    class($manager)->load;
-
-    $self->debug(
-        "cache manager config for $manager: ",
-        $self->dump_data($config)
-    ) if DEBUG;
-
-    my $cache = $manager->new(
-        uri => $self->uri,
-        %$config,
-    );
-
-    $self->debug("created new cache manager: $cache") if DEBUG;
-    $self->{ cache } = $cache;
-
-    # we must notify the metadata object that it has a cache to work with
-    #$self->metadata->configure( cache => $cache );
-}
-
-
-
-#-----------------------------------------------------------------------------
-# Methods for fetching and storing data in a cache
-#-----------------------------------------------------------------------------
-
-sub cache {
-    my $self = shift;
-
-    return $self->{ cache } 
-        unless @_;
-
-    return @_ > 1
-        ? $self->cache_store(@_)
-        : $self->cache_fetch(@_);
-}
-
-sub cache_fetch {
-    my ($self, $name) = @_;
-    my $cache = $self->cache || return;
-    my $data  = $cache->get($name);
-    if (DEBUG) {
-        if ($data) {
-            $self->debug("cache_fetch($name) got data: ", $self->dump_data($data));
-        }
-        else {
-            $self->debug("cache_fetch($name) found nothing") if DEBUG;
-        }
-    }
-    return $data;
-}
-
-sub cache_store {
-    my ($self, $name, $data, $expires) = @_;
-    my $cache = $self->cache || return;
-
-    if (falselike($expires)) {
-        $self->debug("cache $name never") if DEBUG;
-        return;
-    }
-
-    # see if we need to set an expiry timestamp
-    if (truelike($expires)) {
-        $self->debug("cache $name forever") if DEBUG;
-        $cache->set($name, $data);
-    }
-    else {
-        $self->debug("cache $name for $expires") if DEBUG;
-        $cache->set($name, $data, "$expires");
-    }
 }
 
 
@@ -195,23 +118,22 @@ sub component_config {
     my $params = params(@_);
     my $schema = $self->item_schema($name) || { };
     my $config = $self->config($name) || { };
-    my $merged = extend(
-        { 
-            component => $name, # This can be over-ridden by config
-            urn       => $name,
-        },
-        $schema,
-        $config,
-        $params,
-        workspace => $self,     # This can't
-    );
+    my $merged = extend({ }, $config, $params);
+    my $final  = { 
+        component => $name,
+        urn       => $name,
+        schema    => $schema,
+        %$schema,
+        workspace => $self,
+        config    => $merged,
+    };
 
     $self->debug(
         "config for component $name:",
-        $self->dump_data1($merged)
+        $self->dump_data1($final)
     ) if DEBUG;
 
-    return $merged;
+    return $final;
 }
 
 
@@ -225,10 +147,43 @@ sub clear_component_cache {
     }
 }
 
+
+#-----------------------------------------------------------------------------
+# subspaces require the use of a factory
+#-----------------------------------------------------------------------------
+
+sub subspace {
+    my ($self, $params) = self_params(@_);
+    my $type = $params->{ type };
+
+    $params->{ parent } = $self;
+
+    $self->debug("subspace() params: ", $self->dump_data($params)) if DEBUG;
+
+    if ($type) {
+        $self->debug("subspace() found workspace type: $type") if DEBUG;
+        return $self->WORKSPACE_FACTORY->workspace(
+            $type => $params
+        );
+    }
+
+    $self->debug("No type, using default: ", $self->SUBSPACE_MODULE) if DEBUG;
+
+    return class($self->SUBSPACE_MODULE)->load->instance($params);
+}
+
+
 sub item_schema {
     shift->config->item(shift);
 }
 
+
+sub ident {
+    my $self = shift;
+    return sprintf(
+        '%s:0x%x:%s', ref($self) || reftype($self), refaddr($self), $self->uri
+    );
+}
 
 sub destroy {
     my $self = shift;
