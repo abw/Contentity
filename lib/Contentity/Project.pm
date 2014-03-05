@@ -5,43 +5,160 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Workspace',
+    utils       => 'self_params',
     constant    => {
-        WORKSPACE_TYPE => 'project',
+        SUBSPACE_MODULE => 'Contentity::Workspace',
+        WORKSPACE_TYPE  => 'project',
+#        CONFIG_FILE     => 'project',
+        DOMAINS         => 'domains',
+        WORKSPACES      => 'workspaces',
+    },
+    messages => {
+        no_workspaces       => "There aren't any other workspaces defined",
+        no_domain_workspace => "There isn't any workspace defined for the '%s' domain",
     };
 
 
 #-----------------------------------------------------------------------------
-# Methods for loading component modules
+# Workspace management
 #-----------------------------------------------------------------------------
 
-sub OLD_has_component {
+sub workspace {
     my $self = shift;
-    my $type = shift;
-    return $self->{ components }->{ $type };
+    my $uri  = shift;
+    return  $self->{ workspace }->{ $uri }
+        //= $self->load_workspace($uri);
 }
 
-sub OLD_component_factory {
-    my $self = shift;
+sub load_workspace {
+    my $self   = shift;
+    my $uri    = shift;
+    my $base   = $self;
+    my $config = $self->workspace_config($uri)
+        || return $self->error( $self->reason );
 
-    return  $self->{ component_factory }
-        ||= $self->COMPONENT_FACTORY->new(
-                path => $self->{ config }->{ component_path }
-            );
+    $self->debug("workspace config: ", $self->dump_data($config)) if DEBUG;
+
+    if ($config->{ base }) {
+        $self->debug("fetching base workspace for $uri: $config->{ base }") if DEBUG;
+        $base = $self->workspace( $config->{ base } );
+    }
+
+    return $base->subspace(
+        $config
+    );
+}
+
+sub workspace_configs {
+    my $self = shift;
+    return $self->config(WORKSPACES)
+        || $self->decline_msg('no_workspaces');
+}
+
+sub workspace_config {
+    my $self    = shift;
+    my $uri     = shift;
+    my $configs = $self->workspace_configs || return;
+    my $config  = $configs->{ $uri }
+        || return $self->error_msg( invalid => workspace => $uri );
+
+    # subspace root directory is relative to project workspace root
+    $config->{ root }   = $self->dir( $config->{ root } );
+    $config->{ uri  } ||= $uri;
+
+    return $config;
+}
+
+sub workspace_names {
+    my $self   = shift;
+    my $spaces = $self->workspaces_config;
+    return [ sort keys %$spaces ];
+}
+
+sub workspace_name_hash {
+    my $self  = shift;
+    my $names = $self->workspace_names;
+    return {
+        map { $_ => $_ } 
+        @$names
+    };
+}
+
+sub all_workspaces {
+    my $self   = shift;
+    my $names  = $self->workspace_names;
+    my @spaces;
+    foreach my $name (@$names) {
+        push(@spaces, $self->workspace($name));
+    }
+    return wantarray
+        ?  @spaces
+        : \@spaces;
+}
+
+sub all_workspaces_hash {
+    my $self   = shift;
+    my $names  = $self->workspace_names;
+    my $spaces = { };
+    foreach my $name (@$names) {
+        $spaces->{ $name } = $self->workspace($name);
+    }
+    return $spaces;
+}
+
+
+sub has_workspace {
+    my $self = shift;
+    my $hash = $self->workspace_name_hash;
+    return $hash unless @_;
+    my $name = shift;
+    return $hash->{ $name };
+}
+
+
+#-----------------------------------------------------------------------------
+# Domains
+#-----------------------------------------------------------------------------
+
+sub domains {
+    shift->component(DOMAINS);
+}
+
+sub domain {
+    shift->domains->domain(@_);
+}
+
+sub site_domains {
+    shift->domains->site_domains(@_);
+}
+
+sub domain_site {
+    my ($self, $name) = @_;
+    my $domain = $self->domain($name) || return;
+    my $wsuri  = $self->domain_workspace_uri($domain);
+    return $self->workspace($wsuri);
+}
+
+sub domain_workspace_uri {
+    my ($self, $domain) = @_;
+
+    if ($domain->{ workspace }) {
+        return $domain->{ workspace };
+    }
+    elsif ($domain->{ site }) {
+        return "sites/$domain->{ site }";
+    }
+
+    return $self->error_msg(
+        no_domain_workspace => $domain->{ domain }
+    );
 }
 
 
 1;
 
+
 __END__
-
-
-
-
-
-#-----------------------------------------------------------------------------
-# General purpose methods
-#-----------------------------------------------------------------------------
-
 
 
 #-----------------------------------------------------------------------------
@@ -243,33 +360,6 @@ sub plack {
     shift->component('plack');
 }
 
-sub domains {
-    shift->component('domains');
-}
-
-sub domain {
-    shift->domains->domain(@_);
-}
-
-sub domain_site {
-    my ($self, $name) = @_;
-    my $domain  = $self->domain($name) || return;
-    my $siteurn = $domain->{ site }    || return $self->error_msg( no_domain_site => $name );
-    return $self->site($siteurn);
-}
-
-sub site_domains {
-    shift->domains->site_domains(@_);
-}
-
-sub OLD_sites {
-    shift->component('sites');
-}
-
-sub OLD_site {
-    shift->sites->resource(@_);
-}
-
 sub lists {
     shift->component('lists');
 }
@@ -316,11 +406,7 @@ sub autoload_delegate {
 sub autoload_config {
     my ($self, $name, @args) = @_;
     $self->debug("$self->{uri}: autoload_config($name)") if DEBUG;
-    my $config = $self->config;
-
-    return  exists $config->{ $name }
-        ?   $config->{ $name }
-        :   undef;
+    return $self->config($name);
 }
 
 sub autoload_master {

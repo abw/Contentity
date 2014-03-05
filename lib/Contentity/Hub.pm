@@ -10,10 +10,19 @@ use Contentity::Class
     import    => 'class',
     base      => 'Badger::Hub Contentity::Base',
     utils     => 'blessed params plural',
+    accessors => 'project',              # WARNING: this will break project component loading
     constants => 'HASH',
     constant  => {
         SITE => 'Contentity::Site',
     };
+
+
+our $CONFIG     = 'Contentity::Config';
+our $COMPONENTS = {
+    project     => 'Contentity::Project',
+    middlewares => 'Contentity::Middlewares',
+};
+
 
 
 #-----------------------------------------------------------------------------

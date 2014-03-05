@@ -46,7 +46,6 @@ sub run {
     $context->output(
         $tmps->render($file, $context->data)
     );
-
 }
 
 sub extension_specific {

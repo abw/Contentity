@@ -333,8 +333,8 @@ See L<Contentity::Colour>
 
 =head1 DESCRIPTION
 
-See L<Template::Plugin::Colour::RGB> until I get around to updating
-the docs to show examples of use from Perl.
+This module defines a colour object using the Red/Green/Blue (RGB)
+colour space.
 
 =head1 AUTHOR
 

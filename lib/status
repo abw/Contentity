@@ -1,0 +1,58 @@
+[ ] Contentity/App/Content.pm
+[ ] Contentity/App/Hello.pm
+[ ] Contentity/App.pm
+[ ] Contentity/Apps.pm
+[X] Contentity/Base.pm
+[X] Contentity/Cache/Memcached.pm
+[X] Contentity/Cache/Memory.pm
+[X] Contentity/Cache.pm
+[X] Contentity/Class.pm
+[X] Contentity/Colour/HSV.pm
+[X] Contentity/Colour/RGB.pm
+[X] Contentity/Colour.pm
+[ ] Contentity/Component/Apps.pm
+[ ] Contentity/Component/Entities.pm
+[ ] Contentity/Component/Forms.pm
+[ ] Contentity/Component/Middleware.pm
+[ ] Contentity/Component/Page.pm
+[ ] Contentity/Component/Plack.pm
+[ ] Contentity/Component/Projects.pm
+[ ] Contentity/Component/Resource.pm
+[ ] Contentity/Component/Routes.pm
+[ ] Contentity/Component/Site.pm
+[ ] Contentity/Component/Sitemap/Component.pm
+[ ] Contentity/Component/Sitemap.pm
+[ ] Contentity/Component/Sites.pm
+[ ] Contentity/Component/Templates.pm
+[ ] Contentity/Component/Workspaces.pm
+[ ] Contentity/Component.pm
+[ ] Contentity/Components.pm
+[ ] Contentity/Config.pm
+[ ] Contentity/Configure/Item.pm
+[ ] Contentity/Configure/Scaffold.pm
+[ ] Contentity/Configure/Script.pm
+[ ] Contentity/Configure.pm
+[ ] Contentity/Constants.pm
+[ ] Contentity/Context.pm
+[ ] Contentity/Hub.pm
+[x] Contentity/Metadata/Filesystem.pm -> Badger::Config::Filesystem
+[x] Contentity/Metadata.pm -> refactored out of existence
+[ ] Contentity/Middleware/Error.pm
+[ ] Contentity/Middleware/Site.pm
+[ ] Contentity/Middleware.pm
+[ ] Contentity/Middlewares.pm
+[ ] Contentity/Plack/App/Directory.pm
+[ ] Contentity/Plack/App/File.pm
+[ ] Contentity/Plack/App/URLMap.pm
+[ ] Contentity/Plack/Builder/Site.pm
+[ ] Contentity/Plack/Builder.pm
+[ ] Contentity/Plack/Component.pm
+[ ] Contentity/Project.pm
+[ ] Contentity/Request.pm
+[ ] Contentity/Router.pm
+[ ] Contentity/Site.pm
+[ ] Contentity/Sitemap.pm
+[ ] Contentity/Template.pm
+[ ] Contentity/Utils.pm
+[ ] Contentity/Workspace.pm
+[ ] Contentity.pm

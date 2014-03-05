@@ -1,3 +1,4 @@
+# Moving into Contentity::Config
 package Contentity::Metadata;
 
 use Badger::Debug ':all';
@@ -5,17 +6,15 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     import    => 'class',
-    base      => 'Contentity::Base',
-    utils     => 'blessed self_params numlike falselike truelike extend
-                  join_uri resolve_uri Filter',
-    constants => 'SLASH HASH ARRAY CODE',
+    base      => 'Badger::Config::Filesystem Contentity::Base',
+    utils     => 'blessed self_params falselike truelike extend resolve_uri Filter',
+    constants => 'SLASH HASH ARRAY',
     accessors => 'schemas data',
     messages  => {
         get         => 'Cannot fetch configuration item <1>.<2> (<1> is <3>)',
         no_metadata => 'No metadata found for %s',
     };
 
-our $CODECS     = { };
 our $TREE_TYPE  = 'nest';
 our $TREE_JOINT = '_';
 
@@ -26,17 +25,11 @@ our $TREE_JOINT = '_';
 
 sub init {
     my ($self, $config) = @_;
-    $self->debug("init_metadata() config: ", $self->dump_data($config)) if DEBUG;
-    $self->init_metadata($config);
+    $self->init_config($config);
+    $self->init_filesystem($config);
     $self->init_schemas($config);
     $self->configure($config);
     return $self;
-}
-
-sub init_metadata {
-    my ($self, $config) = @_;
-    $self->{ data } = { };#delete $config->{ data } || $config; #{ %$config };
-    #$self->debug("init_data(): ", $self->dump_data($self->{ data }));
 }
 
 sub init_schemas {
@@ -94,23 +87,38 @@ sub configure {
     $self->configure_schemas($item)
         if ($item = delete $config->{ schemas });
 
+    $self->configure_file($item)
+        if ($item = delete $config->{ file });
+
+    # TODO: re-evaluate these
     $self->{ inherit } = $self->configure_filter( inherit => $item )
         if ($item = delete $config->{ inherit });
 
     $self->{ merge } = $self->configure_filter( merge => $item )
         if ($item = delete $config->{ merge });
 
-    #$self->configure_file($item)
-    #    if ($item = delete $config->{ file });
-
     $self->configure_data($config);
+
+}
+
+sub configure_file {
+    my ($self, $name) = @_;
+    my $data = $self->config_file_data($name)
+        || return $self->error_msg( invalid => file => "[$self->{root}]/$name");
+
+    $self->debug(
+        "Config file data from $name: ",
+        $self->dump_data($data)
+    ) if DEBUG;
+
+    $self->configure($data);
 }
 
 sub configure_cache {
     my ($self, $cache) = @_;
 
     # A bit of hackery to allow the config object to load configuration options
-    # for the cache and store it like any other data.  Badger::Workspace then
+    # for the cache and store it like any other data.  Contentity::Workspace then
     # reads the cache config, creates a cache object and passes it to this 
     # method to have it set.  So me must detect the difference between an
     # object and raw data.
@@ -175,66 +183,12 @@ sub configure_data {
 }
 
 
-#sub configure_file {
-#    my ($self, $name) = @_;
-#    my $data = $self->config_file_data($name)
-#        || return $self->error_msg( invalid => file => $name );
-#
-#    $self->debug(
-#        "Config file data from $name: ",
-#        $self->dump_data($data)
-#    ) if DEBUG;
-#
-#    $self->configure($data);
-#}
-
-
-
-#-----------------------------------------------------------------------------
-# Public-facing get() and set() methods
-#-----------------------------------------------------------------------------
-
-sub get {
-    my $self  = shift;
-    my @names = map { ref $_ eq ARRAY ? @$_ : split /\./ } @_;
-    my $name  = shift @names;
-
-    $self->debug(
-        "get: [", 
-        join('].[', $name, @names),
-        "]"
-    ) if DEBUG;
-    
-    # fetch the head item
-    my $data = $self->head($name) 
-        //  return $self->decline_msg( 
-                no_metadata => $name
-            );
-
-    return @names
-        ? $self->dot($name, $data, \@names)
-        : $data;
-}
-
-sub set {
-    my $self = shift->prototype;
-    my $name = shift;
-    my $data = @_ == 1 ? shift : { @_ };
-    $self->debug("set $name => $data") if DEBUG;
-    $self->{ data }->{ $name } = $data;
-    return $data;
-}
-
-
 
 #-----------------------------------------------------------------------------
 # Additional methods used for getting and setting.
 #
 # head() is called to fetch the first (or only) item in a get() request
 # tail() is called when the above head() call locates the data in question
-# dot() is used to resolve any further navigation into the data.
-#
-# e.g. get('user.name') is roughly equivalent to dot(head('user'), 'name')
 #-----------------------------------------------------------------------------
 
 sub head {
@@ -281,67 +235,6 @@ sub tail {
     return $data;
 }
 
-sub dot {
-    my ($self, $name, $data, $dots) = @_;
-    my @done = ($name);
-    my ($dot, $last, $method);
-
-    $self->debug(
-        "dot: [", 
-        join('].[', $name, @$dots),
-        "]"
-    ) if DEBUG;
-    
-
-    # resolve any dotted paths after the head
-    foreach $dot (@$dots) {
-        # call any function reference to return a value
-        if (ref $data eq CODE) {
-            $data = $data->();
-        }
-
-        CHECK: {
-            if (ref $data eq HASH) {
-                $data = $data->{ $dot };
-                last CHECK;
-            }
-            elsif (ref $data eq ARRAY) {
-                if (numlike $dot) {
-                    $data = $data->[$dot];
-                    last CHECK;
-                }
-                # else vmethods?
-            }
-            elsif (blessed $data) {
-                if ($method = $data->can($dot)) {
-                    $data = $method->($dot);
-                    last CHECK;
-                }
-            }
-            return $self->decline_msg( 
-                no_metadata => join('.', @done, $dot)
-            );
-        }
-
-        if (! defined $data) {
-            return $self->decline_msg( 
-                no_metadata => join('.', @done, $dot)
-            );
-        }
-        push(@done, $dot);
-    }
-
-    return $data;
-}
-
-#-----------------------------------------------------------------------------
-# fetch() is designed to be re-implemented by sub-classes
-#-----------------------------------------------------------------------------
-
-sub fetch {
-    my ($self, $name) = @_;
-    return $self->{ data }->{ $name };
-}
 
 #-----------------------------------------------------------------------------
 # Methods for fetching and storing data in a cache
@@ -544,117 +437,6 @@ sub merge_data_item {
 
 
 #-----------------------------------------------------------------------------
-# Binder methods for combining multiple data sources (e.g. files in sub-
-# directories) into a single tree.
-#-----------------------------------------------------------------------------
-
-sub tree_binder {
-    my $self = shift;
-    my $name = shift 
-        || $self->{ tree_type } 
-        || return $self->error_msg( missing => 'tree_type' );
-
-    return $self->can("${name}_binder")
-        || return $self->decline_msg( invalid => binder => $name );
-}
-
-sub nest_binder {
-    my ($self, $parent, $path, $child, $schema) = @_;
-    my $data = $parent;
-
-    foreach my $key (@$path) {
-        $data = $data->{ $key } ||= { };
-    }
-    while (my ($key, $value) = each %$child) {
-        $data->{ $key } = $value;
-    }
-}
-
-sub flat_binder {
-    my ($self, $parent, $path, $child, $schema) = @_;
-
-    while (my ($key, $value) = each %$child) {
-        $parent->{ $key } = $value;
-    }
-}
-
-sub join_binder {
-    my ($self, $parent, $path, $child, $schema) = @_;
-    my $joint = $schema->{ tree_joint } || $self->{ tree_joint };
-    my $base  = join($joint, @$path);
-
-    $self->debug(
-        "join_binder path is set: ", 
-        $self->dump_data($path),
-        "\nnew base is $base"
-    ) if DEBUG;
-
-    # Similar to the above but this joins items with underscores
-    # e.g. an entry "foo" in site/bar.yaml will become "bar_foo"
-    while (my ($key, $value) = each %$child) {
-        if ($key =~ s/^\///) {
-            # if the child item has a leading '/' then we want to put it in 
-            # the root so we leave $key unchanged
-        }
-        elsif (length $base) {
-            # otherwise the $key is appended onto $base
-            $key = join($joint, $base, $key);
-        }
-        $parent->{ $key } = $value;
-    }
-}
-
-sub uri_binder {
-    my ($self, $parent, $path, $child, $schema) = @_;
-    my $opt  = $schema->{ uri_paths } || $self->{ uri_paths };
-    my $base = join_uri(@$path);
-
-    $self->debug("uri_paths option: $opt") if DEBUG;
-
-    $self->debug(
-        "uri_binder path is set: ", 
-        $self->dump_data($path),
-        "\nnew base is $base"
-    ) if DEBUG;
-
-    # This resolves base items as URIs relative to the parent
-    # e.g. an entry "foo" in the site/bar.yaml file will be stored in the parent 
-    # site as "bar/foo", but an entry "/bam" will be stored as "/bam" because 
-    # it's an absolute URI rather than a relative one (relative to the $base)
-    while (my ($key, $value) = each %$child) {
-        my $uri = $base ? resolve_uri($base, $key) : $key;
-        if ($opt) {
-            $uri = $self->fix_uri_path($uri, $opt);
-        }
-        $parent->{ $uri } = $value;
-        $self->debug(
-            "loaded metadata for [$base] + [$key] = [$uri]"
-        ) if DEBUG;
-    }
-}
-
-sub fix_uri_path {
-    my ($self, $uri, $option) = @_;
-
-    $option ||= $self->{ uri_paths } || return $uri;
-
-    if ($option eq 'absolute') {
-        $self->debug("setting absolute URI path") if DEBUG;
-        $uri = "/$uri" unless $uri =~ /^\//;
-    }
-    elsif ($option eq 'relative') {
-        $self->debug("setting relative URI path") if DEBUG;
-        $uri =~ s/^\///;
-    }
-    else {
-        return $self->error_msg( invalid => 'uri_paths option' => $option );
-    }
-
-    return $uri;
-}
-
-
-#-----------------------------------------------------------------------------
 # Data schema management
 #-----------------------------------------------------------------------------
 
@@ -746,7 +528,7 @@ Contentity::Metadata - metadata management module
 
 =head1 DESCRIPTION
 
-This module implements a metadata management system.
+This module implements a metadata management system. 
 
 =head1 CONFIGURATION OPTIONS
 
@@ -895,7 +677,7 @@ Andy Wardley L<http://wardley.org/>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2008-2013 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2008-2014 Andy Wardley.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

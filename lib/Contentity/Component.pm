@@ -4,8 +4,8 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Base',
-    utils       => 'weaken',
-    accessors   => 'workspace component config';
+    utils       => '',
+    accessors   => 'workspace component urn schema config';
 
 
 sub init {
@@ -16,15 +16,23 @@ sub init {
         $self->dump_data1($config)
     ) if DEBUG;
 
-    my $component = delete $config->{ component } || 'component';
-    my $workspace = delete $config->{ workspace } || return $self->error_msg( missing => 'workspace' );
+    my $component = $config->{ component } 
+        || 'component';
+
+    my $workspace = $config->{ workspace } 
+        || return $self->error_msg( missing => 'workspace' );
+
+    my $subconfig = $config->{ config } || $config;
+
 
     $self->{ workspace } = $workspace;
     $self->{ component } = $component;
-    $self->{ config    } = $config;
+    $self->{ schema    } = $config->{ schema };
+    $self->{ urn       } = $config->{ urn    };
+    $self->{ config    } = $subconfig;
 
     return $self
-        ->init_component($config);
+        ->init_component($subconfig);
 }
 
 
@@ -39,7 +47,7 @@ sub init_component {
 # Various useful accessor methods
 #-----------------------------------------------------------------------------
 
-sub hub {
+sub NOT_hub {
     shift->workspace->hub;
 }
 
@@ -68,7 +76,8 @@ sub destroy {
     my $self = shift;
     delete $self->{ workspace };
     delete $self->{ config    };
-    $self->debug("$self->{ component } component is destroyed") if DEBUG;
+    delete $self->{ schema    };
+    $self->debug("$self: $self->{ component } [$self->{ urn }] component is destroyed") if DEBUG;
 }
 
 

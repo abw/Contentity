@@ -42,14 +42,6 @@ sub dump_data2 {
     shift->dump_data_depth(shift, 2);
 }
 
-sub OLD_debug_data {
-    my $self = shift;
-    $self->debug(
-        map { ref $_ ? $self->dump_data($_) : $_ }
-        @_
-    );
-}
-
 sub debug_data {
     my ($self, $msg, $data) = @_;
     local $Badger::Debug::CALLER_UP = 1;
@@ -94,10 +86,35 @@ L<Badger::Base>.
 
 =head1 METHODS
 
-All methods are inherited from the L<Badger::Base> base class.
+All methods are inherited from the L<Badger::Base> base class.  It also
+importa C<:all> exportable methods from L<Badger::Debug>.
 
-It also imports the C<debugf> method and C<:dump> methods from 
-L<Badger::Debug>.
+The following methods are also defined.
+
+=head2 dump_data_depth($data, $depth)
+
+A wrapper around L<dump_data()|Badger::Debug/dump_data()> which limits the
+depth of C<$data> dumped to C<$depth> levels.
+
+=head2 dump_data1($data)
+
+Method of convenience calling L<dump_data_depth()> with C<$depth> set to C<1>.
+
+=head2 dump_data2($data)
+
+Method of convenience calling L<dump_data_depth()> with C<$depth> set to C<2>.
+
+=head2 debug_data($data)
+
+Re-implementation (a quick hack) to add support for colour in data dumps.
+
+=head2 debug_magic()
+
+Part of an ugly hack to allow debugging message formats to be customised.
+
+=head2 dbg()
+
+The other part of the ugly L<debug_magic()> hack.
 
 =head1 AUTHOR
 
@@ -105,7 +122,7 @@ Andy Wardley E<lt>abw@wardley.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2008-2012 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2008-2014 Andy Wardley.  All Rights Reserved.
 
 =cut
 

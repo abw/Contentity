@@ -12,7 +12,7 @@ use Contentity::Class
     utils     => 'Dir VFS Now',
     constant  => {
         PROJECT_TYPE    => 'project',
-        TEMPLATES_DIR   => 'skeleton',
+        TEMPLATES_DIR   => 'scaffold',
         TEMPLATES_LIB   => 'library',
         TEMPLATE_ENGINE => 'Contentity::Template',
     };

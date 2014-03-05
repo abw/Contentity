@@ -37,10 +37,10 @@ ok( $project, "created contentity project: $project" );
 # URIs
 #-----------------------------------------------------------------------------
 
-my $uri  = $project->uri;
+my $uri = $project->uri;
 is( $project->urn, 'alpha', 'project urn is alpha' );
 is( $project->uri, 'project:alpha', 'project uri is project:alpha' );
-is( $project->uri('wibble'), 'project:alpha/wibble', 'project relative uri is project:alpha/wibble' );
+is( $project->uri('wibble'),  'project:alpha/wibble', 'project relative uri is project:alpha/wibble' );
 is( $project->uri('/wobble'), 'project:alpha/wobble', 'project absolute uri is project:alpha/wobble' );
 
 

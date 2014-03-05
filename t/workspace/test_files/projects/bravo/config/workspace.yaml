@@ -2,9 +2,7 @@
 greeting:       Sub-project setup
 name:           The Bravo Project
 
-inherit:
-  exclude: all
-
 schemas:
   urls:
     tree_type: uri
+    merge:     1

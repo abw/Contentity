@@ -8,14 +8,16 @@
 #
 #========================================================================
 
+use lib '/Users/abw/projects/badger/lib';
 use Badger
     lib        => 'lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 24,
-    debug => 'Contentity::Project Contentity::WorkspaceXX Contentity::Metadata::Filesystem Contentity::Metadata',
+    tests => 17,
+  # tests => 24,
+    debug => 'Contentity::Project Contentity::Workspace Badger::Config::Filesystem',
     args  => \@ARGV;
 
 use Contentity::Project;
@@ -32,7 +34,7 @@ my $project = Contentity::Project->new(
 );
 ok( $project, "created contentity project: $project" );
 
-my $tree1 = $project->get('urls');
+my $tree1 = $project->config('urls');
 ok( $tree1, 'got config urls uri tree' );
 main->debug(
     'tree1: ', main->dump_data($tree1)
@@ -46,8 +48,8 @@ main->debug(
 my $sub = $project->workspace('bravo') || die "No bravo: ", $project->reason;
 
 ok( $sub, 'got sub-project' );
-is( $sub->get('name'), 'The Bravo Project', 'got project name' );
-is( $sub->get('mastermsg'), 'The master message', 'got master project message' );
+is( $sub->config('name'), 'The Bravo Project', 'got project name' );
+is( $sub->config('mastermsg'), 'The master message', 'got master project message' );
 
 is( $sub->name, 'The Bravo Project', 'got project name' );
 is( $sub->mastermsg, 'The master message', 'got master project message' );
@@ -57,7 +59,7 @@ is( $sub->mastermsg, 'The master message', 'got master project message' );
 # Check that a config tree merge includes both slave and master project
 #-----------------------------------------------------------------------------
 
-my $tree = $sub->get('urls');
+my $tree = $sub->config('urls');
 ok( $tree, 'got config urls uri tree' );
 main->debug(
     'tree: ', main->dump_data($tree)
@@ -84,6 +86,12 @@ is( $tree->{'admin/bravo2'}, '/path/to/admin/bravo2', 'got /admin/bravo2 url in 
 my $chas = $project->workspace('charlie');
 ok( $chas, 'got charlie project' );
 is( $chas->greeting, 'Charlie greeting', 'got charlie greeeting' );
+
+
+exit;
+
+
+
 
 my $harry = $chas->entity('harry');
 ok( $harry, 'got harry entity' );
