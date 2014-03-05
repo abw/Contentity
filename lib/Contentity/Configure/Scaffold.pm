@@ -120,7 +120,7 @@ sub scaffold {
 
 sub info {
     my $self = shift;
-    return if $self->{ quiet };
+    return if $self->{ quiet } || ! $self->{ verbose };
     print STDERR cyan(@_), "\n";
 }
 
