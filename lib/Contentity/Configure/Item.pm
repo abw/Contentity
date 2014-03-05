@@ -79,6 +79,9 @@ sub help {
 }
 
 
+# TODO: merge in new functionality in Cog::PHP::App
+
+
 sub prompt {
     my ($self, $prompter, $model) = @_;
 
@@ -130,6 +133,9 @@ sub prompt {
 
 #    $self->set($path, $result);
 }
+
+
+
 
 our $INSULTS = [
     [

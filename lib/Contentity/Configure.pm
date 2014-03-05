@@ -3,7 +3,7 @@ package Contentity::Configure;
 use Badger::Rainbow 
     ANSI => 'red green yellow cyan blue white grey';
 
-use Contentity::Metadata::Filesystem;
+use Badger::Config::Filesystem;
 use Contentity::Configure::Script;
 use Contentity::Configure::Scaffold;
 use Contentity::Class
@@ -20,7 +20,7 @@ use Contentity::Class
         CONFIG_SAVE     => 'config_save',
         SCRIPT_MODULE   => 'Contentity::Configure::Script',
         SCAFFOLD_MODULE => 'Contentity::Configure::Scaffold',
-        METADATA_MODULE => 'Contentity::Metadata::Filesystem',
+        CONFIG_MODULE   => 'Badger::Config::Filesystem',
     };
 
 *title_colour  = \&white;
@@ -41,8 +41,8 @@ sub init {
     my $cfgdir   = $self->{ config_dir  } = $root->dir($cdir);
     my $data     = $self->{ data        } = $config->{ data } ||= { };
     my $args     = $config->{ args };
-    my $metamod  = $self->METADATA_MODULE->new( directory => $cfgdir );
-    my $metadata = $metamod->get($script)
+    my $confmod  = $self->CONFIG_MODULE->new( directory => $cfgdir );
+    my $metadata = $confmod->get($script)
         || return $self->error("Configuration script not found: $cdir/$script.yaml");
 
     # quick hack to set quite/verbose mode ahead of full config read
@@ -60,7 +60,7 @@ sub init {
     $data->{ root } ||= $root->definitive;
 
     if ($sfile && ! $self->{ reset }) {
-        my $lastrun = $metamod->get($sfile);
+        my $lastrun = $confmod->get($sfile);
         if ($lastrun) {
             $self->note("Loaded saved configuration values from $cdir/$sfile");
             $self->debug("last run:", $self->dump_data($lastrun)) if DEBUG;
@@ -103,7 +103,7 @@ sub init {
     }
 
     if ($sfile) {
-        $metamod->write_config_file(
+        $confmod->write_config_file(
             $sfile => $self->stripped_data
         );
         $self->note("Saved current configuration as $sfile");
@@ -393,6 +393,7 @@ sub option_group_blurb {
           "\n\n";
 
 }
+
 sub option_prompt {
     my ($self, $name, $option) = @_;
     return if defined $option->{ prompt } && ! $option->{ prompt };

@@ -71,7 +71,7 @@ sub workspace_config {
 
 sub workspace_names {
     my $self   = shift;
-    my $spaces = $self->workspaces_config;
+    my $spaces = $self->workspace_configs;
     return [ sort keys %$spaces ];
 }
 
