@@ -101,6 +101,7 @@ sub init_reporter {
         @$events
     };
 
+
     return $self;
 }
 

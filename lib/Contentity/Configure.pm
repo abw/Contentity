@@ -47,10 +47,11 @@ sub init {
 
     # quick hack to set quite/verbose mode ahead of full config read
     if ($args) {
-        $self->{ verbose } = grep { /^--?v(erbose)?$/ } @$args;
-        $self->{ quiet   } = grep { /^--?q(uiet)?$/   } @$args;
-        $self->{ white   } = grep { /^--?w(hite)?$/   } @$args;
-        $self->{ reset   } = grep { /^--?r(eset)?$/   } @$args;
+        $self->{ verbose } = grep { /^--?v(erbose)?$/     } @$args;
+        $self->{ quiet   } = grep { /^--?q(uiet)?$/       } @$args;
+        $self->{ dry_run } = grep { /^--?d(ry[-_]?run)?$/ } @$args;
+        $self->{ white   } = grep { /^--?w(hite)?$/       } @$args;
+        $self->{ reset   } = grep { /^--?r(eset)?$/       } @$args;
     }
 
     $config->{ script } ||= $metadata;
@@ -93,6 +94,10 @@ sub init {
         warn $self->help, "\n";
         exit;
     }
+
+    $config->{ verbose } = $self->{ verbose };
+    $config->{ quiet   } = $self->{ quiet   };
+    $config->{ dry_run } = $data->{ dry_run };
 
     if ($config->{ prompt }) {
         $self->options_prompt;

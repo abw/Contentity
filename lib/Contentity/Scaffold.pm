@@ -6,9 +6,8 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Base',
-    utils     => 'VFS Dir red green split_to_list',
+    utils     => 'VFS Dir split_to_list extend self_params Now yellow',
     accessors => 'source_dirs library_dirs output_dir reporter',
-    #mutators  => 'quiet verbose',
     constant  => {
         TEMPLATE_ENGINE => 'Template',
         REPORTER_MODULE => 'Contentity::Reporter',
@@ -17,6 +16,14 @@ use Contentity::Class
 
 sub init {
     my ($self, $config) = @_;
+    $self->init_scaffold($config);
+    return $self;
+}
+
+sub init_scaffold {
+    my ($self, $config) = @_;
+
+    #$self->debug_data("init_scaffold() config: ", $config);
 
     # source and output directories are mandatory, library dirs are optional
     my $srcs = $config->{ source_dirs  } || return $self->error_msg( missing => 'source_dirs' );
@@ -24,24 +31,22 @@ sub init {
     my $libs = $config->{ library_dirs } || '';
 
     # some massaging to make them directory objects (or lists thereof)
-    $self->{ source_dirs     } = $self->init_dirs($srcs);
-    $self->{ library_dirs    } = $self->init_dirs($libs);
-    $self->{ output_dir      } = Dir($outd);
+    $self->{ source_dirs  } = $self->prepare_dirs($srcs);
+    $self->{ library_dirs } = $self->prepare_dirs($libs);
+    $self->{ output_dir   } = Dir($outd);
+    $self->{ data         } = $config->{ data } || { };
 
     # template_prefix can be specified for reporting purposes.  It's added to
     # the front of template names which is displayed in progress messages
-    $self->{ template_prefix } = $config->{ template_prefix };
+    $self->{ path_prefix  } = $config->{ path_prefix };
 
     # create a reporter to handle message output
-    $self->{ reporter        } = $self->REPORTER_MODULE->new($config);
-
-    #$self->{ quiet           } = $config->{ quiet };
-    #$self->{ verbose         } = $config->{ verbose };
+    $self->{ reporter     } = $self->REPORTER_MODULE->new($config);
 
     return $self;
 }
 
-sub init_dirs {
+sub prepare_dirs {
     my $self = shift;
     my $dirs = shift || return [ ];
 
@@ -60,27 +65,74 @@ sub init_dirs {
 }
 
 #-----------------------------------------------------------------------------
+# scaffolding
+#-----------------------------------------------------------------------------
+
+sub scaffold {
+    my ($self, $data) = self_params(@_);
+
+    #$data->{ production  } = $data->{ deployment } eq 'production';
+    #$data->{ development } = $data->{ deployment } eq 'development';
+
+    if ($self->dry_run) {
+        $self->skip_templates($data);
+    }
+    else {
+        $self->process_templates($data);
+    }
+}
+
+#-----------------------------------------------------------------------------
 # templates
 #-----------------------------------------------------------------------------
 
+sub skip_templates {
+    my $self      = shift;
+    my $data      = $self->template_data(@_);
+    my $templates = $self->source_templates;
+
+    #$self->debugf("Skipping %s templates", scalar @$templates);
+    $self->info("Dry run...");
+
+    foreach my $template (@$templates) {
+        $self->template_skip($template);
+    }
+}
+
 sub process_templates {
-    my ($self, $data) = @_;
-    my $engine = $self->template_engine;
-    my $paths  = $self->collect_templates;
-    my $outdir = $self->output_dir;
+    my $self        = shift;
+    my $data        = $self->template_data(@_);
+    my $engine      = $self->template_engine;
+    my $templates   = $self->source_templates;
+    my $outdir      = $self->output_dir;
+    my $srcdirs     = $self->source_dirs;
+    my $libdirs     = $self->library_dirs;
+
+    $data->{ date } ||= Now->date;
+    $data->{ time } ||= Now->time;
+    $data->{ when } ||= Now;
+    $data->{ dirs } ||= { };
+
+    $data->{ dirs }->{ src  } ||= $self->source_dirs->[0];
+    $data->{ dirs }->{ dest } ||= $self->output_dir;
+
+    $self->debug_data("DATA: ", $data) if DEBUG;
 
     $self->debug(
         sprintf(
             "%s templates found in %s", 
-            scalar(@$paths), 
+            scalar(@$templates), 
             $self->dump_data($self->source_dirs)
         )
     ) if DEBUG;
 
-    foreach my $file (@$paths) {
-        # this is a virtual file system so "absolute" paths are actually 
-        # relative to the root directories of the VFS.
-        my $path = $file->absolute;
+    $self->info("Processing scaffolding templates...");
+    $self->info_dirs("From: ", $srcdirs);
+    $self->info_dirs("With: ", $libdirs);
+    $self->info_dir( "  To: ", $outdir);
+
+    foreach my $template (@$templates) {
+        my $path = $template->absolute;
         $path =~ s[^/][];
 
         # process($src_file, $data, $out_file) - we read files from one places 
@@ -90,17 +142,17 @@ sub process_templates {
 
         if ($engine->process($path, $data, $path)) {
             # Wow!  Much success.
-            $self->template_pass($file);
+            $self->template_pass($path);
         }
         else {
             # Oh noes!
-            $self->template_fail($file, $engine->error);
+            $self->template_fail($path, $engine->error);
         }
 
         # output file should have the same file permissions as the source file
         # to ensure that executable scripts remain executable, for example.
         $outdir->file($path)->chmod(
-            $file->perms
+            $template->perms
         );
     }
 }
@@ -120,7 +172,7 @@ sub template_engine {
     })  || $self->error( "Failed to create Template engine: ", Template->error );
 }
 
-sub collect_templates {
+sub source_templates {
     my $self = shift;
     my $dirs = shift || $self->source_dirs;
     my $vfs  = VFS->new( root => $dirs );
@@ -134,16 +186,55 @@ sub collect_templates {
     return $files;
 }
 
+sub pass {
+    shift->reporter->pass(@_);
+}
+
+sub fail {
+    shift->reporter->fail(@_);
+}
+
+sub skip {
+    shift->reporter->skip(@_);
+}
+
+sub info {
+    shift->reporter->info(@_);
+}
+
+sub info_dir {
+    my ($self, $info, $dir) = @_;
+    $self->info($info, yellow($dir));
+}
+
+sub info_dirs {
+    my ($self, $info, $dirs) = @_;
+    my $text = $info;
+    my $tlen = length $text;
+    my $tpad = (' ' x ($tlen - 2)) . '+ ';
+
+    foreach my $dir (@$dirs) {
+        $self->info_dir($text, $dir);
+        $text = $tpad;
+    }
+}
+
 sub template_pass {
     my $self = shift;
     my $file = $self->template_filename(@_);
-    $self->reporter->pass(" + $file");
+    $self->pass("    + $file");
 }
 
 sub template_fail {
     my $self = shift;
     my $file = $self->template_filename(shift);
-    $self->reporter->fail(" + $file");
+    $self->fail("    ! $file");
+}
+
+sub template_skip {
+    my $self = shift;
+    my $file = $self->template_filename(shift);
+    $self->skip("    - $file");
 }
 
 sub template_filename {
@@ -156,12 +247,36 @@ sub template_filename {
         :   $name;
 }
 
+sub template_data {
+    my $self = shift;
+    return extend({ }, $self->data, @_);
+}
+
+sub data {
+    my $self = shift;
+    my $data = $self->{ data };
+
+    if (@_ > 1) {
+        return extend($data, @_);
+    }
+    elsif (@_ == 1) {
+        return $data->{ $_[0] };
+    }
+    else {
+        return $data;
+    }
+}
+
 sub verbose {
     shift->reporter->verbose(@_);
 }
 
 sub quiet {
     shift->reporter->quiet(@_);
+}
+
+sub dry_run {
+    shift->reporter->dry_run(@_);
 }
 
 
@@ -182,13 +297,14 @@ Contentity::Scaffold - template-based scaffolding for project/site configuration
         source_dirs  => [ '/path/to/source/one', '/path/to/source/two'   ],
         library_dirs => [ '/path/to/library/one', '/path/to/library/two' ],
         output_dir   => '/path/to/output/dir',
+        data         => {
+            # any template variable data goes here
+            foo => 'Hello World',
+            bar => 'Swiss Cheese',
+        }
     );
 
-    $scaffold->process_templates({
-        # template data variables    
-        foo => 'Hello World',
-        bar => 'Swiss Cheese',
-    });
+    $scaffold->scaffold;
 
 
 =head1 DESCRIPTION
@@ -273,6 +389,11 @@ progress of the module.
 
 Set this to any true value to suppress error messages if you really don't care
 about them (but don't blame me if you miss something important).
+
+=head2 dry_run
+
+Set this to any true value to have the scaffolder do a dry run instead of 
+processing any templates.
 
 =head1 METHODS
 

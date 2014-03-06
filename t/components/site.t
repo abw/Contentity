@@ -8,14 +8,13 @@
 #
 #========================================================================
 
-use lib '/Users/abw/projects/badger/lib';
 use Badger
     lib        => '../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 7,
+    tests => 15,
     debug => 'Contentity::Workspace Contentity::Component::Site 
               Contentity::Component::Flyweight Badger::Config::Filesystem',
     args  => \@ARGV;
@@ -76,4 +75,4 @@ ok( $humans2, 'got some humans' );
 is( scalar(@$humans2), 3, 'got three humans' );
 
 my $pages2 = $comps2->pages;
-print "pages: ", $comps2->dump_data($pages2), "\n";
+print "pages: ", $comps2->dump_data($pages2), "\n" if DEBUG;
