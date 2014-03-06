@@ -1,8 +1,9 @@
 package Contentity::Component::Workspaces;
+die __PACKAGE__, " is deprecated (for now) - functionality moved into C::Project";
 
 use Contentity::Class
     version   => 0.01,
-    debug     => 0,
+    debug     => 1,
     component => 'resource',
     resource  => 'workspace',
     constant  => {

@@ -1,4 +1,6 @@
 package Contentity::Component::Sitemap::Component;
+die __PACKAGE__, " is deprecated (for now) - functionality moved into C::Component::Flyweight";
+
 
 use Contentity::Class
     version     => 0.01,

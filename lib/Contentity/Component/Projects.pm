@@ -1,4 +1,6 @@
 package Contentity::Component::Projects;
+die __PACKAGE__, " is deprecated (for now) - functionality moved into C::Project";
+
 
 use Contentity::Class
     version   => 0.01,

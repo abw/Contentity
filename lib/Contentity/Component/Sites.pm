@@ -1,4 +1,5 @@
 package Contentity::Component::Sites;
+die __PACKAGE__, " is deprecated (for now) - functionality moved into C::Project";
 
 use Contentity::Site;
 use Contentity::Class
