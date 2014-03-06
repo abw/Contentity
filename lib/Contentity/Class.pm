@@ -74,7 +74,7 @@ sub resources {
 #-----------------------------------------------------------------------------
 
 our $AUTOLOAD;
-our $CALLUP = 1;
+our $CALLUP = 0;
 
 sub autolook {
     my ($self, $methods) = @_;
@@ -94,7 +94,7 @@ sub autolook {
                 #print STDERR "tried $method got ", $value // '<undef>', "\n";
                 return $value if defined $value;
             }
-            my @caller = caller($CALLUP) || caller(0);
+            my @caller = caller($CALLUP);
             return $this->error_msg( 
                 bad_method => $name, ref($this) || $this, 
                 (@caller)[1,2] 
