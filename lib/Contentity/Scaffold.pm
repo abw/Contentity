@@ -1,15 +1,17 @@
 package Contentity::Scaffold;
 
 use Template;
+use Contentity::Reporter;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Base',
     utils     => 'VFS Dir red green split_to_list',
-    accessors => 'source_dirs library_dirs output_dir',
-    mutators  => 'quiet verbose',
+    accessors => 'source_dirs library_dirs output_dir reporter',
+    #mutators  => 'quiet verbose',
     constant  => {
         TEMPLATE_ENGINE => 'Template',
+        REPORTER_MODULE => 'Contentity::Reporter',
     };
 
 
@@ -27,10 +29,14 @@ sub init {
     $self->{ output_dir      } = Dir($outd);
 
     # template_prefix can be specified for reporting purposes.  It's added to
-    # the front of template names which is displayed unless we're in quiet mode
+    # the front of template names which is displayed in progress messages
     $self->{ template_prefix } = $config->{ template_prefix };
-    $self->{ quiet           } = $config->{ quiet };
-    $self->{ verbose         } = $config->{ verbose };
+
+    # create a reporter to handle message output
+    $self->{ reporter        } = $self->REPORTER_MODULE->new($config);
+
+    #$self->{ quiet           } = $config->{ quiet };
+    #$self->{ verbose         } = $config->{ verbose };
 
     return $self;
 }
@@ -131,15 +137,13 @@ sub collect_templates {
 sub template_pass {
     my $self = shift;
     my $file = $self->template_filename(@_);
-    return if $self->quiet || ! $self->verbose;
-    print STDERR green("  + $file"), "\n";
+    $self->reporter->pass(" + $file");
 }
 
 sub template_fail {
     my $self = shift;
     my $file = $self->template_filename(shift);
-    return if $self->quiet;
-    print STDERR red("  ! $file:", @_), "\n";
+    $self->reporter->fail(" + $file");
 }
 
 sub template_filename {
@@ -152,6 +156,13 @@ sub template_filename {
         :   $name;
 }
 
+sub verbose {
+    shift->reporter->verbose(@_);
+}
+
+sub quiet {
+    shift->reporter->quiet(@_);
+}
 
 
 
