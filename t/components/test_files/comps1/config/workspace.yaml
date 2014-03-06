@@ -1,0 +1,8 @@
+schemas:
+  site:
+    type:       component
+    tree_type:  nest
+
+  pages:
+    tree_type:  uri
+    uri_paths:  absolute

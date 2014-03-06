@@ -1,0 +1,5 @@
+debug:     0
+developer: 1
+dynamic:
+  css:     1
+  js:      0
