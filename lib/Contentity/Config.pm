@@ -221,7 +221,7 @@ sub parent_head {
 
 sub merge_data {
     my ($self, $name, $parent, $child, $schema) = @_;
-    my $merged = { };
+    my $merged;
 
     $parent = { 
         map { $_ => 1 }
@@ -240,35 +240,34 @@ sub merge_data {
             && ref($child)  eq HASH 
             && ref($parent) eq HASH;
 
-    my @keys = keys %$parent;
-    my $inherit = $schema->{ inherit_filter };
-    my $merge   = $schema->{ merge_filter   };
+    my $submerge = $schema->{ submerge };
 
-    if (! $inherit && ! $merge) {
-        $self->debug("No inherit or merge rules - doing a simple inherit") if DEBUG;
-        return {
+    if (! $submerge) {
+        $self->debug("No submerge rules - doing a simple inherit") if DEBUG;
+        $merged = {
             %$parent,
             %$child
         };
     }
+    else {
+        my $filter = $self->new_filter($submerge);
 
-    # first inherit the relevant items from the parent data set
-    while (my ($key, $value) = each %$parent) {
-        next if $inherit
-            &&  $inherit->item_rejected($key);
-        $merged->{ $key } = $value;
-    }
+        # first inherit all items from the parent data set
+        $merged = { %$parent };
 
-    # then add (or merge) in any items from the child data set
-    while (my ($key, $value) = each %$child) {
-        if ($merge && $merge->item_accepted($key)) {
-            my $old = $merged->{ $key };
-            $value = $self->merge_data_item($name, $key, $old, $value)
-                if defined $old;
+        # then add (or merge) in any items from the child data set
+        while (my ($key, $value) = each %$child) {
+            if ($filter->item_accepted($key)) {
+                $self->debug("merging $key") if DEBUG;
+                my $old = $merged->{ $key };
+                $value = $self->merge_data_item($name, $key, $old, $value)
+                    if defined $old;
+            }
+            $merged->{ $key } = $value;
         }
-        $merged->{ $key } = $value;
     }
 
+    $self->debug("MERGED: ", $self->dump_data($merged)) if DEBUG;
     return $merged;
 }
 
@@ -302,6 +301,29 @@ sub merge_data_item {
     }
 
     return [ $parent, $child ];
+}
+
+sub new_filter {
+    my ($self, $spec) = @_;
+
+    if (! ref $spec) {
+        # single word like 'all' or 'none'
+        $spec = {
+            accept => $spec
+        };
+    }
+    elsif (ref $spec ne HASH) {
+        $spec = {
+            include => $spec
+        };
+    }
+
+    $self->debug(
+        "filter spec: ",
+        $self->dump_data($spec),
+    ) if DEBUG;
+
+    return Filter($spec);
 }
 
 
