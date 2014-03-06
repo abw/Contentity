@@ -9,10 +9,10 @@ use Contentity::Class
     base        => 'Badger::Workspace Contentity::Base',
     import      => 'class',
     utils       => 'truelike falselike extend params self_params reftype refaddr',
-    autolook    => 'config',
+    autolook    => 'get',
     accessors   => 'type component_factory',
     as_text     => 'ident',
-    constants   => '',
+    constants   => 'BLANK',
     constant    => {
         # configuration manager
         CONFIG_MODULE     => 'Contentity::Config',
@@ -23,7 +23,7 @@ use Contentity::Class
         SUBSPACE_MODULE   => 'Contentity::Workspace',
         WORKSPACE_TYPE    => '',
 
-        #COMPONENTS        => 'components',
+        COMPONENT         => 'component',
         #DELEGATES         => 'delegates',
         #RESOURCES         => 'resources',
         #WORKSPACE         => 'resources',
@@ -193,6 +193,40 @@ sub ident {
     );
 }
 
+sub name {
+    my $self = shift;
+    return  $self->{ name }
+        ||= $self->config('name')
+        ||  $self->{ uri };
+}
+
+#-----------------------------------------------------------------------------
+# generic get (autoload) method
+#-----------------------------------------------------------------------------
+
+sub get {
+    my ($self, $name, @args) = @_;
+    my $data   = $self->config($name) || return;
+    my $schema = $self->item_schema($name);
+
+    if (DEBUG) {
+        $self->debug("Workspace got config: ", $self->dump_data($data));
+        $self->debug("Workspace got schema: ", $self->dump_data($schema));
+    }
+
+    my $type   = $schema->{ type } || BLANK;
+
+    if ($schema->{ component } || $type eq COMPONENT) {
+        $self->debug("Found a component for $name: ", $self->dump_data($schema)) if DEBUG;
+        return $self->component($name)
+    }
+    # else other types...
+
+    return $data;
+}
+
+
+
 sub destroy {
     my $self = shift;
     $self->clear_component_cache;
@@ -247,7 +281,7 @@ directory name is C<config>.
 This optional parameter can be used to specify the name of the main 
 configuration file (without file extension) that should reside in the 
 L<config_dir> directory under the C<root> project directory.  The default 
-configuration file name is C<contentity>.
+configuration file name is C<workspace>.
 
 =head1 GENERAL PURPOSE OBJECT METHODS
 
@@ -297,6 +331,7 @@ This should generally be used in preference to L<resources_dir()>.
 
 =head1 OBJECT METHODS FOR READING CONFIGURATION FILES
 
+TODO
 
 =head1 OBJECT METHODS FOR LOADING COMPONENTS
 
