@@ -14,19 +14,19 @@
 [ ] Contentity/Component/Entities.pm
 [ ] Contentity/Component/Forms.pm
 [ ] Contentity/Component/Middleware.pm
-[ ] Contentity/Component/Page.pm
+[X] Contentity/Component/Page.pm
 [ ] Contentity/Component/Plack.pm
 [ ] Contentity/Component/Projects.pm
 [ ] Contentity/Component/Resource.pm
 [ ] Contentity/Component/Routes.pm
-[ ] Contentity/Component/Site.pm
+[X] Contentity/Component/Site.pm
 [ ] Contentity/Component/Sitemap/Component.pm
 [ ] Contentity/Component/Sitemap.pm
-[ ] Contentity/Component/Sites.pm
+[-] Contentity/Component/Sites.pm
 [ ] Contentity/Component/Templates.pm
-[ ] Contentity/Component/Workspaces.pm
-[ ] Contentity/Component.pm
-[ ] Contentity/Components.pm
+[-] Contentity/Component/Workspaces.pm
+[X] Contentity/Component.pm
+[X] Contentity/Components.pm
 [ ] Contentity/Config.pm
 [ ] Contentity/Configure/Item.pm
 [ ] Contentity/Configure/Scaffold.pm
@@ -55,4 +55,5 @@
 [ ] Contentity/Template.pm
 [ ] Contentity/Utils.pm
 [ ] Contentity/Workspace.pm
+[ ] Contentity/Workspaces.pm
 [ ] Contentity.pm
