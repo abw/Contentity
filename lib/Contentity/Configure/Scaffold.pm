@@ -4,7 +4,7 @@ use Contentity::Template;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::Scaffold',
+    base      => 'Contentity::Builder',
     utils     => 'Dir',
     constant  => {
         PROJECT_TYPE    => 'project',
@@ -15,12 +15,12 @@ use Contentity::Class
 
 sub init {
     my ($self, $config) = @_;
-    $self->init_project_type($config);
     $self->init_scaffold($config);
+    $self->init_builder($config);
     return $self;
 }
 
-sub init_project_type {
+sub init_scaffold {
     my ($self, $config) = @_;
 
     my $dir  = $config->{ directory     } || return $self->error_msg( missing => 'directory' );

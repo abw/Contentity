@@ -1,4 +1,4 @@
-package Contentity::Scaffold;
+package Contentity::Builder;
 
 use Template;
 use Contentity::Reporter;
@@ -16,14 +16,12 @@ use Contentity::Class
 
 sub init {
     my ($self, $config) = @_;
-    $self->init_scaffold($config);
+    $self->init_builder($config);
     return $self;
 }
 
-sub init_scaffold {
+sub init_builder {
     my ($self, $config) = @_;
-
-    #$self->debug_data("init_scaffold() config: ", $config);
 
     # source and output directories are mandatory, library dirs are optional
     my $srcs = $config->{ source_dirs  } || return $self->error_msg( missing => 'source_dirs' );
@@ -65,10 +63,10 @@ sub prepare_dirs {
 }
 
 #-----------------------------------------------------------------------------
-# scaffolding
+# building
 #-----------------------------------------------------------------------------
 
-sub scaffold {
+sub build {
     my ($self, $data) = self_params(@_);
 
     #$data->{ production  } = $data->{ deployment } eq 'production';
@@ -126,7 +124,7 @@ sub process_templates {
         )
     ) if DEBUG;
 
-    $self->info("Processing scaffolding templates...");
+    $self->info("Building scaffolding templates...");
     $self->info_dirs("From: ", $srcdirs);
     $self->info_dirs("With: ", $libdirs);
     $self->info_dir( "  To: ", $outdir);
@@ -287,13 +285,13 @@ __END__
 
 =head1 NAME
 
-Contentity::Scaffold - template-based scaffolding for project/site configuration files
+Contentity::Builder - template-based scaffolding for project/site configuration files
 
 =head1 SYNOPSIS
 
-    use Contentity::Scaffold;
+    use Contentity::Builder;
 
-    my $scaffold = Contentity::Scaffold->new(
+    my $builder = Contentity::Builder->new(
         source_dirs  => [ '/path/to/source/one', '/path/to/source/two'   ],
         library_dirs => [ '/path/to/library/one', '/path/to/library/two' ],
         output_dir   => '/path/to/output/dir',
@@ -304,7 +302,7 @@ Contentity::Scaffold - template-based scaffolding for project/site configuration
         }
     );
 
-    $scaffold->scaffold;
+    $builder->build;
 
 
 =head1 DESCRIPTION
@@ -333,14 +331,14 @@ C<WRAPPER>, etc.
 One or more source directories.  This can be a single string containing 
 a directory path:
 
-    my $scaffold = Contentity::Scaffold->new(
+    my $builder = Contentity::Builder->new(
         source_dirs  => '/path/to/source/one',
         ...
     );
 
 Or a string containing multiple whitespace-delimited directories:
 
-    my $scaffold = Contentity::Scaffold->new(
+    my $builder = Contentity::Builder->new(
         source_dirs  => '/path/to/source/one /path/to/source/two',
         ...
     );
@@ -349,14 +347,14 @@ It can also be a L<Badger::Filesystem::Directory> object.
 
     use Badger::Utils 'Dir';
 
-    my $scaffold = Contentity::Scaffold->new(
+    my $builder = Contentity::Builder->new(
         source_dirs => Dir('/path/to/source/one'),
         ...
     );
 
 Or a reference to a list of one or more directory paths or objects:
 
-    my $scaffold = Contentity::Scaffold->new(
+    my $builder = Contentity::Builder->new(
         source_dirs => [ '/path/to/source/one', '/path/to/source/two' ],
         ...
     );
@@ -392,24 +390,24 @@ about them (but don't blame me if you miss something important).
 
 =head2 dry_run
 
-Set this to any true value to have the scaffolder do a dry run instead of 
+Set this to any true value to have the builder do a dry run instead of 
 processing any templates.
 
 =head1 METHODS
 
 =head2 new()
 
-Constructor method to create a new C<Contentity::Scaffold> object.  Any of the
+Constructor method to create a new C<Contentity::Builder> object.  Any of the
 L<configuration options|CONFIGURATION OPTIONS> specified above can be passed
 as named parameters.
 
-    my $scaffold = Contentity::Scaffold->new(
+    my $builder = Contentity::Builder->new(
         source_dirs  => [ '/path/to/source/one', '/path/to/source/two'   ],
         library_dirs => [ '/path/to/library/one', '/path/to/library/two' ],
         output_dir   => '/path/to/output/dir',
     );
 
-=head2 process_templates($data)
+=head2 build($data)
 
 This is the main entry point method.  It processes all the templates in the 
 L<source_dirs> directories and writes the output to corresponding files in 
@@ -417,7 +415,7 @@ the L<output_dir>.
 
 A reference to a hash array of template variables can be passed as an argument.
 
-    $scaffold->process_templates({
+    $builder->process_templates({
         # template data variables    
         foo => 'Hello World',
         bar => 'Swiss Cheese',
@@ -427,15 +425,19 @@ A reference to a hash array of template variables can be passed as an argument.
 
 Getter/setter for the L<verbose> option.
 
-    $scaffold->verbose(1);      # set
+    $builder->verbose(1);      # set
 
-    if ($scaffold->verbose) {   # get
+    if ($builder->verbose) {   # get
         ...
     }
 
 =head2 quiet()
 
 Getter/setter for the L<quiet> option, usage as per L<verbose()>.
+
+=head2 dry_run()
+
+Getter/setter for the L<dry_run> option, usage as per L<verbose()>.
 
 =head1 AUTHOR
 

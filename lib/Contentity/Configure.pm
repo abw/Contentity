@@ -489,7 +489,7 @@ sub random_insult {
 }
 
 sub scaffold {
-    shift->scaffold_module->scaffold;
+    shift->scaffold_module->build;
 }
 
 sub scaffold_module {
