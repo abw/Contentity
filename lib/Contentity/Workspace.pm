@@ -21,13 +21,8 @@ use Contentity::Class
         COMPONENT_FACTORY => 'Contentity::Components',
         WORKSPACE_FACTORY => 'Contentity::Workspaces',
         SUBSPACE_MODULE   => 'Contentity::Workspace',
-        WORKSPACE_TYPE    => '',
-
         COMPONENT         => 'component',
-        #DELEGATES         => 'delegates',
-        #RESOURCES         => 'resources',
-        #WORKSPACE         => 'resources',
-
+        WORKSPACE_TYPE    => '',
     },
     messages => {
         no_module        => 'No %s module defined.',
@@ -37,8 +32,6 @@ use Contentity::Class
 
 
 our $LOADED = { };
-
-#our $COLLECTIONS = [COMPONENTS, RESOURCES];
 
 
 #-----------------------------------------------------------------------------
@@ -181,17 +174,9 @@ sub subspace {
 }
 
 
-sub item_schema {
-    shift->config->item(shift);
-}
-
-
-sub ident {
-    my $self = shift;
-    return sprintf(
-        '%s:0x%x:%s', ref($self) || reftype($self), refaddr($self), $self->uri
-    );
-}
+#-----------------------------------------------------------------------------
+# name and object identifier for debugging purposes
+#-----------------------------------------------------------------------------
 
 sub name {
     my $self = shift;
@@ -200,8 +185,16 @@ sub name {
         ||  $self->{ uri };
 }
 
+sub ident {
+    my $self = shift;
+    return sprintf(
+        '%s:0x%x:%s', ref($self) || reftype($self), refaddr($self), $self->uri
+    );
+}
+
+
 #-----------------------------------------------------------------------------
-# generic get (autoload) method
+# generic get (autoload) method using item_schema() to fetch schema
 #-----------------------------------------------------------------------------
 
 sub get {
@@ -225,7 +218,13 @@ sub get {
     return $data;
 }
 
+sub item_schema {
+    shift->config->item(shift);
+}
 
+#-----------------------------------------------------------------------------
+# Cleanup
+#-----------------------------------------------------------------------------
 
 sub destroy {
     my $self = shift;

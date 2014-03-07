@@ -3,6 +3,7 @@
 [ ] Contentity/App.pm
 [ ] Contentity/Apps.pm
 [X] Contentity/Base.pm
+[X] Contentity/Builder.pm
 [X] Contentity/Cache/Memcached.pm
 [X] Contentity/Cache/Memory.pm
 [X] Contentity/Cache.pm
@@ -29,7 +30,7 @@
 [X] Contentity/Components.pm
 [ ] Contentity/Config.pm
 [ ] Contentity/Configure/Item.pm
-[ ] Contentity/Configure/Scaffold.pm
+[X] Contentity/Configure/Scaffold.pm
 [ ] Contentity/Configure/Script.pm
 [ ] Contentity/Configure.pm
 [ ] Contentity/Constants.pm
@@ -48,12 +49,13 @@
 [ ] Contentity/Plack/Builder.pm
 [ ] Contentity/Plack/Component.pm
 [ ] Contentity/Project.pm
+[X] Contentity/Reporter.pm
 [ ] Contentity/Request.pm
 [ ] Contentity/Router.pm
 [ ] Contentity/Site.pm
 [ ] Contentity/Sitemap.pm
 [ ] Contentity/Template.pm
 [ ] Contentity/Utils.pm
-[ ] Contentity/Workspace.pm
-[ ] Contentity/Workspaces.pm
+[X] Contentity/Workspace.pm
+[X] Contentity/Workspaces.pm
 [ ] Contentity.pm
