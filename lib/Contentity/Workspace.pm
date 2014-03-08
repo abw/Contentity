@@ -22,6 +22,7 @@ use Contentity::Class
         WORKSPACE_FACTORY => 'Contentity::Workspaces',
         SUBSPACE_MODULE   => 'Contentity::Workspace',
         COMPONENT         => 'component',
+        SCAFFOLD          => 'scaffold',
         WORKSPACE_TYPE    => '',
     },
     messages => {
@@ -174,6 +175,15 @@ sub subspace {
 }
 
 
+sub project {
+    my $self = shift;
+    return $self->{ project } 
+       ||= $self->{ parent  }
+         ? $self->{ parent  }->project
+         : $self;
+}
+
+
 #-----------------------------------------------------------------------------
 # name and object identifier for debugging purposes
 #-----------------------------------------------------------------------------
@@ -221,6 +231,15 @@ sub get {
 sub item_schema {
     shift->config->item(shift);
 }
+
+#-----------------------------------------------------------------------------
+# Specific components
+#-----------------------------------------------------------------------------
+
+sub scaffold {
+    shift->component(SCAFFOLD, @_);
+}
+
 
 #-----------------------------------------------------------------------------
 # Cleanup

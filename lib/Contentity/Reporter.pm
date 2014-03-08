@@ -5,16 +5,17 @@ use Contentity::Class
     debug        => 0,
     base         => 'Contentity::Base',
     import       => 'class',
-    config       => 'verbose=0 quiet=0 dry_run=0 progress=0 colour|color=1',
+    config       => 'verbose=0 quiet=0 nothing|dry_run=0 progress=0 colour|color=1',
     utils        => 'red green yellow cyan blue bold xprintf',
     accessors    => 'event_names',
-    mutators     => 'verbose quiet dry_run colour',
+    mutators     => 'verbose quiet nothing colour',
     constants    => 'ARRAY',
     constant     => {
         NO_REASON   => 'no reason given',
     },
     alias        => {
         color    => 'colour',
+        dry_run  => 'nothing',
     };
 
 our $EVENTS = [
@@ -120,7 +121,7 @@ sub configure_args {
     $self->debug("configure_args(", $self->dump_data(\@args)) if DEBUG;
     
     return $self->usage     if grep(/--?h(elp)?/, @args);
-    $self->{ dry_run  } = 1 if grep(/--?(n(othing)?|dry[-_]?run)/, @args);
+    $self->{ nothing  } = 1 if grep(/--?(n(othing)?|dry[-_]?run)/, @args);
     $self->{ verbose  } = 1 if grep(/--?v(erbose)?/, @args);
     $self->{ quiet    } = 1 if grep(/--?q(uiet)?/, @args);
     $self->{ colour   } = 1 if grep(/--?c(olou?r)?/, @args);
@@ -186,7 +187,6 @@ sub event_msg {
     my $type = shift;
     my $text = join('', grep { defined $_ } @_);
     $self->say_msg( $type => $text );
-
 }
 
 sub pass {

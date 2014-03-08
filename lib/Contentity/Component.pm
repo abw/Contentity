@@ -68,6 +68,22 @@ sub dir {
 }
 
 
+sub ancestral_dirs {
+    my ($self, @path) = @_;
+    my $space     = $self->workspace;
+    my $ancestors = $space->ancestors;
+    my ($ancestor, $dir, @dirs);
+
+    foreach $ancestor (@$ancestors) {
+        $dir = $ancestor->dir(@path);
+        push(@dirs, $dir) if $dir->exists;
+    }
+
+    return wantarray
+        ?  @dirs
+        : \@dirs;
+}
+
 
 #-----------------------------------------------------------------------------
 # Cleanup methods

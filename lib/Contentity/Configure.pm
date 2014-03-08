@@ -1,25 +1,29 @@
 package Contentity::Configure;
 
+# Deprecated - being moved to C::Configure::App
+
 use Badger::Rainbow 
     ANSI => 'red green yellow cyan blue white grey';
 
 use Badger::Config::Filesystem;
+use Contentity::Project;
 use Contentity::Configure::Script;
-use Contentity::Configure::Scaffold;
+#use Contentity::Configure::Scaffold;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Base',
-    accessors   => 'script data',
-    utils       => 'Bin Dir prompt split_to_list floor',
+    accessors   => 'script data root',
+    utils       => 'Bin Dir prompt split_to_list floor extend',
     constants   => 'HASH BLANK',
     constant    => {
         INTRO           => 'intro',
         SECTION         => 'section',
         CONFIG_SCRIPT   => 'config_script',
         CONFIG_SAVE     => 'config_save',
+        PROJECT_MODULE  => 'Contentity::Project',
         SCRIPT_MODULE   => 'Contentity::Configure::Script',
-        SCAFFOLD_MODULE => 'Contentity::Configure::Scaffold',
+#        SCAFFOLD_MODULE => 'Contentity::Configure::Scaffold',
         CONFIG_MODULE   => 'Badger::Config::Filesystem',
     };
 
@@ -49,7 +53,7 @@ sub init {
     if ($args) {
         $self->{ verbose } = grep { /^--?v(erbose)?$/     } @$args;
         $self->{ quiet   } = grep { /^--?q(uiet)?$/       } @$args;
-        $self->{ dry_run } = grep { /^--?d(ry[-_]?run)?$/ } @$args;
+        $self->{ dry_run } = grep(/--?(n(othing)?|dry[-_]?run)/, @$args);
         $self->{ white   } = grep { /^--?w(hite)?$/       } @$args;
         $self->{ reset   } = grep { /^--?r(eset)?$/       } @$args;
     }
@@ -104,7 +108,7 @@ sub init {
     }
 
     if ($config->{ scaffold }) {
-        $self->scaffold;
+        $self->scaffold($config);
     }
 
     if ($sfile) {
@@ -489,20 +493,25 @@ sub random_insult {
 }
 
 sub scaffold {
-    shift->scaffold_module->build;
+    my ($self, $config) = @_;
+    my $project = $self->project;
+    my $params = {
+        # take a copy of data to avoid self-referencing problems
+        data    => extend({ }, $config->{ data }),
+        verbose => $config->{ verbose },
+        quiet   => $config->{ quiet   },
+        dry_run => $config->{ dry_run },
+    };
+    $project->scaffold($params)->build;
 }
 
-sub scaffold_module {
-    my $self = shift;
-    my $conf = $self->{ config };
-
-#    $conf = { 
-#        %$conf,
-##        data => $self->{ data }
-#    };
-
-    return  $self->{ scaffold_module }
-        ||= $self->SCAFFOLD_MODULE->new($conf);
+sub project {
+    my ($self, $config) = @_;
+    return  $self->{ project }
+        ||= $self->PROJECT_MODULE->new(
+                root  => $self->root,
+                #quiet => 1,
+            );
 }
 
 sub note {

@@ -3,7 +3,7 @@ package Contentity::Utils;
 use Carp;
 use warnings            qw( FATAL utf8 );
 use open                qw< :std :utf8 >;
-use Badger::Rainbow     ANSI => 'red green blue cyan magenta yellow bold';
+use Badger::Rainbow     ANSI => 'red green blue cyan magenta yellow black white dark bold';
 use Carp;
 use POSIX               'floor';
 use Badger::Debug       'debug_caller';
@@ -25,7 +25,7 @@ use Contentity::Class
             datestamp today format_date
             ordinal ordinate commas trim
             find_program prompt confirm floor
-            red green blue cyan magenta yellow bold
+            red green blue cyan magenta yellow black white dark bold
         }
     };
 use Contentity::Colour  'Colour';

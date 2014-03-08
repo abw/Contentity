@@ -16,8 +16,9 @@ use Contentity::Class
 
 sub init_component {
     my ($self, $config) = @_;
-    my $project = $self->project;
     my ($path, $dir, $engine);
+
+    my $workspace = $self->workspace;
 
     $self->debugf(
         'templates init_component(%s)',

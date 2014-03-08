@@ -1,5 +1,7 @@
 package Contentity::Configure::Scaffold;
 
+die __PACKAGE__, " is deprecated - use Contentity::Component::Scaffold instead";
+
 use Contentity::Template;
 use Contentity::Class
     version   => 0.01,
