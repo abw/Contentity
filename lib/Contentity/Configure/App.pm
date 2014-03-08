@@ -2,6 +2,7 @@ package Contentity::Configure::App;
 
 use AppConfig;
 use Contentity::Prompter;
+use Contentity::Workspace;
 use Contentity::Configure::Script;
 use Contentity::Class
     version     => 0.02,
