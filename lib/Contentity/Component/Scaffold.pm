@@ -19,7 +19,7 @@ sub init_component {
     $self->debug(
         "Scaffold component init_component(): ", 
         $self->dump_data($config)
-    ) if DEBUG or 1;
+    ) if DEBUG;
 
     return $self;
 }
@@ -99,6 +99,12 @@ sub builder_data {
 
 sub source_dirs {
     my $self = shift;
+
+    $self->debug(
+        "scaff dir: $self->SCAFFOLD_DIR\n",
+        "wspace type: ", $self->workspace->type
+    ) if DEBUG;
+
     return  $self->{ source_dirs }
         ||= $self->ancestral_dirs(
                 $self->SCAFFOLD_DIR,        # e.g. scaffold + project

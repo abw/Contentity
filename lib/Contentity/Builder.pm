@@ -23,6 +23,8 @@ sub init {
 sub init_builder {
     my ($self, $config) = @_;
 
+    $self->debug_data("init_builder(): ", $config) if DEBUG;
+
     # source and output directories are mandatory, library dirs are optional
     my $srcs = $config->{ source_dirs  } || return $self->error_msg( missing => 'source_dirs' );
     my $outd = $config->{ output_dir   } || return $self->error_msg( missing => 'output_dir' );
@@ -72,7 +74,7 @@ sub build {
     #$data->{ production  } = $data->{ deployment } eq 'production';
     #$data->{ development } = $data->{ deployment } eq 'development';
 
-    if ($self->dry_run) {
+    if ($self->nothing) {
         $self->skip_templates($data);
     }
     else {
@@ -273,8 +275,8 @@ sub quiet {
     shift->reporter->quiet(@_);
 }
 
-sub dry_run {
-    shift->reporter->dry_run(@_);
+sub nothing {
+    shift->reporter->nothing(@_);
 }
 
 
@@ -388,7 +390,7 @@ progress of the module.
 Set this to any true value to suppress error messages if you really don't care
 about them (but don't blame me if you miss something important).
 
-=head2 dry_run
+=head2 nothing
 
 Set this to any true value to have the builder do a dry run instead of 
 processing any templates.
@@ -435,9 +437,9 @@ Getter/setter for the L<verbose> option.
 
 Getter/setter for the L<quiet> option, usage as per L<verbose()>.
 
-=head2 dry_run()
+=head2 nothing()
 
-Getter/setter for the L<dry_run> option, usage as per L<verbose()>.
+Getter/setter for the L<nothing> option, usage as per L<verbose()>.
 
 =head1 AUTHOR
 

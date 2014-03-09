@@ -140,6 +140,11 @@ sub init_app {
 }
 
 
+#-----------------------------------------------------------------------------
+# Configuration module (AppConfig) for handling command line arguments
+# and config() method for accessing the resulting configuration values
+#-----------------------------------------------------------------------------
+
 sub appconfig {
     my $self = shift;
 
@@ -163,6 +168,16 @@ sub config {
         : $config;
 }
 
+#-----------------------------------------------------------------------------
+# Scaffolding
+#-----------------------------------------------------------------------------
+
+sub scaffold {
+    my $self     = shift;
+    my $space    = $self->workspace;
+    my $scaffold = $space->scaffold( $self->config );
+    $scaffold->build;
+}
 
 #-----------------------------------------------------------------------------
 # Stub for main run method
@@ -174,6 +189,7 @@ sub run {
     # TMP
     if ($self->script) {
         $self->run_script;
+        $self->scaffold if $self->config('scaffold');
     }
     else {
         # must be implemented by subclasses
