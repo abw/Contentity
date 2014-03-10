@@ -85,6 +85,7 @@ sub builder_data {
     # reference to "Site" which we've already got.  But in the case of a 
     # portfolio for example, it means there will be a "Portfolio" reference
     # as well.
+    $data = { %$data };
     $data->{ Project   } = $space->project;
     $data->{ Workspace } = $space;
     $data->{ Space     } = $space;

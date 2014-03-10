@@ -91,8 +91,7 @@ sub init_item {
 
 sub init_section {
     my ($self, $section) = @_;
-    my $urn   = $section->{ urn } || $section->{ name };
-    my $arg   = $section->{ cmdarg } || $urn;
+    my $urn   = $section->{ urn   } || $section->{ name };
     my $items = $section->{ items };
     my $stack = $self->{ sections };
     my $frame = {
@@ -158,6 +157,7 @@ sub run_item {
     #$self->debug_data("TODO: run item: ", $item);
 
     my $name = $item->{ name };
+
     $app->option_prompt($name, $item);
 }
 
@@ -190,5 +190,16 @@ sub program_helper {
     find_program($name);
 }
 
+sub title {
+    my $self = shift;
+    return  $self->{ title }
+        ||= $self->{ items }->[0]->{ title };
+}
+
+sub about {
+    my $self = shift;
+    return  $self->{ about }
+        ||= $self->{ items }->[0]->{ about };
+}
 
 1;
