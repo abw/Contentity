@@ -125,7 +125,7 @@ sub init_config_args {
         $appc->varlist('.') 
     };
 
-    $self->debug_data( argcfg => $argcfg );
+    $self->debug_data( argcfg => $argcfg ) if DEBUG;
 
     # merge all command line arguments into the config
     extend($config, $argcfg);
