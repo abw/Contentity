@@ -37,6 +37,10 @@ our $COLOURS = {
     error      => \&red,
     bracket    => sub { bold blue @_ },
     dry_run    => sub { bold red @_ },
+    cmd_dash   => sub { green @_ },
+    cmd_arg    => sub { bold green @_ },
+    cmd_alt    => sub { bold blue @_ },
+    cmd_title  => sub { bold cyan @_ },
     cmd_line   => sub { bold green @_ },
     cmd_prompt => sub { bold blue @_ },
 };

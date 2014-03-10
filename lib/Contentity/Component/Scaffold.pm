@@ -45,8 +45,8 @@ sub builder_config {
 
     # Add the source directories onto the source_dirs list in $params and 
     # the same for library directories.  
-    push(@$src_dirs, $self->source_dirs);
-    push(@$lib_dirs, $self->library_dirs);
+    push(@$src_dirs, @{ $self->source_dirs  });
+    push(@$lib_dirs, @{ $self->library_dirs });
 
     # If an output_dir has already been set in $params then it should take
     # precedence, otherwise we default it to be the workspace root directory
@@ -60,7 +60,11 @@ sub builder_config {
     }
 
     # Merge in the extra data references
-    $config->{ data } = $self->builder_data($data);
+    $data = $config->{ data } = $self->builder_data($data);
+
+    $data->{ source_dir  } = $src_dirs->[0];
+    $data->{ library_dir } = $lib_dirs->[0];
+    $data->{ output_dir  } = $config->{ output_dir };
 
     $self->debug_data("builder config: ", $config) if DEBUG;
     

@@ -10,7 +10,8 @@ use Contentity::Class
     base        => 'Contentity::Base',
     import      => 'class',
     utils       => 'extend merge red yellow green cyan split_to_list File Cwd',
-    accessors   => 'opts args workspace script',
+    accessors   => 'option args',
+    constants   => 'ARRAY',
     constant    => {
         APPCONFIG_MODULE => 'AppConfig',
         CODEC            => 'yaml',
@@ -18,7 +19,9 @@ use Contentity::Class
         WORKSPACE_MODULE => 'Contentity::Workspace',
         PROMPTER_MODULE  => 'Contentity::Prompter',
         SCRIPT_MODULE    => 'Contentity::Configure::Script',
-        SCAFFOLD_MODULE  => 'Contentity::Configure::Scaffold',
+    },
+    messages => {
+        bad_args => 'Error processing command line arguments: %s',
     };
 
 our $CMD_ARGS = [
@@ -35,24 +38,22 @@ our $CMD_ARGS = [
 sub init {
     my ($self, $config) = @_;
 
-    # Also note that the $config is a bit of a mess with everything thrown
+    # Note that the $config is a bit of a mess with everything thrown
     # into one hash and passed around the various delegate constructors, 
-    # leading to possible parameter collision (e.g. config_file)
+    # leading to possible parameter collision
 
     $self->init_config($config);
-    $self->init_config_file($config);
-    $self->init_config_args($config);
-
-    $self->init_workspace($config);
-    $self->init_script($config);
+    $self->init_args($config);
     $self->init_app($config);
 
     if ($config->{ help }) {
         $self->help;
-        exit;
     }
 
-    $self->debug_data("post-init config: ", $self->{ config }) if DEBUG;
+    if (DEBUG) {
+        $self->debug_data("post-init config: ", $self->{ config });
+        $self->debug_data("post-init data: ", $self->{ data });
+    }
 
     return $self;
 }
@@ -70,111 +71,188 @@ sub init_config {
     $self->{ config } = $config;
     $self->{ data   } = $config->{ data } ||= { };
 
+    $self->load_data_file;
+
     $self->debug(
         "extended config: ", 
         $self->dump_data($config)
     ) if DEBUG;
 }
 
-sub init_config_file {
-    my ($self, $config) = @_;
-
-    # ICKY: delete any reference to config_file so we don't confuse delegates 
-    # that share the same config.
-    my $path = delete($config->{ config_file }) || return;
-    my $file = File(
-        $path, { 
-            codec    => $config->{ codec    } || $self->CODEC,
-            encoding => $config->{ encoding } || $self->ENCODING,
-        }
-    );
-    $self->{ config_file } = $file;
-
-    if ($file->exists) {
-        $self->load_config_file;
-    }
-}
-
-sub load_config_file {
-    my $self = shift;
-    my $file = $self->{ config_file } || return;
-    my $data = $file->data;
-    $self->debug_data("read config file: $file : ", $data) if DEBUG;
-    merge($self->{ data }, $data);
-}
-
-sub save_config_file {
-    my $self = shift;
-    my $file = $self->{ config_file } || return;
-    my $data = $self->saveable_data;
-    $self->debug_data("writing config file: $file : ", $data) if DEBUG;
-    $file->data($data);
-}
-
-
-sub init_config_args {
+sub init_args {
     my ($self, $config) = @_;
     my $args = $self->{ args } = $config->{ args } || [ ];
     my $appc = $self->appconfig;
     my $arg;
 
     $appc->args($args)
-        || return $self->error($appc->error);
-
-    my $argcfg = { 
-        $appc->varlist('.') 
-    };
-
-    $self->debug_data( argcfg => $argcfg ) if DEBUG;
-
-    # merge all command line arguments into the config
-    extend($config, $argcfg);
+        || return $self->help;
 }
-
-sub init_workspace {
-    my ($self, $config) = @_;
-    # NOTE: 'root' is defined in a saved config file, or via command line 
-    # options.  'directory' is typically defined as a config option passed
-    # by the calling script as the default.  If none are defined then we 
-    # assume it's the current working directory.
-    $self->debug("[ROOT:$config->{root}] [DIR:$config->{directory}") if DEBUG;
-    my $dir   = $config->{ root      } ||$config->{ directory } || Cwd;
-    my $space = $config->{ workspace } || $self->WORKSPACE_MODULE->new(
-        root  => $dir,
-        quiet => 1,     # may not have a workspace.yaml or project.yaml
-    );
-    $self->{ workspace } = $space;
-    $self->{ directory } = $space->dir;
-}
-
-sub init_script {
-    my ($self, $config) = @_;
-    my $script = $config->{ script } || return;
-    my $space  = $self->workspace;
-    my $sdata  = $space->config($script)
-        || return $self->error_msg( invalid => script => $script );
-
-    $self->debug_data("script data: ", $sdata) if DEBUG;
-
-    local $config->{ script } = $sdata;
-
-    $self->{ script } = $self->SCRIPT_MODULE->new($config);
-    $self->{ option } = $self->script->option;
-}
-
 
 sub init_app {
-    my $self   = shift;
-    my $config = $self->config;
-    my $opts   = $self->opts;
-    $self->debug_data("init_app() CONFIG: ", $config) if DEBUG;
-    $self->debug_data("init_app() OPTIONS: ", $opts)  if DEBUG;
     # stub for subclasses
 }
 
 
 #-----------------------------------------------------------------------------
-# Configuration module (AppConfig) for handling command line arguments
+# config() method provides access to the central configuration hash $config,
+# as passed to the init() method.  This is where we store the runtime 
+# configuration options for the object.  Additional data (including the 
+# questions we might want to ask the user, and the answers they provide are
+# store in separate configuration files and/or data hashes)
+#-----------------------------------------------------------------------------
+
+sub config {
+    my $self   = shift;
+    my $config = $self->{ config };
+    return @_
+        ? $config->{ $_[0] }
+        : $config;
+}
+
+
+#-----------------------------------------------------------------------------
+# Autogenerate various shortcut methods which delegate to items in the config
+# e.g.
+#   sub verbose {
+#       shift->config->{ verbose };
+#   }
+#-----------------------------------------------------------------------------
+
+class->methods(
+    map { 
+        my $name = $_;
+        $name => sub {
+            shift->config->{ $name };
+        }
+    }
+    qw(
+        yes verbose quiet nothing
+    )
+);
+
+
+#-----------------------------------------------------------------------------
+# Generic methods for loading and saving configuration files
+#-----------------------------------------------------------------------------
+
+sub config_file {
+    my $self = shift;
+    my $path = shift || return $self->error_msg( missing => 'config_file' );
+    return File($path, $self->config_filespec);
+}
+
+sub config_filespec {
+    my $self = shift;
+    return  $self->{ filespec }
+        ||= {
+                codec    => $self->config->{ codec    } || $self->CODEC,
+                encoding => $self->config->{ encoding } || $self->ENCODING,
+            };
+}
+
+#-----------------------------------------------------------------------------
+# The script is a configuration file containing all the questions that need 
+# answering.  The file also defines those values that can be set via command
+# line arguments.
+#-----------------------------------------------------------------------------
+
+sub script {
+    my $self = shift;
+    return  $self->{ script }
+        ||= $self->load_script;
+}
+
+sub load_script {
+    my $self   = shift;
+    my $config = $self->config;
+    my $script = $config->{ script } || return;
+    my $sdata  = $self->config_file($script)->data;
+
+    $self->debug_data("script data: ", $sdata) if DEBUG;
+    local $config->{ script } = $sdata;
+
+    return $self->SCRIPT_MODULE->new($config);
+}
+
+
+#-----------------------------------------------------------------------------
+# The data_file is where we store the answers that the user gives to the 
+# questions asked.  This is loaded (if it exists) at the start and saved at 
+# the end of the configuration process
+#-----------------------------------------------------------------------------
+
+sub data_file {
+    my $self = shift;
+    return  $self->{ data_file }
+        ||= $self->config_file( $self->config->{ data_file } || return );
+}
+
+sub load_data_file {
+    my $self = shift;
+    my $file = $self->data_file || return;
+    return unless $file->exists;
+    my $data = $file->data;
+    $self->debug_data("read config file: $file : ", $data) if DEBUG;
+    merge($self->{ data }, $data);
+}
+
+sub save_data_file {
+    my $self = shift;
+    my $file = $self->data_file || return;
+    my $data = $self->save_data;
+    $self->debug_data("writing config file: $file : ", $data) if DEBUG;
+    $file->data($data);
+}
+
+sub save_data {
+    # We save all data by default, subclasses may redefine to filter it
+    shift->{ data };
+}
+
+
+#-----------------------------------------------------------------------------
+# Methods for getting, setting and deleting data values (including nested)
+#-----------------------------------------------------------------------------
+
+sub get {
+    my ($self, $path) = @_;
+    my $data = $self->{ data } ||= { };
+    foreach my $part (@$path) {
+        $data = $data->{ $part } || return;
+    }
+    return $data;
+}
+
+sub set {
+    my ($self, $path, $value) = @_;
+    my $data  = $self->{ data } ||= { };
+    my @parts = ref $path eq ARRAY ? @$path : $path;
+    my $name  = pop @parts;
+    $self->debug("set [", join('].[', @parts, $name), "] => $value") if DEBUG;
+    foreach my $part (@parts) {
+        $data = $data->{ $part } ||= { };
+    }
+    $data->{ $name } = $value;
+}
+
+sub zap {
+    my ($self, $path, $src) = @_;
+    my $data  = $src || ($self->{ data } ||= { });
+    my @parts = ref $path eq ARRAY ? @$path : $path;
+    my $name  = pop @parts;
+    $self->debug("zap [", join('].[', @parts, $name), "]") if DEBUG;
+    foreach my $part (@parts) {
+        $data = $data->{ $part } || return;
+    }
+    delete $data->{ $name };
+}
+
+
+#-----------------------------------------------------------------------------
+# Configuration module (AppConfig) for handling command line arguments.
+# This is a temporary measure until Contentity::Configure::Script can
+# handle it.
 #-----------------------------------------------------------------------------
 
 sub appconfig {
@@ -187,23 +265,67 @@ sub appconfig {
 
 sub appconfig_config {
     my $self = shift;
-    return @{ 
-        $self->class->list_vars('CMD_ARGS') 
-    };
+    return $self->script
+        ? $self->script_appconfig_args
+        : $self->config_appconfig_args;
 }
 
-#-----------------------------------------------------------------------------
-# config() method provides access to 
-# and config() method for accessing the resulting configuration values
-#-----------------------------------------------------------------------------
-sub config {
+sub config_appconfig_args {
+    my $self = shift;
+    my $cmds = $self->class->list_vars('CMD_ARGS');
+    return (
+        map {
+            $_ => {
+                # each of the CMD_ARGS sets a value in $self->{ config }
+                ACTION => sub {
+                    my ($state, $var, $val) = @_;
+                    $self->debug("CMD SET $var => $val") if DEBUG;
+                    $self->{ config }->{ $var } = $val;
+                }
+            }
+        }
+        @$cmds
+    );
+}
+
+sub script_appconfig_args {
     my $self   = shift;
-    my $config = $self->{ config };
-    return @_
-        ? $config->{ $_[0] }
-        : $config;
-}
+    my $script = $self->script || return ();
+    my $option = $script->option;
+    my $seen   = { };
+    my (@args, $key, $value);
 
+    while (($key, $value) = each %$option) {
+        my $long   = $value->{ option };
+        my $short  = $value->{ short  };
+        my $path   = $value->{ path   } || next;
+        my $is_cfg = $value->{ is_config };
+
+        next if $seen->{ $long };
+        $seen->{ $long } = 1;
+
+        my $spec = { };
+
+        $spec->{ ARGCOUNT } = $value->{ is_flag } ? 0 : 1;
+        $spec->{ ALIAS    } = $short if $short;
+        $spec->{ DEFAULT  } = $value->{ default };
+        $spec->{ ACTION   } = sub {
+            # each of the items in the script sets a value in $self->{ data }
+            my ($state, $var, $val) = @_;
+            if ($is_cfg) {
+                $self->debug_data("config [$var] to [$val] via ", $path) if DEBUG;
+                $self->{ config }->{ $var } = $val;
+            }
+            else {
+                $self->debug_data("set [$var] to [$val] via ", $path) if DEBUG;
+                $self->set($path, $val);
+            }
+        };
+        push(@args, $long => $spec);
+    }
+
+    return @args;
+}
 
 
 #-----------------------------------------------------------------------------
@@ -259,7 +381,10 @@ sub option_prompt {
     my $default = $option->{ default   };
     my $value   = $self->get($path); # || $option->{ default };
 
-    $self->debug("VALUE: [$value]  DEFAULT: [$default]") if DEBUG;
+    if (DEBUG) {
+        $self->debug_data( path => $path );
+        $self->debug("$name VALUE: [$value]  DEFAULT: [$default]");
+    }
 
     local $option->{ value } = $value || $default;
   
@@ -271,9 +396,41 @@ sub option_prompt {
 }
 
 
+#-----------------------------------------------------------------------------
+# The configuration app is primarily intended for configuring workspaces of
+# different types: projects, sites, portfolios, etc.
+# This is handled by a workspace component, Contentity::Component::Scaffold
+#-----------------------------------------------------------------------------
+
+sub workspace {
+    my $self = shift;
+    return  $self->{ workspace }
+        ||= $self->init_workspace;
+}
+
+sub init_workspace {
+    my $self   = shift;
+    my $config = $self->config;
+
+    # NOTE: 'root' is defined in a saved config file, or via command line 
+    # options.  'directory' is typically defined as a config option passed
+    # by the calling script as the default.  If none are defined then we 
+    # assume it's the current working directory.
+    $self->debug("[ROOT:$config->{root}] [DIR:$config->{directory}") if DEBUG;
+
+    my $dir   = $config->{ root      } || $config->{ directory } || Cwd;
+    my $space = $config->{ workspace } || $self->WORKSPACE_MODULE->new(
+        root  => $dir,
+        quiet => 1,     # may not have a workspace.yaml or project.yaml
+    );
+    $self->{ workspace } = $space;
+}
+
+
 
 #-----------------------------------------------------------------------------
-# Scaffolding
+# Scaffolding is the processes of generating configuration files, etc.
+# This is handled by a workspace component, Contentity::Component::Scaffold
 #-----------------------------------------------------------------------------
 
 sub scaffold {
@@ -294,6 +451,7 @@ sub run {
     if ($self->script) {
         $self->run_script;
         $self->scaffold if $self->config('scaffold');
+        $self->save_data_file;
     }
     else {
         # must be implemented by subclasses
@@ -313,69 +471,6 @@ sub run_script {
 
 
 
-#-----------------------------------------------------------------------------
-# Data methods for getting and setting configuration options
-#-----------------------------------------------------------------------------
-
-sub set {
-    my ($self, $path, $value) = @_;
-    my $data  = $self->{ data } ||= { };
-    my @parts = @$path;
-    my $name  = pop @parts;
-    $self->debug("set [", join('].[', @parts, $name), "] => $value") if DEBUG;
-    foreach my $part (@parts) {
-        $data = $data->{ $part } ||= { };
-    }
-    $data->{ $name } = $value;
-}
-
-sub get {
-    my ($self, $path) = @_;
-    my $data = $self->{ data } ||= { };
-    foreach my $part (@$path) {
-        $data = $data->{ $part } || return;
-    }
-    return $data;
-}
-
-sub zap {
-    my ($self, $path, $src) = @_;
-    my $data  = $src || ($self->{ data } ||= { });
-    my @parts = @$path;
-    my $name  = pop @parts;
-    $self->debug("zap [", join('].[', @parts, $name), "]") if DEBUG;
-    foreach my $part (@parts) {
-        $data = $data->{ $part } || return;
-    }
-    delete $data->{ $name };
-}
-
-
-sub saveable_data {
-    shift->{ data };
-}
-
-#-----------------------------------------------------------------------------
-# Shortcuts to command line options
-#
-# Autogenerate various methods which delegate to items in the config
-# e.g.
-#   sub verbose {
-#       shift->config->{ verbose };
-#   }
-#-----------------------------------------------------------------------------
-
-class->methods(
-    map { 
-        my $name = $_;
-        $name => sub {
-            shift->config->{ $name };
-        }
-    }
-    qw(
-        yes verbose quiet nothing
-    )
-);
 
 
 #-----------------------------------------------------------------------------
@@ -400,6 +495,8 @@ sub help {
     $self->prompt_entry( 
         $self->help_options
     );
+
+    exit;
 }
 
 sub help_title {
@@ -430,7 +527,104 @@ sub help_options {
 EOF
 }
 
+sub help_script_options {
+    my $self   = shift;
+    my $script = $self->script || return '';
+
+    #$self->debug_data( script => $script );
+
+    return join('', $self->help_script_option_items($script->items));
+}
+
+sub help_script_option_items {
+    my ($self, $items) = @_;
+    return
+        map { $self->help_script_option_item($_) }
+        @$items;
+}
+
+sub help_script_option_item {
+    my ($self, $item) = @_;
+    my $type = $item->{ type } || '';
+
+    if ($type eq 'section') {
+        return $self->help_script_option_section($item);
+    }
+    my $long  = $item->{ option } || return;
+    my $short = $item->{ short  };
+    my $title = $item->{ title  };
+
+    $self->prompt_help_option($long, $short, $title);
+}
+
+sub prompt_help_option {
+    my ($self, $long, $short, $title) = @_;
+    my $slen   = $short ? length $short : 0;
+    my $llen   = length $long;
+    my $len    = $llen + 2;               # --$long
+       $len   += ($slen + 4) if $slen;       # -$short / <long>
+    my $pad    = 20 - $len;
+    my $prompt = $self->prompter;
+    my @bits;
+
+    push(
+        @bits, 
+        $prompt->col_expr([
+            [cmd_dash => '-'],
+            [cmd_arg  => $short],
+            [cmd_alt  => ' / '],
+        ])
+    ) if $short;
+
+    push(
+        @bits, 
+        $prompt->col_expr([
+            [cmd_dash => '--'],
+            [cmd_arg  => $long]
+        ]),
+        ' ' x $pad,
+        $prompt->col(
+            cmd_title => $title
+        )
+    );
+    print "    ", @bits, "\n";
+}
+
+sub help_script_option_section {
+    my ($self, $item) = @_;
+    my $items  = $item->{ items } || return;
+    $self->prompt_title( $item->{ title } );
+    $self->help_script_option_items($items);
+    $self->prompt_newline;
+}
+
+
+
 __END__
+==
+
+
+    my $length  = length $cmdarg;
+    my $pad;
+
+    $length++ if $cmdargs;
+    $length += length($cmdargs)   if $cmdargs;
+    $length += length($short) + 4 if $short;
+    $length += 2;
+    $pad     = 30 - $length;
+    $pad     = ' ' x $pad;
+
+    if ($self->{ colour }) {
+        $cmdarg  = option_colour($cmdarg);
+        $cmdargs = optarg_colour($cmdargs) if $cmdargs;
+        $title   = opttxt_colour($title);
+        $short   = ' (-' . option_colour($short) . ')' if $short;
+    }
+    $cmdargs = "=$cmdargs" if $cmdargs;
+    $cmdarg .= $cmdargs;
+    return sprintf("    --%s%s%s %s", $cmdarg, $short, $pad, $title);
+}
+
 
 #-----------------------------------------------------------------------------
 # OLD STUFF - being merged in from Contentity::Configure

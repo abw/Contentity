@@ -4,13 +4,13 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Base',
-    utils     => 'find_program',
+    utils     => 'find_program falselike',
     constants => 'HASH BLANK',
     constant  => {
         INTRO   => 'intro',
         SECTION => 'section',
     },
-    accessors => 'script option';
+    accessors => 'script option items';
 
 our $HELPERS = {
     program => \&program_helper,
@@ -150,6 +150,8 @@ sub run_items {
 sub run_item {
     my ($self, $item, $app) = @_;
 
+    return if $self->dont_prompt($item);
+
     if ($item->{ section }) {
         return $self->run_section($item, $app);
     }
@@ -184,6 +186,14 @@ sub run_section {
         unless $app->quiet;
 }
 
+sub dont_prompt {
+    my ($self, $item) = @_;
+
+    # a defined but falselike prompt value (e.g. 0, false, etc) indicates
+    # we shouldn't prompt for this item
+    return defined   $item->{ prompt } 
+        && falselike $item->{ prompt };
+}
 
 sub program_helper {
     my ($self, $name, $item) = @_;
