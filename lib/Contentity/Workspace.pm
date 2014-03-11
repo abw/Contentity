@@ -23,6 +23,7 @@ use Contentity::Class
         SUBSPACE_MODULE   => 'Contentity::Workspace',
         COMPONENT         => 'component',
         SCAFFOLD          => 'scaffold',
+        BUILDER           => 'builder',
         WORKSPACE_TYPE    => '',
     },
     messages => {
@@ -238,6 +239,10 @@ sub item_schema {
 
 sub scaffold {
     shift->component(SCAFFOLD, @_);
+}
+
+sub builder {
+    shift->component(BUILDER, @_);
 }
 
 

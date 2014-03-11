@@ -101,18 +101,17 @@ sub builder_data {
     return $data;
 }
 
+sub templates_dir {
+    my $self = shift;
+    return $self->config->{ scaffold_dir } || $self->SCAFFOLD_DIR;
+}
+
 
 sub source_dirs {
     my $self = shift;
-
-    $self->debug(
-        "scaff dir: $self->SCAFFOLD_DIR\n",
-        "wspace type: ", $self->workspace->type
-    ) if DEBUG;
-
     return  $self->{ source_dirs }
         ||= $self->ancestral_dirs(
-                $self->SCAFFOLD_DIR,        # e.g. scaffold + project
+                $self->templates_dir,
                 $self->workspace->type      #      => scaffold/project
             );
 }
@@ -121,8 +120,8 @@ sub library_dirs {
     my $self = shift;
     return  $self->{ library_dirs }
         ||= $self->ancestral_dirs(
-                $self->SCAFFOLD_DIR,
-                $self->LIBRARY_DIR
+                $self->templates_dir,
+                $self->config->{ library_dir  } || $self->LIBRARY_DIR
             );
 }
 

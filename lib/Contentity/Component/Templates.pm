@@ -17,13 +17,16 @@ use Contentity::Class
 sub init_component {
     my ($self, $config) = @_;
     my ($path, $dir, $engine);
+    my $space = $self->workspace;
 
-    my $workspace = $self->workspace;
+    $self->debug_data("templates config", $config);
 
-    $self->debugf(
-        'templates init_component(%s)',
-        $self->dump_data($config)
-    ) if DEBUG;
+}
+
+1;
+
+__END__
+==
 
     $path = $config->{ path } || $self->TEMPLATES_PATH;
     $path = split_to_list($path);

@@ -1,21 +1,22 @@
 package Contentity::Builder;
 
-use Template;
+use Contentity::Template;
 use Contentity::Reporter;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Base',
     utils     => 'VFS Dir split_to_list extend self_params Now yellow',
-    accessors => 'source_dirs library_dirs output_dir reporter',
+    accessors => 'source_dirs library_dirs output_dir reporter config',
     constant  => {
-        TEMPLATE_ENGINE => 'Template',
+        TEMPLATE_ENGINE => 'Contentity::Template',
         REPORTER_MODULE => 'Contentity::Reporter',
     };
 
 
 sub init {
     my ($self, $config) = @_;
+    $self->{ config } = $config;
     $self->init_builder($config);
     return $self;
 }
@@ -126,7 +127,7 @@ sub process_templates {
         )
     ) if DEBUG;
 
-    $self->info("Building scaffolding templates...");
+    #$self->info("Building scaffolding templates...");
     $self->info_dirs("From: ", $srcdirs);
     $self->info_dirs("With: ", $libdirs);
     $self->info_dir( "  To: ", $outdir);
@@ -166,10 +167,14 @@ sub template_engine {
         @{ $self->library_dirs }
     ];
     
-    return $self->TEMPLATE_ENGINE->new({
-        INCLUDE_PATH => $incs,
-        OUTPUT_PATH  => $self->output_dir->absolute,
-    })  || $self->error( "Failed to create Template engine: ", Template->error );
+    my $class  = $self->TEMPLATE_ENGINE;
+    my $config = $self->config;
+
+    return $class->new({
+        %$config,
+        path    => $incs,
+        output  => $self->output_dir->absolute,
+    })  || $self->error( "Failed to create $class engine: ", $class->error );
 }
 
 sub source_templates {
@@ -226,9 +231,10 @@ sub template_pass {
 }
 
 sub template_fail {
-    my $self = shift;
-    my $file = $self->template_filename(shift);
-    $self->fail("    ! $file");
+    my $self  = shift;
+    my $file  = $self->template_filename(shift);
+    my $error = shift;
+    $self->fail("    ! $file\n      $error");
 }
 
 sub template_skip {
