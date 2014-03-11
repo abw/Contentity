@@ -1,5 +1,9 @@
 package Contentity::Builder;
 
+die __PACKAGE__, " is deprecated, use Contentity::Component::Builder instead\n";
+
+# TODO: make this attach or be implemented in terms of C::Component::Renderer
+
 use Contentity::Template;
 use Contentity::Reporter;
 use Contentity::Class

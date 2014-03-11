@@ -22,6 +22,8 @@ use Contentity::Class
         WORKSPACE_FACTORY => 'Contentity::Workspaces',
         SUBSPACE_MODULE   => 'Contentity::Workspace',
         COMPONENT         => 'component',
+        TEMPLATES         => 'templates',
+        RENDERER          => 'renderer',
         SCAFFOLD          => 'scaffold',
         BUILDER           => 'builder',
         WORKSPACE_TYPE    => '',
@@ -184,6 +186,21 @@ sub project {
          : $self;
 }
 
+sub dirs_up {
+    my ($self, @path) = @_;
+    my $spaces = $self->ancestors;
+    my ($space, $dir, @dirs);
+
+    foreach $space (@$spaces) {
+        $dir = $space->dir(@path);
+        push(@dirs, $dir) if $dir->exists;
+    }
+
+    return wantarray
+        ?  @dirs
+        : \@dirs;
+}
+
 
 #-----------------------------------------------------------------------------
 # name and object identifier for debugging purposes
@@ -233,9 +250,18 @@ sub item_schema {
     shift->config->item(shift);
 }
 
+
 #-----------------------------------------------------------------------------
-# Specific components
+# templates
 #-----------------------------------------------------------------------------
+
+sub renderer {
+    shift->templates->renderer(@_);
+}
+
+sub templates {
+    shift->component(TEMPLATES, @_);
+}
 
 sub scaffold {
     shift->component(SCAFFOLD, @_);
