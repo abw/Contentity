@@ -7,18 +7,18 @@ use Contentity::Configure::Script;
 use Contentity::Class
     version     => 0.02,
     debug       => 0,
-    base        => 'Contentity::Base',
+    base        => 'Contentity::Base Badger::Workplace',
     import      => 'class',
-    utils       => 'extend merge red yellow green cyan split_to_list File Cwd',
-    accessors   => 'option args',
+    utils       => 'extend merge Dir File Cwd',
+    accessors   => 'root option args',
     constants   => 'ARRAY',
     constant    => {
-        APPCONFIG_MODULE => 'AppConfig',
-        CODEC            => 'yaml',
-        ENCODING         => 'utf8',
-        WORKSPACE_MODULE => 'Contentity::Workspace',
-        PROMPTER_MODULE  => 'Contentity::Prompter',
-        SCRIPT_MODULE    => 'Contentity::Configure::Script',
+        CODEC       => 'yaml',
+        ENCODING    => 'utf8',
+        APPCONFIG   => 'AppConfig',
+        WORKSPACE   => 'Contentity::Workspace',
+        PROMPTER    => 'Contentity::Prompter',
+        SCRIPT      => 'Contentity::Configure::Script',
     },
     messages => {
         bad_args => 'Error processing command line arguments: %s',
@@ -68,8 +68,11 @@ sub init_config {
         $config
     );
 
-    $self->{ config } = $config;
+    my $root = $config->{ root } || $config->{ directory } || Cwd;
+
+    $self->{ root   } = Dir($root);
     $self->{ data   } = $config->{ data } ||= { };
+    $self->{ config } = $config;
 
     $self->load_data_file;
 
@@ -139,7 +142,7 @@ class->methods(
 sub config_file {
     my $self = shift;
     my $path = shift || return $self->error_msg( missing => 'config_file' );
-    return File($path, $self->config_filespec);
+    return $self->root->file($path, $self->config_filespec);
 }
 
 sub config_filespec {
@@ -172,7 +175,7 @@ sub load_script {
     $self->debug_data("script data: ", $sdata) if DEBUG;
     local $config->{ script } = $sdata;
 
-    return $self->SCRIPT_MODULE->new($config);
+    return $self->SCRIPT->new($config);
 }
 
 
@@ -258,7 +261,7 @@ sub zap {
 sub appconfig {
     my $self = shift;
 
-    return $self->{ appconfig } ||= AppConfig->new(
+    return $self->{ appconfig } ||= $self->APPCONFIG->new(
         $self->appconfig_config
     );
 }
@@ -341,7 +344,7 @@ sub prompter {
     my $self = shift;
     return  $self->{ prompter } 
         ||=($self->config->{ prompter } 
-        ||  $self->PROMPTER_MODULE->new(
+        ||  $self->PROMPTER->new(
                 $self->config
             ));
 }
@@ -419,7 +422,7 @@ sub init_workspace {
     $self->debug("[ROOT:$config->{root}] [DIR:$config->{directory}") if DEBUG;
 
     my $dir   = $config->{ root      } || $config->{ directory } || Cwd;
-    my $space = $config->{ workspace } || $self->WORKSPACE_MODULE->new(
+    my $space = $config->{ workspace } || $self->WORKSPACE->new(
         root  => $dir,
         quiet => 1,     # may not have a workspace.yaml or project.yaml
     );
