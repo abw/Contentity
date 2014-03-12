@@ -48,7 +48,7 @@ sub debug_data {
     local $Badger::Debug::CALLER_AT = $self->debug_magic;
     my $dump = $self->dump_data($data);
     for ($dump) {
-        s/(=>)\s([^\{\}\[\]]\S+)/$1.SPACE.yellow($2)/ge;
+        s/(=>)\s([^\{\}\[\]].+)/$1.SPACE.yellow($2)/ge;
         s/(\S+)\s(=>)/bold(green($1)).SPACE.cyan($2)/ge;
         s/([{}]+)/green($1)/ge;
     }

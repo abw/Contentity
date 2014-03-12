@@ -11,7 +11,7 @@ use Contentity::Class
     debug     => 0,
     import    => 'class',
     base      => 'Badger::Config::Filesystem Contentity::Base',
-    utils     => 'truelike falselike extend Filter',
+    utils     => 'truelike falselike extend merge split_to_list Filter',
     accessors => 'parent',
     constants => 'HASH ARRAY',
     constant    => {
@@ -27,6 +27,8 @@ use Contentity::Class
 
 sub init {
     my ($self, $config) = @_;
+
+    $self->{ parent } = $config->{ parent };
  
     # First call Badger::Config base class method to handle any 'items' 
     # definitions and other general initialisation
@@ -43,8 +45,8 @@ sub init {
 
 sub init_contentity {
     my ($self, $config) = @_;
-    $self->{ parent } = $config->{ parent };
     $self->init_cache;
+    $self->init_data_files;
     return $self;
 }
 
@@ -71,6 +73,41 @@ sub init_cache {
     return $self;
 }
 
+sub init_data_files {
+    my $self  = shift;
+    my $files = $self->get('data_files') || return;
+    $self->import_data_files($files);
+    $files = split_to_list($files);
+    $self->debug_data("data files: ", $files);
+}
+
+sub import_data_files {
+    my $self = shift;
+
+    while (@_) {
+        my $files = shift;
+        $files = split_to_list($files);
+
+        foreach my $file (@$files) {
+            $self->import_data_file($file)
+        }
+    }
+}
+
+sub import_data_file {
+    my ($self, $file) = @_;
+    my $data = $self->get($file)
+        || $self->error_msg( invalid => 'data file' => $file );
+    $self->debug_data("imported data from $file: ", $data) if DEBUG;
+    merge($self->{ data }, $data);
+}
+
+sub import_data_file_if_exists {
+    my ($self, $file) = @_;
+    my $data = $self->get($file) || return;
+    $self->debug_data("imported data from $file: ", $data) if DEBUG;
+    merge($self->{ data }, $data);
+}
 
 # TODO: init_schema() init_schemas() and other configure_XXX() methods in 
 # Contentity::Metadata
