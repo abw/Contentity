@@ -44,15 +44,25 @@ our $LOADED = { };
 
 sub init_workspace {
     my ($self, $config) = @_;
+
     $self->SUPER::init_workspace($config);
-    $self->init_components($config);
-    $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
-    $self->{ uri  } = $config->{ uri  } || join(
+
+    my $type = $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
+    my $uri  = $self->{ uri  } = $config->{ uri  } || join(
         ':', 
         grep { defined $_ and length $_ }
         $self->{ type },
         $self->{ urn }
     );
+
+    $self->init_components($config);
+    $self->init_data_files($config);
+
+    # import all the pre-loaded config data into the workspace for efficiency
+    my $data = $self->{ data } ||= { };
+    merge($data, $self->config->data);
+    $self->debug_data("merged config data: ", $data);
+
     return $self;
 }
 
@@ -62,6 +72,16 @@ sub init_components {
     $self->{ component_factory } = $self->COMPONENT_FACTORY->new($config);
 }
 
+
+sub init_data_files {
+    my ($self, $config) = shift;
+
+    # import any data file corresponding to the workspace type, e.g. project,
+    # site, portfolio, etc.
+    $self->config->import_data_file_if_exists($self->type);
+
+    # TODO: load any other data files
+}
 
 
 #-----------------------------------------------------------------------------
@@ -227,7 +247,7 @@ sub ident {
 
 sub get {
     my ($self, $name, @args) = @_;
-    my $data   = $self->config($name) || return;
+    my $data   = $self->config($name) // return;
     my $schema = $self->item_schema($name);
 
     if (DEBUG) {
