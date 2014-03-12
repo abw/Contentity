@@ -22,7 +22,7 @@ sub init_component {
     $self->{ renderers } = { };
     $self->{ configs   } = { };
 
-    $self->debug_data("templates config", $config) if DEBUG or 1;
+    $self->debug_data("templates config", $config) if DEBUG;
 
     return $self;
 }
@@ -127,11 +127,12 @@ sub prepare_path {
     my $up    = $config->{ "${path}_up"   };              # e.g. source_up,  library_up
     my $space = $self->workspace;
 
+    # An ugly, temporary hack to allow the scaffold components to load sources 
+    # templates from a scaffolding directory of the same name as the workspace
+    # type, e.g. scaffold/project, scaffold/site.  This sucks big donkey dick.
     if ($pdir eq '<workspace_type>') {
-        $self->debug("HOLY SHIT: a gruesome $pdir hack");
         $pdir = $space->type;
     }
-    $self->debug("pdir: $pdir");
 
     # Add on the resolved directories for all workspace up the parent chain
     # if $up is set all the way up, or just the current one if not

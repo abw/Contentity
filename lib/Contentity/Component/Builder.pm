@@ -33,7 +33,7 @@ sub init_renderer {
     # fetch a renderer component of the appropriate type (e.g. static)
     my $renderer = $config->{ renderer } || $self->RENDERER;
     $self->{ renderer } = $self->workspace->renderer($renderer);
-    $self->debug("created $renderer renderer: $self->{ renderer }") if DEBUG or 1;
+    $self->debug("created $renderer renderer: $self->{ renderer }") if DEBUG;
 }
 
 sub init_reporter {

@@ -24,7 +24,7 @@ sub init_component {
 sub init_renderer {
     my ($self, $config) = @_;
 
-    $self->debug_data("init_renderer(): ", $config) if DEBUG or 1;
+    $self->debug_data("init_renderer(): ", $config) if DEBUG;
 
     # source and output directories are mandatory, library dirs are optional
     my $srcs = $config->{ source_dirs  } || return $self->error_msg( missing => 'source_dirs' );
