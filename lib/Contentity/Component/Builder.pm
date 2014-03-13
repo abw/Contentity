@@ -5,8 +5,8 @@ use Contentity::Class
     debug       => 0,
     base        => 'Contentity::Component',
     import      => 'class',
-    utils       => 'Now self_params yellow',
-    accessors   => 'renderer reporter prompter',
+    utils       => 'Now Filter self_params yellow',
+    accessors   => 'renderer reporter prompter filter',
     constant    => {
         RENDERER => 'static',
         REPORTER => 'Contentity::Reporter',
@@ -23,6 +23,7 @@ sub init_component {
 
     $self->init_renderer($config);
     $self->init_reporter($config);
+    $self->init_filter($config);
 
     return $self;
 }
@@ -34,6 +35,26 @@ sub init_renderer {
     my $renderer = $config->{ renderer } || $self->RENDERER;
     $self->{ renderer } = $self->workspace->renderer($renderer);
     $self->debug("created $renderer renderer: $self->{ renderer }") if DEBUG;
+
+}
+
+sub init_filter {
+    my ($self, $config) = @_;
+
+    # the templates/static section (loaded by C::Component::Templates and 
+    # passed to C::Component::Renderer) can also contain include/exclude rules
+    # that we can use
+    my $rconfig = $self->renderer->config;
+    my $fspec   = { };
+
+    foreach my $key (qw( include exclude )) {
+        $fspec->{ $key } = $rconfig->{ $key }
+            if $rconfig->{ $key };
+    }
+    if (%$fspec) {
+        $self->debug_data("renderer has filtering rules: ", $fspec);
+        $self->{ filter } = Filter($fspec);
+    }
 }
 
 sub init_reporter {
@@ -66,15 +87,16 @@ sub build {
 #-----------------------------------------------------------------------------
 
 sub skip_templates {
-    my $self  = shift;
-    my $data  = $self->template_data(@_);
-    my $files = $self->source_files;
+    my $self     = shift;
+    my $data     = $self->template_data(@_);
+    my $renderer = $self->renderer;
+    my $files    = $renderer->source_files;
 
     #$self->debugf("Skipping %s templates", scalar @$templates);
-    $self->info("Dry run...");
+    $self->reporter->info("Dry run...");
 
     foreach my $file (@$files) {
-        $self->template_skip($file);
+        $self->template_skip($file, "Dry run");
     }
 }
 
@@ -86,6 +108,7 @@ sub process_templates {
     my $outdir   = $renderer->output_dir;
     my $srcdirs  = $renderer->source_dirs;
     my $libdirs  = $renderer->library_dirs;
+    my $filter   = $self->filter;
 
     $data->{ date } ||= Now->date;
     $data->{ time } ||= Now->time;
@@ -118,6 +141,12 @@ sub process_templates {
         # (sources_dirs) and write them to a file of the same name in another
         # place (output_dir).  So in this case, $src_file and $out_file are the
         # same $path reference
+        if ($filter) {
+            if ($filter->item_rejected($path)) {
+                $self->template_skip($path, 'rejected by filter rule');
+                next;
+            }
+        }
 
         if ($renderer->try->process($path, $data, $path)) {
             # Wow!  Much success.
@@ -188,6 +217,8 @@ sub template_skip {
     my $self = shift;
     my $file = $self->template_filename(shift);
     $self->reporter->skip("    - $file");
+    $self->reporter->info("      # ", @_)
+        if @_ && $self->verbose;
 }
 
 sub template_filename {

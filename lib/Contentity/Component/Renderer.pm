@@ -6,7 +6,7 @@ use Contentity::Class
     base        => 'Contentity::Component',
     import      => 'class',
     utils       => 'VFS Dir split_to_list extend params self_params',
-    accessors   => 'source_dirs library_dirs output_dir config',
+    accessors   => 'source_dirs library_dirs output_dir',
     constant    => {
         ENGINE  => 'Contentity::Template',
     },
@@ -36,6 +36,8 @@ sub init_renderer {
     $self->{ library_dirs } = $self->prepare_dirs($libs);
     $self->{ output_dir   } = Dir($outd) if $outd;
     $self->{ data         } = $config->{ data } || { };
+
+    $self->debug("renderer config: [$config] self config [$self->{ config }") if DEBUG;
 
     return $self;
 }

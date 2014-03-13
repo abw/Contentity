@@ -8,7 +8,7 @@ use Contentity::Class
     debug       => 0,
     base        => 'Badger::Workspace Contentity::Base',
     import      => 'class',
-    utils       => 'truelike falselike extend params self_params reftype refaddr',
+    utils       => 'truelike falselike extend merge params self_params reftype refaddr',
     autolook    => 'get',
     accessors   => 'type component_factory',
     as_text     => 'ident',
@@ -61,7 +61,7 @@ sub init_workspace {
     # import all the pre-loaded config data into the workspace for efficiency
     my $data = $self->{ data } ||= { };
     merge($data, $self->config->data);
-    $self->debug_data("merged config data: ", $data);
+    $self->debug_data("merged config data: ", $data) if DEBUG;
 
     return $self;
 }
@@ -75,12 +75,14 @@ sub init_components {
 
 sub init_data_files {
     my ($self, $config) = shift;
+    my $type = $self->type;
 
     # import any data file corresponding to the workspace type, e.g. project,
     # site, portfolio, etc.
-    $self->config->import_data_file_if_exists($self->type);
+    $self->config->import_data_file_if_exists($type)
+        if $type;
 
-    # TODO: load any other data files
+    # TODO: load any other data files, like deployment, local, etc
 }
 
 

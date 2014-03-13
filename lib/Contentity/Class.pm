@@ -6,7 +6,7 @@ use Badger::Class
     debug     => 0,
     uber      => 'Badger::Class',
     hooks     => 'constructor component resource resources autolook',
-    utils     => 'is_object split_to_list camel_case',
+    utils     => 'is_object split_to_list camel_case blessed',
     constants => 'CODE',
     constant  => {
         UTILS            => 'Contentity::Utils',
@@ -86,8 +86,12 @@ sub autolook {
         AUTOLOAD => sub {
             my ($this, @args) = @_;
             my ($name) = ($AUTOLOAD =~ /([^:]+)$/ );
-            return if $name eq 'DESTROY';
             my $value;
+
+            return if $name eq 'DESTROY';
+
+            confess "AUTOLOAD $name() called on unblessed value '$this'"
+                unless blessed $this;
 
             foreach my $method (@$methods) {
                 $value = $this->$method($name, @args);
