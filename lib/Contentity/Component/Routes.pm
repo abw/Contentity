@@ -1,10 +1,8 @@
 package Contentity::Component::Routes;
 
-die __PACKAGE__, " is deprecated - see routes() method in Contentity::Site\n";
-
 use Contentity::Router;
 use Contentity::Class
-    version   => 0.01,
+    version   => 0.02,
     debug     => 0,
     base      => 'Contentity::Component',
     accessors => 'router',
@@ -40,7 +38,6 @@ sub init_component {
 
 sub auto_can {
     my ($self, $name) = @_;
-
 
     if ($self->router->can($name)) {
         return sub {

@@ -4,51 +4,95 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Component',
+    utils       => 'params truelike',
     constant    => {
-        SITE    => 'site',
         PAGES   => 'pages',
     };
+
+
+sub init_component {
+    my ($self, $config) = @_;
+    $self->debug_data("sitemap config", $config) if DEBUG;
+    return $self;
+}
 
 
 #-----------------------------------------------------------------------------
 # Methods for loading site and page metadata from project config directory
 #-----------------------------------------------------------------------------
 
-sub site_data {
-    my $self   = shift;
-    my $config = $self->config;
-
-    return  $self->{ site_data }
-        ||= $self->project->config_tree( 
-                $config->{ site_config_uri } || $self->SITE 
-            );
+sub pages {
+    my $self = shift;
+    return  $self->{ pages }
+        ||= $self->load_pages;
 }
 
-sub site {
-    my $self = shift;
+sub load_pages {
+    my $self  = shift;
+    my $pages = $self->workspace->config(PAGES);
+    $self->debug_data( pages => $pages) if DEBUG;
+    return $pages;
+}
 
-    $self->project->component(
-        site => {
-            site    => $self->site_data,
-            sitemap => $self,
+sub page {
+    my $self   = shift;
+    my $uri    = shift || return $self->error_msg( missing => 'page uri' );
+    my $params = params(@_);
+    my $strict = truelike $params->{ strict };
+    my @paths  = $self->uri_walk_up($uri);
+    my ($path, $page, $parent, @parents);
+
+    $self->debug_data("page paths for $uri", \@paths) if DEBUG;
+
+    # look for the longest parent URL of this page 
+    while (@paths) {
+        $path = shift @paths;
+
+        if ($page = $self->page_metadata($path)) {
+            $self->debug_data("found page for $uri: $path", $page) if DEBUG;
+            last;
+        }
+        elsif ($strict) {
+            last;
+        }
+    }
+
+    return $self->error_msg( invalid => page => $uri )
+        unless $page;
+
+    # fetch any and all parent pages
+    while (@paths) {
+        $path = shift @paths;
+        if ($parent = $self->page_metadata($path)) {
+            push(@parents, $parent);
+        }
+    }
+
+    # merge data allowing page to inherit certain items
+    $self->debug(
+        "page inherits from ", 
+        scalar(@parents), " parents"
+    ) if DEBUG;
+
+    my $data = $self->merge_page_metadata(
+        $page, @parents
+    );
+
+    $self->debug_data("merged page data for $uri", $data) if DEBUG;
+
+    return $self->workspace->component(
+        page => {
+            metadata => $data,
         }
     );
 }
 
-sub pages_data {
-    my $self   = shift;
-    my $config = $self->config;
-
-    return  $self->{ pages_data }
-        ||= $self->project->config_uri_tree( 
-                $config->{ pages_config_uri } || $self->PAGES
-            );
-}
-
-sub page_data {
+sub page_metadata {
     my $self  = shift;
-    my $uri   = shift || return $self->error_msg( missing => 'page uri' );
-    my $page  = $self->pages_data->{ $uri };
+    my $uri   = shift || return $self->error_msg( missing => 'uri' );
+    my $page  = $self->pages->{ $uri };
+
+    $self->debug_data("page $uri", $page) if DEBUG;
 
     if ($page) {
         $page->{ uri } ||= $uri;
@@ -58,35 +102,72 @@ sub page_data {
         || $self->decline_msg( invalid => page => $uri );
 }
 
-sub page {
-    my $self = shift;
-    my $page = $self->page_data(@_) 
-        || return $self->error( $self->reason );
 
-    return $self->project->component(
-        page => {
-            page    => $page,
-            sitemap => $self,
-        }
-    );
+sub merge_page_metadata {
+    my ($self, $page, @pages) = @_;
+    return $page unless @pages;
+
+    my $parents = $self->merge_page_metadata(@pages);
+    my $inherit = $self->config->{ inherit };
+
+    $self->debug(
+        "sitemap inherits: ", 
+        $self->dump_data($inherit)
+    ) if DEBUG;
+
+    foreach my $i (@$inherit) {
+        $self->debug("INHERIT $i <= $parents->{ $i }")
+            if   DEBUG
+            &&   $parents->{ $i }
+            && ! $page->{ $i };
+
+        $page->{ $i } //= $parents->{ $i }
+            if defined $parents->{ $i };
+    }
+
+    return $page;
 }
-
 
 
 #-----------------------------------------------------------------------------
-# Cleanup methods
+# URIs and URLs
 #-----------------------------------------------------------------------------
 
-sub destroy {
-    my $self = shift;
-    my $site = delete $self->{ site };
-    $site->destroy if $site;
-    $self->debug("sitemap is destroyed") if DEBUG;
-}
+sub uri_walk_up {
+    my $self  = shift;
+    my $uri   = shift || return $self->error_msg( missing => 'uri' );
+    my $path  = $uri;
+    my @paths;
 
-sub DESTROY {
-    shift->destroy;
-}
+    $path = '/' . $uri 
+        unless $path =~ m{^/};
 
+    while (length $path) {
+        push(@paths, $path);
+
+        # Remove a filename extension (e.g. /foo.html -> /foo),
+        # a trailing slash (e.g. /foo/ -> /foo) or a trailing word
+        # (e.g. /foo/bar -> /foo/). Keep doing it until there's 
+        # nothing left to take away
+        last unless (
+                $path =~ s{ \.\w+ $ }{}x
+            ||  $path =~ s{ (?<=.)/ $ }{}x
+            ||  $path =~ s{ [\w\-]+ $ }{}x
+        )   &&  length $path;
+    }
+
+    return wantarray
+        ?  @paths
+        : \@paths;
+}
 
 1;
+
+__END__
+
+# merging from Cog::Wegb::Site
+
+
+sub lookup_page {
+    shift->page(shift, 0);
+}
