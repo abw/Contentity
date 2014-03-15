@@ -1,4 +1,4 @@
-package Contentity::Plack::App::Directory;
+:package Contentity::Plack::Handler::Directory;
 
 use Plack::MIME;
 use Plack::Util;
@@ -8,7 +8,7 @@ use Badger::Filesystem 'Dir';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Plack::App::Directory Contentity::Base';
+    base      => 'Plack::App::Directory Contentity::Plack::Base';
 
 my $dir_file = <<FILE;
   <tr>

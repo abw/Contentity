@@ -1,9 +1,9 @@
-package Contentity::Plack::App::URLMap;
+package Contentity::Plack::Handler::URLMap;
 
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Plack::App::URLMap Contentity::Base';
+    base      => 'Plack::App::URLMap Contentity::Plack::Base';
 
 
 sub map {

@@ -1,17 +1,14 @@
-package Contentity::Middleware::Resources;
+package Contentity::Plack::Middleware::Resources;
 
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::Middleware',
+    base      => 'Contentity::Plack::Middleware',
     accessors => 'site',
     constant  => {
-        URL_MAP => 'Contentity::Plack::App::URLMap',
-        DIR_APP => 'Contentity::Plack::App::Directory',
+        URL_MAP => 'URLMap',
+        DIR_APP => 'Directory',
     };
-
-use Contentity::Plack::App::URLMap;
-use Contentity::Plack::App::Directory;
 
 
 sub init_component {
@@ -26,17 +23,20 @@ sub init_component {
 sub resources_url_map {
     my $self    = shift;
     my $site    = $self->site;
-    my $resources  = $site->resource_list;
-    my $urlmap  = $self->URL_MAP->new;
+    my $reslist = $site->resource_list;
+    my $urlmap  = $self->handler( $self->URL_MAP );
 
     # create routes for all static resources
-    foreach my $resource (@$resources) {
+    foreach my $resource (@$reslist) {
         $self->debug(
             "adding static resource route: $resource->{ url } => $resource->{ location }"
         ) if DEBUG;
+
         $urlmap->map(
-            $resource->{ url } => $self->DIR_APP->new(
-                { root => $resource->{ location } }
+            $resource->{ url } => $self->handler( 
+                $self->DIR_APP => {
+                    root => $resource->{ location }
+                }
             )->to_app
         );
     }
