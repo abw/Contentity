@@ -5,8 +5,10 @@ use Contentity::Class
     debug       => 0,
     base        => 'Contentity::Component',
     utils       => 'params truelike',
+    constants   => 'ARRAY',
     constant    => {
         PAGES   => 'pages',
+        MENUS   => 'menus',
     };
 
 
@@ -127,6 +129,53 @@ sub merge_page_metadata {
 
     return $page;
 }
+
+
+#-----------------------------------------------------------------------------
+# Menus
+#-----------------------------------------------------------------------------
+
+sub menus {
+    my $self = shift;
+    return  $self->{ menus }
+        ||= $self->load_menus;
+}
+
+sub load_menus {
+    my $self  = shift;
+    my $menus = $self->workspace->config(MENUS) || return;
+    $self->debug_data( menus => $menus ) if DEBUG;
+    return $menus;
+}
+
+sub menu {
+    my ($self, $name, $uris) = @_;
+
+    # if $uris isn't specified then $name must be the name of a menu 
+    # defined in the menus.yaml or menus/*.yaml metadata tree
+    $uris 
+        ||= $self->menus->{ $name }
+        ||  return $self->error_msg( invalid => "menu" => $name );
+
+    # if $uris is specified as a word then it must be a menu defined as above
+    $uris = $self->menus->{ $uris }
+        ||  return $self->error_msg( invalid => "$name menu" => $uris )
+            unless ref $uris eq ARRAY;
+
+    return $self->menu_pages( $name => $uris );
+}
+
+sub menu_pages {
+    my ($self, $name, $uris) = @_;
+    return [
+        map { 
+            $self->try->page($_) 
+                || return $self->error_msg( invalid => "page in $name menu" => $_ )
+        }
+        @$uris
+    ];
+}
+
 
 
 #-----------------------------------------------------------------------------
