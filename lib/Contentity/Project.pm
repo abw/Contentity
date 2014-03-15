@@ -72,7 +72,10 @@ sub workspace_config {
 sub workspace_names {
     my $self   = shift;
     my $spaces = $self->workspace_configs;
-    return [ sort keys %$spaces ];
+    my @names  = sort keys %$spaces;
+    return wantarray
+        ?  @names
+        : \@names;
 }
 
 sub workspace_name_hash {
@@ -153,7 +156,6 @@ sub domain_workspace_uri {
         no_domain_workspace => $domain->{ domain }
     );
 }
-
 
 1;
 
