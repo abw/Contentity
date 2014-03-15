@@ -5,12 +5,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Plack::Builder',
     utils     => 'self_params',
-    accessors => 'site',
-    constant  => {
-        STATIC_MIDDLEWARE => 'Contentity::Web::Middleware::Static',
-    };
-
-use Contentity::Web::Middleware::Static;
+    accessors => 'site';
 
 
 sub init_builder {
@@ -37,15 +32,18 @@ sub build {
         ];
     };
 
-    return $self->assets_app($index);
+    return $self->resources_app($index);
 }
 
 
-sub assets_app {
+sub resources_app {
     my $self = shift;
     my $app  = shift;
-    my $ware = $self->STATIC_MIDDLEWARE->new( site => $self->site );
-    return $ware->wrap($app);
+    $self->middleware( 
+        resources => {
+            site => $self->site,
+        }
+    )->wrap($app);
 }
 
 

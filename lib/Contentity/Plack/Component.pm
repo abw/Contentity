@@ -5,7 +5,10 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base Plack::Component',
     accessors => 'env',
-    constants => 'HASH';
+    constants => 'HASH',
+    constant  => {
+        CONTEXT_NAME => 'context',
+    };
 
 
 #-----------------------------------------------------------------------------
@@ -61,7 +64,8 @@ sub wrap_app {
 
 sub context {
     my $self    = shift;
-    my $context = $self->env->{ context } ||= { };
+    my $cname   = $self->CONTEXT_NAME;
+    my $context = $self->env->{ $cname } ||= { };
 
     return $self->get_or_set(
         $context, @_
@@ -125,7 +129,7 @@ __END__
 
 =head1 NAME
 
-Contentity::Web::Plack::Component - Contentity base class for Plack components
+Contentity::Plack::Component - Contentity base class for Plack components
 
 =head1 DESCRIPTION
 

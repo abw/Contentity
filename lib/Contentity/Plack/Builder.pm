@@ -8,7 +8,7 @@ use Contentity::Class
     accessors => 'middlewares',
     constants => 'CODE',
     constant  => {
-        MIDDLEWARES_FACTORY => 'Contentity::Plack::Middlewares',
+        MIDDLEWARES => 'Contentity::Plack::Middlewares',
     };
 
 sub init {
@@ -28,7 +28,7 @@ sub build {
 }
 
 sub middleware {
-    shift->MIDDLEWARES_FACTORY->middleware(@_);
+    shift->MIDDLEWARES->middleware(@_);
 }
 
 sub add_middleware {
@@ -59,7 +59,7 @@ __END__
 
 =head1 NAME
 
-Contentity::Web::Plack::Builder - Contentity base class for Plack application builders
+Contentity::Plack::Builder - Contentity base class for Plack application builders
 
 =head1 DESCRIPTION
 

@@ -1,9 +1,9 @@
-package Cog::Web::Plack::App::File;
+package Contentity::Plack::App::File;
 
-use Cog::Class
+use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Plack::App::File Cog::Base';
+    base      => 'Plack::App::File Contentity::Base';
 
 sub NOT_return_404 {
     my $self = shift;

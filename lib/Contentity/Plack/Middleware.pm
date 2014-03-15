@@ -1,4 +1,4 @@
-package Contentity::Middleware;
+package Contentity::Plack::Middleware;
 
 use Contentity::Class
     version   => 0.01,
@@ -11,7 +11,7 @@ __END__
 
 =head1 NAME
 
-Contentity::Middleware - Contentity base class for middleware components
+Contentity::Plack::Middleware - Contentity base class for middleware components
 
 =head1 DESCRIPTION
 

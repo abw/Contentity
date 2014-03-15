@@ -1,10 +1,10 @@
-package Contentity::Middlewares;
+package Contentity::Plack::Middlewares;
 
 use Badger::Factory::Class
     version => 0.01,
     debug   => 0,
     item    => 'middleware',
-    path    => 'Contentity(X)::Middleware';
+    path    => 'Contentity(X)::Plack::Middleware';
 
 1;
 
@@ -12,7 +12,7 @@ __END__
 
 =head1 NAME
 
-Contentity::Middlewares - factory module for loading and instantiating middleware modules
+Contentity::Plack::Middlewares - factory module for loading and instantiating middleware modules
 
 =head1 SYNOPSIS
 

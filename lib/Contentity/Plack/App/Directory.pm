@@ -1,16 +1,14 @@
-package Cog::Web::Plack::App::Directory;
+package Contentity::Plack::App::Directory;
 
-use Badger::Filesystem 'Dir';
 use Plack::MIME;
 use Plack::Util;
 use HTTP::Date;
 use URI::Escape;
-use Cog::Class
+use Badger::Filesystem 'Dir';
+use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Plack::App::Directory Cog::Base';
-
-#use Plack::Request;
+    base      => 'Plack::App::Directory Contentity::Base';
 
 my $dir_file = <<FILE;
   <tr>
