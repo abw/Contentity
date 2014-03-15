@@ -5,7 +5,7 @@ use Contentity::Class
     debug       => 0,
     base        => 'Contentity::Component',
     import      => 'class',
-    utils       => 'Now Filter self_params yellow',
+    utils       => 'Now Filter self_params yellow extend',
     accessors   => 'renderer reporter prompter filter',
     constant    => {
         RENDERER => 'static',
@@ -184,7 +184,8 @@ sub template_data {
     # reference to "Site" which we've already got.  But in the case of a 
     # portfolio for example, it means there will be a "Portfolio" reference
     # as well.
-    $data = { %$data };
+#    $data = { %$data };
+    $data = extend({ }, $self->config->{ data }, $data );
     $data->{ Project   } = $space->project;
     $data->{ Workspace } = $space;
     $data->{ Space     } = $space;
