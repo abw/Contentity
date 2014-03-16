@@ -84,7 +84,7 @@ sub page {
 
     return $self->workspace->component(
         page => {
-            metadata => $data,
+            data => $data,
         }
     );
 }
@@ -175,7 +175,6 @@ sub menu_pages {
         @$uris
     ];
 }
-
 
 
 #-----------------------------------------------------------------------------
