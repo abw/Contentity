@@ -16,7 +16,7 @@ sub init_component {
         $self->dump_data($config)
     ) if DEBUG;
 
-    $self->{ data } = $config->{ data };
+    $self->{ data } = $config->{ data } || $config;
 
     return $self;
 }
