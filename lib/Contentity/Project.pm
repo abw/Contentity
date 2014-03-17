@@ -10,7 +10,6 @@ use Contentity::Class
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
         WORKSPACE_TYPE  => 'project',
-        DOMAINS         => 'domains',
         WORKSPACES      => 'workspaces',
     },
     messages => {
@@ -124,26 +123,22 @@ sub has_workspace {
 # Domains
 #-----------------------------------------------------------------------------
 
-sub domains {
-    shift->component(DOMAINS);
-}
-
-sub domain {
+sub OLD_domain {
     shift->domains->domain(@_);
 }
 
-sub site_domains {
+sub OLD_site_domains {
     shift->domains->site_domains(@_);
 }
 
-sub domain_site {
+sub OLD_domain_site {
     my ($self, $name) = @_;
     my $domain = $self->domain($name) || return;
     my $wsuri  = $self->domain_workspace_uri($domain);
     return $self->workspace($wsuri);
 }
 
-sub domain_workspace_uri {
+sub OLD_domain_workspace_uri {
     my ($self, $domain) = @_;
 
     if ($domain->{ workspace }) {
@@ -382,10 +377,6 @@ sub roots {
 # Mappings to various components, etc
 #-----------------------------------------------------------------------------
 
-sub plack {
-    shift->component('plack');
-}
-
 sub lists {
     shift->component('lists');
 }
@@ -394,9 +385,6 @@ sub list {
     shift->lists->resource(@_);
 }
 
-sub templates {
-    shift->component('templates');
-}
 
 sub template {
     shift->templates->template(@_);

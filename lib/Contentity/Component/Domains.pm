@@ -4,23 +4,82 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Component',
-    accessors   => 'domains sites';
+    accessors   => 'names',
+    constants   => 'ARRAY DOT';
+#    accessors   => 'domains sites';
 
 
 sub init_component {
     my ($self, $config) = @_;
 
-    $self->debug(
+    $self->debug_data(
         "Domains component init_component(): ", 
-        $self->dump_data($config)
+        $config
     ) if DEBUG;
 
     $self->init_domains($config);
+
+    return $self;
+}
+
+sub name {
+    my $self = shift;
+    my $doms = $self->names || return;
+    # The first domain name is assumed to be the main domain name
+    return $doms->[0];
+}
+
+sub aliases {
+    my $self = shift;
+    my $doms = $self->names || return;
+    my @tail = @$doms;
+    # All domains but the first are assumed to be domain name aliases
+    shift @tail;
+    return \@tail;
 }
 
 
 sub init_domains {
     my ($self, $config) = @_;
+    my $domains = $config->{ domains };
+    my $space   = $self->workspace;
+    my $sdoms   = $space->server_domains;
+    my $names   = $space->names;
+
+    return $self->error_msg( invalid => domains => "$domains (not a list)" )
+        unless ref $domains eq ARRAY;
+
+    $domains = [ @$domains ];
+
+    if (DEBUG) {
+        $self->debug_data("server domains", $sdoms);
+        $self->debug_data("site names", $names);
+    }
+
+    # add in server wildcard domains
+    foreach my $domain (@$sdoms) {
+        # remove any '*.' prefix from the server wildcard domain
+        $domain =~ s/^\*\.//;
+
+        foreach my $name (@$names) {
+            push(@$domains, $name.DOT.$domain);
+        }
+    }
+
+    $self->debug_data("generated domains: ", $domains) if DEBUG;
+
+    #$self->init_domains($config);
+    $self->{ names } = $domains;
+
+}
+
+
+1;
+
+__END__
+
+
+==
     my $domains = { };
     my $sites   = { };
 

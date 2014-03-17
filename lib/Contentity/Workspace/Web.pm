@@ -7,14 +7,18 @@ use Contentity::Class
     utils     => 'resolve_uri split_to_list Colour',
     constants => 'SLASH HASH VHOST_FILE',
     constant  => {
-        RGB       => 'rgb',
+        BUILDER   => 'builder',
         COLOURS   => 'colours',
-        URLS      => 'urls',
+        DOMAINS   => 'domains',
         FONTS     => 'fonts',
+        PLACK     => 'plack',
+        RGB       => 'rgb',
         ROUTES    => 'routes',
         RESOURCES => 'resources',
+        SCAFFOLD  => 'scafffold',
         SITEMAP   => 'sitemap',
-        PLACK     => 'plack',
+        TEMPLATES => 'templates',
+        URLS      => 'urls',
     },
     messages => {
         bad_col_rgb => 'Invalid RGB colour name specified for %s: %s',
@@ -59,38 +63,25 @@ sub builder {
 #------------------------------------------------------------------------
 
 sub domains {
-    my $self = shift;
-    return  $self->{ domains }
-        ||= $self->project->site_domains(
-                $self->urn
-            );
+    shift->component(DOMAINS, @_);
 }
 
-sub domain {
-    my $self = shift;
-    return  $self->{ domain }
-        ||= $self->domains_head;
+sub domain_name {
+    shift->domains->name;
 }
 
-sub aliases {
-    my $self = shift;
-    return  $self->{ aliases }
-        ||= $self->domains_tail;
+sub domain_names {
+    shift->domains->names;
 }
 
-sub domains_head {
-    my $self = shift;
-    my $doms = $self->domains || return;
-    return $doms->[0];
+sub domain_aliases {
+    shift->domains->aliases;
 }
 
-sub domains_tail {
-    my $self = shift;
-    my $doms = $self->domains || return;
-    my @tail = @$doms;
-    shift @tail;
-    return \@tail;
+sub server_domains {
+    shift->config('server.domains') || [ ];
 }
+
 
 
 #-----------------------------------------------------------------------------

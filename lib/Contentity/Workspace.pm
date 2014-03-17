@@ -11,7 +11,7 @@ use Contentity::Class
     autolook    => 'get',
     accessors   => 'type',
     as_text     => 'ident',
-    constants   => 'BLANK COMPONENT',
+    constants   => 'HASH BLANK COMPONENT',
     constant    => {
         # configuration manager
         CONFIG_MODULE     => 'Contentity::Config',
@@ -107,8 +107,6 @@ sub init_factory {
 }
 
 
-
-
 #-----------------------------------------------------------------------------
 # Methods for creating components
 #-----------------------------------------------------------------------------
@@ -168,6 +166,9 @@ sub component_config {
     my $params = params(@_);
     my $schema = $self->item_schema($name) || { };
     my $config = $self->config($name) || { };
+    # if $config isn't a HASH reference then we can't merge it with params
+    $config = { $name => $config } unless ref $config eq HASH;
+
     my $merged = extend({ }, $config, $params);
     my $final  = { 
         component => $name,
@@ -261,8 +262,29 @@ sub name {
     my $self = shift;
     return  $self->{ name }
         ||= $self->config('name')
-        ||  $self->{ uri };
+        ||  $self->{ urn };             # was uri
 }
+
+sub names {
+    my $self = shift;
+    my $noms = $self->{ names }
+           ||= [$self->urn, $self->aliases];
+    return wantarray
+        ? @$noms
+        :  $noms;
+}
+
+sub aliases {
+    my $self = shift;
+    my $akas = $self->{ aliases }
+           ||= $self->config('aliases')
+           ||  [ ];
+
+    return wantarray
+        ? @$akas
+        :  $akas;
+}
+
 
 sub ident {
     my $self = shift;
