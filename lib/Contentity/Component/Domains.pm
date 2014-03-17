@@ -41,7 +41,7 @@ sub aliases {
 
 sub init_domains {
     my ($self, $config) = @_;
-    my $domains = $config->{ domains };
+    my $domains = $config->{ domains } || [ ];
     my $space   = $self->workspace;
     my $sdoms   = $space->server_domains;
     my $names   = $space->names;

@@ -7,6 +7,7 @@ use Badger::Factory::Class
     path    => 'Contentity(X)::Component Contentity(X)',
     utils   => 'params';
 
+
 sub type_args {
     my $self   = shift;
     my $type   = shift;

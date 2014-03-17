@@ -15,7 +15,7 @@ use Contentity::Class
         RGB       => 'rgb',
         ROUTES    => 'routes',
         RESOURCES => 'resources',
-        SCAFFOLD  => 'scafffold',
+        SCAFFOLD  => 'scaffold',
         SITEMAP   => 'sitemap',
         TEMPLATES => 'templates',
         URLS      => 'urls',
