@@ -2,15 +2,14 @@ package Contentity::Workspace;
 
 use Contentity::Config;
 use Contentity::Workspaces;
-use Contentity::Components;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Badger::Workspace Contentity::Base',
     import      => 'class',
-    utils       => 'truelike falselike extend merge params self_params reftype refaddr',
+    utils       => 'truelike falselike extend merge params self_params blessed reftype refaddr',
     autolook    => 'get',
-    accessors   => 'type component_factory',
+    accessors   => 'type',
     as_text     => 'ident',
     constants   => 'BLANK COMPONENT',
     constant    => {
@@ -52,7 +51,11 @@ sub init_workspace {
         $self->{ urn }
     );
 
-    $self->init_components($config);
+    # ugly temporary hack to allow 'component_path' configuration option to 
+    # be passed to component factory - see t/workspace/components.t around
+    # line 30
+    $self->{ factory_config } = $config;
+
     $self->init_data_files($config);
 
     # import all the pre-loaded config data into the workspace for efficiency
@@ -62,13 +65,6 @@ sub init_workspace {
 
     return $self;
 }
-
-
-sub init_components {
-    my ($self, $config) = @_;
-    $self->{ component_factory } = $self->COMPONENT_FACTORY->new($config);
-}
-
 
 sub init_data_files {
     my ($self, $config) = shift;
@@ -81,6 +77,36 @@ sub init_data_files {
 
     # TODO: load any other data files, like deployment, local, etc
 }
+
+
+sub component_factory {
+    my $self = shift;
+    return  $self->{ component_factory }
+        ||= $self->init_factory( component => $self->COMPONENT_FACTORY );
+}
+
+sub workspace_factory {
+    my $self = shift;
+    return  $self->{ workspace_factory }
+        ||= $self->init_factory( workspace => $self->WORKSPACE_FACTORY );
+}
+
+sub init_factory {
+    my ($self, $type, $default) = @_;
+    my $name    = "${type}_factory";
+    my $fconfig = $self->{ factory_config };
+    my $factory = $fconfig->{ $name } || $self->config($name) || $default;
+
+    if (blessed $factory) {
+        return $factory;
+    }
+    else {
+        class($factory)->load;
+        return $factory->new($fconfig);
+    }
+}
+
+
 
 
 #-----------------------------------------------------------------------------
@@ -122,7 +148,7 @@ sub load_component {
     else {
         # component name may have been re-mapped by config or schema
         $name = $config->{ component } || $name;
-        $object = $self->{ component_factory }->item( $name => $config ) || return;
+        $object = $self->component_factory->item( $name => $config ) || return;
     }
 
     if ($single) {
@@ -172,6 +198,7 @@ sub clear_component_cache {
 }
 
 
+
 #-----------------------------------------------------------------------------
 # The project is deemed to be the parent at the top of the chain
 #-----------------------------------------------------------------------------
@@ -199,7 +226,7 @@ sub subspace {
 
     if ($type) {
         $self->debug("subspace() found workspace type: $type") if DEBUG;
-        return $self->WORKSPACE_FACTORY->workspace(
+        return $self->workspace_factory->workspace(
             $type => $params
         );
     }

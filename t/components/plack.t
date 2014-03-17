@@ -8,6 +8,8 @@
 #
 #========================================================================
 
+use Badger::Debug modules => 'Badger::Base';
+
 use Badger
     lib   => '../../lib',
     Utils => 'Bin',
