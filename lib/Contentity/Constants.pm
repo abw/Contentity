@@ -17,10 +17,15 @@ use Badger::Class
     base     => 'Badger::Constants',
     import   => 'class',
     constant => {
-        RESOURCES_DIR       => 'resources',
+        COMPONENT           => 'component',
         MIDDLEWARE          => 'middleware',
+
         INDEX_HTML          => 'index.html',
         DOT_HTML            => '.html',
+
+        # virtual host files
+        VHOST_FILE          => 'vhost.conf',
+        VHOST_EXTENSION     => 'conf',
 
         # Timestamp handling
         NULL_DATE           => '0000-00-00',
@@ -49,7 +54,7 @@ use Badger::Class
         @status,
     },
     exports  => {
-        any  => 'MIDDLEWARE',
+        any  => 'COMPONENT MIDDLEWARE',
         tags => {
             status          => \@status,
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
@@ -57,6 +62,7 @@ use Badger::Class
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
             html            => 'INDEX_HTML DOT_HTML',
+            vhost           => 'VHOST_FILE VHOST_EXTENSION',
         },
     };
 

@@ -15,14 +15,10 @@ use Contentity::Class
 sub init_component {
     my ($self, $config) = @_;
 
-    $self->debug(
-        "Plack init_component() => ",
-        $self->dump_data($config)
-    ) if DEBUG;
+    $self->debug_data("Plack init_component()", $config) if DEBUG;
 
     return $self;
 }
-
 
 sub app {
     my $self = shift;
@@ -86,3 +82,21 @@ sub context {
 
 
 1;
+
+__END__
+
+From workspace::web
+
+sub plack {
+    #my $self = shift;
+    #my $builder = $self->BUILDER->new(
+    #    site => $self
+    #);
+    #$self->debug("builder: $builder");
+    #$builder->build;
+
+# TODO: Move Contentity::Plack::Builder::Site into Contentity::Component::Plack::Builder::Site
+# and have Contentity::Component::Plack delegate to it, e.g. $self->plack returns
+# plack component, $self->plack->builder returns the appropriate builder class
+# for the workspace type. 
+

@@ -5,11 +5,11 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Workspace',
-    utils       => 'self_params',
+    utils       => 'self_params id_safe',
+    constants   => ':vhost DOT',
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
         WORKSPACE_TYPE  => 'project',
-#       CONFIG_FILE     => 'project',
         DOMAINS         => 'domains',
         WORKSPACES      => 'workspaces',
     },
@@ -17,6 +17,7 @@ use Contentity::Class
         no_workspaces       => "There aren't any other workspaces defined",
         no_domain_workspace => "There isn't any workspace defined for the '%s' domain",
     };
+
 
 
 #-----------------------------------------------------------------------------
@@ -156,6 +157,29 @@ sub domain_workspace_uri {
         no_domain_workspace => $domain->{ domain }
     );
 }
+
+
+#-----------------------------------------------------------------------------
+# Virtual hosts
+#-----------------------------------------------------------------------------
+
+sub vhosts_file {
+    my $self = shift;
+    my $name = shift || return $self->error_msg( missing => 'vhosts file name' );
+    $self->file( vhosts => id_safe($name).DOT.VHOST_EXTENSION );
+}
+
+sub vhosts_file_exists {
+    shift->vhost_file(@_)->exists;
+}
+
+sub vhost_extension {
+    return VHOST_EXTENSION;
+}
+
+
+
+
 
 1;
 

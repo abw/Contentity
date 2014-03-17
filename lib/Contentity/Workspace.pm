@@ -12,20 +12,17 @@ use Contentity::Class
     autolook    => 'get',
     accessors   => 'type component_factory',
     as_text     => 'ident',
-    constants   => 'BLANK',
+    constants   => 'BLANK COMPONENT',
     constant    => {
         # configuration manager
         CONFIG_MODULE     => 'Contentity::Config',
 
-        # components
+        # component factories
         COMPONENT_FACTORY => 'Contentity::Components',
         WORKSPACE_FACTORY => 'Contentity::Workspaces',
         SUBSPACE_MODULE   => 'Contentity::Workspace',
-        COMPONENT         => 'component',
-        TEMPLATES         => 'templates',
-        RENDERER          => 'renderer',
-        SCAFFOLD          => 'scaffold',
-        BUILDER           => 'builder',
+
+        # empty workspace space - for subclasses to redefine
         WORKSPACE_TYPE    => '',
     },
     messages => {
@@ -176,6 +173,19 @@ sub clear_component_cache {
 
 
 #-----------------------------------------------------------------------------
+# The project is deemed to be the parent at the top of the chain
+#-----------------------------------------------------------------------------
+
+sub project {
+    my $self = shift;
+    return $self->{ project } 
+       ||= $self->{ parent  }
+         ? $self->{ parent  }->project
+         : $self;
+}
+
+
+#-----------------------------------------------------------------------------
 # subspaces require the use of a factory
 #-----------------------------------------------------------------------------
 
@@ -199,14 +209,6 @@ sub subspace {
     return class($self->SUBSPACE_MODULE)->load->instance($params);
 }
 
-
-sub project {
-    my $self = shift;
-    return $self->{ project } 
-       ||= $self->{ parent  }
-         ? $self->{ parent  }->project
-         : $self;
-}
 
 sub dirs_up {
     my ($self, @path) = @_;
@@ -257,7 +259,7 @@ sub get {
         $self->debug("Workspace got schema: ", $self->dump_data($schema));
     }
 
-    my $type   = $schema->{ type } || BLANK;
+    my $type = $schema->{ type } || BLANK;
 
     if ($schema->{ component } || $type eq COMPONENT) {
         $self->debug("Found a component for $name: ", $self->dump_data($schema)) if DEBUG;
@@ -270,27 +272,6 @@ sub get {
 
 sub item_schema {
     shift->config->item(shift);
-}
-
-
-#-----------------------------------------------------------------------------
-# templates
-#-----------------------------------------------------------------------------
-
-sub renderer {
-    shift->templates->renderer(@_);
-}
-
-sub templates {
-    shift->component(TEMPLATES, @_);
-}
-
-sub scaffold {
-    shift->component(SCAFFOLD, @_);
-}
-
-sub builder {
-    shift->component(BUILDER, @_);
 }
 
 
