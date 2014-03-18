@@ -126,10 +126,21 @@ sub import_data_file_if_exists {
 
 sub head {
     my ($self, $name) = @_;
-    return $self->{ data }->{ $name }
-        // $self->cache_fetch($name)
-        // $self->fetch($name)
-        // $self->parent_fetch($name);
+    my $data = $self->{ data };
+
+    # may be a cached result, including undef
+    return $data->{ $name }
+        if exists $data->{ $name };
+
+    my $item = 
+            $self->cache_fetch($name)
+        //  $self->fetch($name)
+        //  $self->parent_fetch($name);
+
+    # store undefined value to avoid repeated false lookups
+    $data->{ $name } = $item if ! $item;
+
+    return $item
 }
 
 # this is called after a successful fetch();
