@@ -14,11 +14,6 @@ use Contentity::Class
 
 
 sub init_component {
-    # For the sake of easier subclassing
-    shift->init_asset(@_);
-}
-
-sub init_asset {
     my ($self, $config) = @_;
 
     my $asset = $config->{ asset } 
@@ -38,8 +33,15 @@ sub init_asset {
     $self->{ cache_instances } = $config->{ cache_instances } 
                              //= $self->CACHE_INSTANCES;
 
-    return $self;
+    return $self->init_asset($config);
 }
+
+
+sub init_asset {
+    # For the sake of easier subclassing
+    return $_[0];
+}
+
 
 
 #-----------------------------------------------------------------------------
@@ -60,6 +62,8 @@ sub lookup_asset {
     my $self = shift;
 
     # Cache-aware asset fetcher
+
+    $self->debug("lookup $_[0]  cache_instances: $self->{ cache_instances }") if DEBUG;
 
     if ($self->{ cache_instances }) {
         my $name  = shift;
@@ -85,7 +89,7 @@ sub fetch_asset {
     );
 
     $self->debug_data(
-        "$self->{ asset } asset $name: ", $config
+        "$self->{ asset } asset $name", $config
     ) if DEBUG;
 
     return $self->prepare_asset($config);

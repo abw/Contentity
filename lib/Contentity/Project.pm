@@ -64,7 +64,7 @@ sub workspace_config {
 
     # subspace root directory is relative to project workspace root
     $config->{ root }   = $self->dir( $config->{ root } );
-    $config->{ uri  } ||= $self->uri($uri);
+    $config->{ uri  } ||= $uri;
 
     return $config;
 }

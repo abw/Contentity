@@ -11,7 +11,7 @@ use Contentity::Class
     autolook    => 'get',
     accessors   => 'type',
     as_text     => 'ident',
-    constants   => 'HASH BLANK COMPONENT',
+    constants   => 'HASH BLANK SLASH COMPONENT',
     constant    => {
         # configuration manager
         CONFIG_MODULE     => 'Contentity::Config',
@@ -40,6 +40,8 @@ our $LOADED = { };
 
 sub init_workspace {
     my ($self, $config) = @_;
+
+#   $self->debug_data( workspace => $config );
 
     my $type = $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
     my $uri  = $self->{ uri  } = $config->{ uri  } || join(
@@ -209,6 +211,35 @@ sub project {
        ||= $self->{ parent  }
          ? $self->{ parent  }->project
          : $self;
+}
+
+sub project_uri {
+    my $self = shift;
+    my $base = $self->{ project_uri }
+           ||= $self->init_project_uri;
+
+    return @_
+        ? sprintf("%s%s", $base, resolve_uri(SLASH, @_))
+        : $base;
+}
+
+sub init_project_uri {
+    my $self    = shift;
+    my $uri     = $self->uri;
+    my $project = $self->project;
+
+    # Bit of a nasty situation here.  We use a URI like sites/completely 
+    # to reference a site, e.g. $project->workspace('sites/completely').
+    # But we also need to have a global uri for caching that includes the
+    # project uri, e.g. cog/sites/completely
+
+    if ($project == $self) {
+        # there isn't a project above us
+        return $uri;
+    }
+    else {
+        return $project->uri($uri);
+    }
 }
 
 

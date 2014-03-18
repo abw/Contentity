@@ -12,6 +12,13 @@ sub init_component {
 
     $self->debug_data( config => $config );
 
+    $self->init_app($config);
+    return $self;
+}
+
+sub init_app {
+    my ($self, $config) = @_;
+    # stub for subclasses
     return $self;
 }
 

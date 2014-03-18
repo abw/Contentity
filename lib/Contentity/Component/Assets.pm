@@ -7,6 +7,7 @@ use Contentity::Class
     base      => 'Contentity::Component',
     import    => 'class',
     #accessors => 'config',
+    constants => 'FALSE SLASH',
     constant  => {
         ASSETS        => 'assets',
         CONFIG_MODULE => 'Contentity::Config',
@@ -42,6 +43,7 @@ sub init_config {
     $self->{ config } = $module->new(
         directory => $dir,
         parent    => $pconfig,
+        dir_tree  => FALSE,
     #   schemas   => $schemas,
     );
 
@@ -50,9 +52,10 @@ sub init_config {
 
 sub config {
     my $self   = shift;
+    my $uri    = join(SLASH, @_);
     my $config = $self->{ config };
     return $config unless @_;
-    return $config->get(@_);
+    return $config->get($uri);
 }
 
 1;
