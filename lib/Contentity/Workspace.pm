@@ -7,7 +7,8 @@ use Contentity::Class
     debug       => 0,
     base        => 'Badger::Workspace Contentity::Base',
     import      => 'class',
-    utils       => 'truelike falselike extend merge params self_params blessed reftype refaddr',
+    utils       => 'truelike falselike extend merge params self_params 
+                    blessed reftype refaddr resolve_uri',
     autolook    => 'get',
     accessors   => 'type',
     as_text     => 'ident',
@@ -233,13 +234,21 @@ sub init_project_uri {
     # But we also need to have a global uri for caching that includes the
     # project uri, e.g. cog/sites/completely
 
-    if ($project == $self) {
+    if (refaddr $project == refaddr $self) {
         # there isn't a project above us
         return $uri;
     }
     else {
         return $project->uri($uri);
     }
+}
+
+sub config_uri {
+    # The Badger::Workspace base class calls this method to determine the uri 
+    # for the config module (and cache) to use.  We want it to have a uri that's
+    # unique so we use the project-relative uri, e.g. cog/sites/completely
+    # instead of the local uri, e.g. sites/completely.
+    shift->project_uri(@_);
 }
 
 
