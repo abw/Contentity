@@ -40,7 +40,7 @@ sub init_component {
 # wrapper to store local (temporary) environment reference in $self->{ env }.
 #-----------------------------------------------------------------------------
 
-sub to_app {
+sub NOT_to_app {
     my $self = shift;
     return $self->wrap_app(
         $self->SUPER::to_app(@_)

@@ -4,7 +4,7 @@ use Contentity::Components;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
-    base        => 'Contentity::Workspace',
+    base        => 'Contentity::Workspace::Web',
     utils       => 'self_params id_safe',
     constants   => ':vhost DOT',
     constant    => {
@@ -64,7 +64,7 @@ sub workspace_config {
 
     # subspace root directory is relative to project workspace root
     $config->{ root }   = $self->dir( $config->{ root } );
-    $config->{ uri  } ||= $uri;
+    $config->{ uri  } ||= $self->uri($uri);
 
     return $config;
 }
@@ -109,48 +109,12 @@ sub all_workspaces_hash {
     return $spaces;
 }
 
-
 sub has_workspace {
     my $self = shift;
     my $hash = $self->workspace_name_hash;
     return $hash unless @_;
     my $name = shift;
     return $hash->{ $name };
-}
-
-
-#-----------------------------------------------------------------------------
-# Domains
-#-----------------------------------------------------------------------------
-
-sub OLD_domain {
-    shift->domains->domain(@_);
-}
-
-sub OLD_site_domains {
-    shift->domains->site_domains(@_);
-}
-
-sub OLD_domain_site {
-    my ($self, $name) = @_;
-    my $domain = $self->domain($name) || return;
-    my $wsuri  = $self->domain_workspace_uri($domain);
-    return $self->workspace($wsuri);
-}
-
-sub OLD_domain_workspace_uri {
-    my ($self, $domain) = @_;
-
-    if ($domain->{ workspace }) {
-        return $domain->{ workspace };
-    }
-    elsif ($domain->{ site }) {
-        return "sites/$domain->{ site }";
-    }
-
-    return $self->error_msg(
-        no_domain_workspace => $domain->{ domain }
-    );
 }
 
 

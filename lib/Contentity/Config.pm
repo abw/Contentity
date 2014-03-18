@@ -28,6 +28,8 @@ use Contentity::Class
 sub init {
     my ($self, $config) = @_;
 
+    $self->debug_data("config", $config) if DEBUG;
+
     $self->{ parent } = $config->{ parent };
  
     # First call Badger::Config base class method to handle any 'items' 
@@ -52,7 +54,7 @@ sub init_contentity {
 
 sub init_cache {
     my $self    = shift;
-    my $config  = $self->get('cache') || return;
+    my $config  = $self->get('cache')  || return;
     my $manager = $config->{ manager } || $self->CACHE_MANAGER;
 
     class($manager)->load;
@@ -61,6 +63,8 @@ sub init_cache {
         "cache manager config for $manager: ",
         $self->dump_data($config)
     ) if DEBUG;
+
+    $self->debug("cache URI: ", $self->uri) if DEBUG;
 
     my $cache = $manager->new(
         uri => $self->uri,
@@ -166,6 +170,8 @@ sub tail_cache {
     my $duration;
 
     $schema ||= $self->schema($name);
+
+    #$self->debug_data("tail_cache", $schema);
 
     if ($data && $self->{ cache } && ($duration = $schema->{ cache })) {
         $self->debug("found cache duration option: $duration") if DEBUG;

@@ -41,15 +41,15 @@ our $LOADED = { };
 sub init_workspace {
     my ($self, $config) = @_;
 
-    $self->SUPER::init_workspace($config);
-
     my $type = $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
     my $uri  = $self->{ uri  } = $config->{ uri  } || join(
         ':', 
         grep { defined $_ and length $_ }
-        $self->{ type },
+        #$self->{ type },
         $self->{ urn }
     );
+
+    $self->SUPER::init_workspace($config);
 
     # ugly temporary hack to allow 'component_path' configuration option to 
     # be passed to component factory - see t/workspace/components.t around
@@ -131,7 +131,6 @@ sub load_component {
         "ready to create $name component\n",
         "+ config: ", $self->dump_data($config)
     ) if DEBUG;
-
 
     # see if a module name is specified in $args, config hash or use $pkgmod
     my $module = $config->{ module };
@@ -293,6 +292,19 @@ sub ident {
     );
 }
 
+
+#-----------------------------------------------------------------------------
+# Modified config() method - I don't think we need to fallback on the
+# parent any more because Contentity::Config handles that.
+#-----------------------------------------------------------------------------
+
+sub config {
+    my $self   = shift;
+    my $config = $self->{ config };
+    return $config unless @_;
+    return $config->get(@_);
+#       // $self->parent_config(@_);
+}
 
 #-----------------------------------------------------------------------------
 # generic get (autoload) method using item_schema() to fetch schema

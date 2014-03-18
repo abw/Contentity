@@ -7,10 +7,13 @@ use Contentity::Class
     utils     => 'resolve_uri split_to_list Colour',
     constants => 'SLASH HASH VHOST_FILE',
     constant  => {
+        APPS      => 'apps',
+        ASSETS    => 'assets',
         BUILDER   => 'builder',
         COLOURS   => 'colours',
         DOMAINS   => 'domains',
         FONTS     => 'fonts',
+        FORMS     => 'forms',
         PLACK     => 'plack',
         RGB       => 'rgb',
         ROUTES    => 'routes',
@@ -25,6 +28,57 @@ use Contentity::Class
         bad_col_dot => 'Invalid colour method for %s: .%s',
         bad_col_val => 'Invalid colour value for %s: %s',
     };
+
+
+#------------------------------------------------------------------------
+# assets are things like forms, lists, etc., that get loaded on demand
+#------------------------------------------------------------------------
+
+sub assets {
+    shift->component(ASSETS, @_);
+}
+
+sub asset_config {
+    shift->assets->config(@_);
+}
+
+
+#------------------------------------------------------------------------
+# domains
+#------------------------------------------------------------------------
+
+sub domains {
+    shift->component(DOMAINS, @_);
+}
+
+sub domain_name {
+    shift->domains->name;
+}
+
+sub domain_names {
+    shift->domains->names;
+}
+
+sub domain_aliases {
+    shift->domains->aliases;
+}
+
+sub server_domains {
+    shift->config('server.domains') || [ ];
+}
+
+#-----------------------------------------------------------------------------
+# forms
+#-----------------------------------------------------------------------------
+
+sub forms {
+    shift->component(FORMS, @_);
+}
+
+sub form {
+    shift->forms->form(@_);
+}
+
 
 
 #-----------------------------------------------------------------------------
@@ -57,30 +111,6 @@ sub builder {
     shift->component(BUILDER, @_);
 }
 
-
-#------------------------------------------------------------------------
-# domains
-#------------------------------------------------------------------------
-
-sub domains {
-    shift->component(DOMAINS, @_);
-}
-
-sub domain_name {
-    shift->domains->name;
-}
-
-sub domain_names {
-    shift->domains->names;
-}
-
-sub domain_aliases {
-    shift->domains->aliases;
-}
-
-sub server_domains {
-    shift->config('server.domains') || [ ];
-}
 
 
 

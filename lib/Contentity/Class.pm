@@ -5,7 +5,7 @@ use Badger::Class
     version   => 0.01,
     debug     => 0,
     uber      => 'Badger::Class',
-    hooks     => 'constructor component resource resources autolook',
+    hooks     => 'constructor component asset assets autolook',
     utils     => 'is_object split_to_list camel_case blessed',
     constants => 'CODE',
     constant  => {
@@ -52,16 +52,17 @@ sub component {
 }
 
 
-sub resource {
+sub asset {
     my ($self, $name) = @_;
-    $self->constant( RESOURCE => $name );
+    $self->constant( ASSET => $name );
+    $self->alias( $name => 'asset' );   # e.g. form() => asset()
     return $self;
 }
 
 
-sub resources {
+sub assets {
     my ($self, $name) = @_;
-    $self->constant( RESOURCES => $name );
+    $self->constant( ASSETS => $name );
     return $self;
 }
 
@@ -111,6 +112,9 @@ sub autolook {
 
 
 1;
+
+__END__
+
 =head1 NAME
 
 Contentity::Class - Contentity metaclass construction module

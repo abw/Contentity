@@ -31,8 +31,7 @@ sub init {
     $self->{ urn       } = $config->{ urn    };
     $self->{ config    } = $subconfig;
 
-    return $self
-        ->init_component($subconfig);
+    return $self->init_component($subconfig);
 }
 
 

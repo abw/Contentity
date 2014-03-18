@@ -5,7 +5,8 @@ use Contentity::Context;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::Component',
+    # TODO: remove dependence on C::P::Base?
+    base      => 'Contentity::Component Contentity::Plack::Base', # Plack::Component',
     accessors => 'env request',
     constant  => {
         CONTEXT => 'Contentity::Context',
@@ -20,7 +21,32 @@ sub init_component {
     return $self;
 }
 
-sub app {
+#-----------------------------------------------------------------------------
+# Custom to_app() method which calls wrap_app() to add an extra runtime
+# wrapper to store local (temporary) environment reference in $self->{ env }.
+#-----------------------------------------------------------------------------
+
+sub to_app {
+    my $self = shift;
+    return $self->wrap_app(
+        $self->SUPER::to_app(@_)
+    );
+}
+
+sub wrap_app {
+    my $self = shift;
+    my $app  = shift;
+    return sub {
+        #local $self->{ env } = $_[0];
+        $self->debug("Running app");
+        $app->(@_);
+    };
+}
+
+1;
+__END__
+
+sub NOT_app {
     my $self = shift;
     my $app  = $self->dispatcher;
 
@@ -29,7 +55,7 @@ sub app {
     };
 }
 
-sub dispatcher {
+sub NOT_dispatcher {
     my $self = shift;
 
     return sub {
