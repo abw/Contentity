@@ -4,13 +4,18 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Base',
-    utils     => 'find_program',
-    constants => 'HASH',
+    utils     => 'find_program falselike',
+    constants => 'HASH BLANK',
     constant  => {
         INTRO   => 'intro',
         SECTION => 'section',
     },
-    accessors => 'script option';
+    accessors => 'script option items';
+
+our $HELPERS = {
+    program => \&program_helper,
+};
+
 
 sub init {
     my ($self, $config) = @_;
@@ -23,6 +28,10 @@ sub init {
     $self->{ quiet  } = $self->{ data }->{ quiet };
     $self->debug("init data: ", $self->dump_data($self->{ data })) if DEBUG;
 
+    $self->{ title } = $script->{ title };
+    $self->{ about } = $script->{ about };
+    $self->{ items } = $script->{ items };
+
     $self->init_script($script);
 
     return $self;
@@ -30,87 +39,85 @@ sub init {
 
 sub init_script {
     my ($self, $script) = @_;
-    my $group;
+    my $items = $script->{ items };
+    local $self->{ sections } = [ ];
+    local $self->{ sectpath } = [ ];
+    $self->init_items($items);
+    $self->debug_data("items: ", $items) if DEBUG;
+}
 
-    foreach $group (@$script) {
-        $self->init_group($group);
+sub init_items {
+    my ($self, $items) = @_;
+
+    foreach my $item (@$items) {
+        $self->init_item($item);
     }
 }
 
-sub init_group {
-    my ($self, $group) = @_;
-    my $opts  = { };
-    my $urn   = undef;
-    my ($section, $name, $spec);
+sub init_item {
+    my ($self, $item) = @_;
+    my $type  = $item->{ type } || BLANK;
+    my $urn   = $item->{ urn  } || $item->{ name };
 
-    if (ref $group->[0] eq HASH) {
-        my $hash = shift @$group;
-        my $key  = (keys %$hash)[0];
-        my $val  = (values %$hash)[0];
-        $self->debug("expanded hash $key => $val") if DEBUG;
-        unshift(@$group, $key, $val);
+    if ($type eq SECTION) {
+        return $self->init_section($item);
     }
 
-    my @items = @$group;
+    $item->{ path } = [
+        @{ $self->{ sectpath } },
+        $urn
+    ];
 
-    if ($items[0] eq SECTION) {
-        shift @items;
-        $section = shift @items;
-        $urn = $section->{ urn } || $section->{ name } || $urn;
-        $opts->{ cmdarg } = $section->{ cmdarg } || $urn;
-        $self->debug("Initialising $urn script group") if DEBUG;
-    }
-    elsif ($items[0] eq INTRO) {
-        shift @items;
-        $section = shift @items;
-        $self->debug("Skipping intro section") if DEBUG;
-    }
+    my $short   = $item->{ short   };
+    my $option  = $item->{ option  };
+    my $default = $item->{ default };
 
-    while (@items) {
-        $name = shift @items;
-        if (ref $name eq HASH) {
-            $spec = (values %$name)[0];
-            $name = (keys   %$name)[0];
-        }
-        else {
-            $spec = shift @items || die "missing spec for $name";
-        }
-        $spec->{ path } = [ $urn || (), $name ];
-        $self->init_option($name, $spec, $opts);
-    }
-}
+    $self->{ option }->{ $option } = $item if $option;
+    $self->{ option }->{ $short  } = $item if $short;
 
-our $HELPERS = {
-    program => \&find_program,
-};
-
-sub init_option {
-    my ($self, $name, $option, $options) = @_;
-    my $cmdarg = $option->{ cmdarg } ||= join(
-        '_', 
-        grep { defined $_ } 
-        $options->{ cmdarg }, 
-        $name
-    );
-    my $default = $option->{ default };
-    my $short   = $option->{ short };
-    $self->{ option }->{ $cmdarg } = $option;
-    $self->{ option }->{ $short  } = $option if $short;
-    
     if ($default) {
         if ($default =~ /^(\w+):(\w.*)/) {
             my $type = $1;
-            my $item = $2;
+            my $name = $2;
             my $help = $HELPERS->{ $type }
                 || return $self->error_msg( invalid => "default for $name" => $default );
-            $option->{ default } = find_program($item);
-            $self->debug("found program $item: $option->{ default }") if DEBUG;
+            $item->{ default } = $help->($self, $name, $item);
+            $self->debug("found $type:$name via $type helper: $item->{ default }") if DEBUG;
         }
-        $self->default($option->{ path }, $option->{ default });
+    #   $self->default($option->{ path }, $option->{ default });
     }
-
-    $self->debug("Initialising $name option ($cmdarg)") if DEBUG;
 }
+
+
+sub init_section {
+    my ($self, $section) = @_;
+    my $urn   = $section->{ urn   } || $section->{ name };
+    my $items = $section->{ items };
+    my $stack = $self->{ sections };
+    my $frame = {
+        section => $section,
+        urn     => $urn,
+    };
+
+    local $self->{ sections } = [@$stack, $frame];
+    local $self->{ sectpath } = [
+        grep { defined && $_ } 
+        map  { $_->{ urn }   }
+        @{ $self->{ sections } },
+    ];
+
+    # force 'section' to be set to something useful
+    $section->{ section } = $self->{ sectpath };
+    #print "SECTPATH: $section->{ section }"
+
+    $self->debug(
+        "Initialising $section->{ section } script group: "
+    ) if DEBUG;
+
+    $self->init_items($items)
+        if $items;
+}
+
 
 sub default {
     my ($self, $path, $value) = @_;
@@ -122,6 +129,87 @@ sub default {
         $data = $data->{ $part } ||= { };
     }
     $data->{ $name } //= $value;
+}
+
+
+sub run {
+    my ($self, $app) = @_;
+    my $items = $self->script->{ items };
+
+    $self->run_items($items, $app);
+}
+
+sub run_items {
+    my ($self, $items, $app) = @_;
+
+    foreach my $item (@$items) {
+        $self->run_item($item, $app);
+    }
+}
+
+sub run_item {
+    my ($self, $item, $app) = @_;
+
+    return if $self->dont_prompt($item);
+
+    if ($item->{ section }) {
+        return $self->run_section($item, $app);
+    }
+
+    #$self->debug_data("TODO: run item: ", $item);
+
+    my $name = $item->{ name };
+
+    $app->option_prompt($name, $item);
+}
+
+
+sub run_section {
+    my ($self, $section, $app) = @_;
+    my $items = $section->{ items };
+
+    unless ($app->quiet) {
+        $app->prompt_title( $section->{ title } )
+            if $section->{ title };
+
+        $app->prompt_about( $section->{ about } )
+            if $section->{ about };
+
+        $app->prompt_instructions
+            if $section->{ instructions };
+    }
+
+    $self->run_items($items, $app)
+        if $items;
+
+    $app->prompt_newline
+        unless $app->quiet;
+}
+
+sub dont_prompt {
+    my ($self, $item) = @_;
+
+    # a defined but falselike prompt value (e.g. 0, false, etc) indicates
+    # we shouldn't prompt for this item
+    return defined   $item->{ prompt } 
+        && falselike $item->{ prompt };
+}
+
+sub program_helper {
+    my ($self, $name, $item) = @_;
+    find_program($name);
+}
+
+sub title {
+    my $self = shift;
+    return  $self->{ title }
+        ||= $self->{ items }->[0]->{ title };
+}
+
+sub about {
+    my $self = shift;
+    return  $self->{ about }
+        ||= $self->{ items }->[0]->{ about };
 }
 
 1;

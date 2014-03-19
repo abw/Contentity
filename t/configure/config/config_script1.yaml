@@ -1,0 +1,13 @@
+-
+    type:   intro
+    title:  Example Project
+    about:  |
+            This script prompts the user to confirm a number of configuration values
+            before processing the templates in the 'skeleton/project' directory to 
+            generate various project files. Note that this overwrites any existing files 
+            so you probably want to do a dry run (-n option) first to check what it's 
+            going to do.
+
+-
+    - section:
+        title:      Project Configuration

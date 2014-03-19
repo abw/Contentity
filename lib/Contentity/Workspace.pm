@@ -2,32 +2,28 @@ package Contentity::Workspace;
 
 use Contentity::Config;
 use Contentity::Workspaces;
-use Contentity::Components;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Badger::Workspace Contentity::Base',
     import      => 'class',
-    utils       => 'truelike falselike extend params self_params reftype refaddr',
-    autolook    => 'config',
-    accessors   => 'type component_factory',
+    utils       => 'truelike falselike extend merge params self_params 
+                    blessed reftype refaddr resolve_uri',
+    autolook    => 'get',
+    accessors   => 'type',
     as_text     => 'ident',
-    constants   => '',
+    constants   => 'HASH BLANK SLASH COMPONENT',
     constant    => {
         # configuration manager
         CONFIG_MODULE     => 'Contentity::Config',
 
-        # components
+        # component factories
         COMPONENT_FACTORY => 'Contentity::Components',
         WORKSPACE_FACTORY => 'Contentity::Workspaces',
         SUBSPACE_MODULE   => 'Contentity::Workspace',
+
+        # empty workspace space - for subclasses to redefine
         WORKSPACE_TYPE    => '',
-
-        #COMPONENTS        => 'components',
-        #DELEGATES         => 'delegates',
-        #RESOURCES         => 'resources',
-        #WORKSPACE         => 'resources',
-
     },
     messages => {
         no_module        => 'No %s module defined.',
@@ -38,8 +34,6 @@ use Contentity::Class
 
 our $LOADED = { };
 
-#our $COLLECTIONS = [COMPONENTS, RESOURCES];
-
 
 #-----------------------------------------------------------------------------
 # Initialisation methods
@@ -47,24 +41,73 @@ our $LOADED = { };
 
 sub init_workspace {
     my ($self, $config) = @_;
-    $self->SUPER::init_workspace($config);
-    $self->init_components($config);
-    $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
-    $self->{ uri  } = $config->{ uri  } || join(
+
+#   $self->debug_data( workspace => $config );
+
+    my $type = $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
+    my $uri  = $self->{ uri  } = $config->{ uri  } || join(
         ':', 
         grep { defined $_ and length $_ }
-        $self->{ type },
+        #$self->{ type },
         $self->{ urn }
     );
+
+    $self->SUPER::init_workspace($config);
+
+    # ugly temporary hack to allow 'component_path' configuration option to 
+    # be passed to component factory - see t/workspace/components.t around
+    # line 30
+    $self->{ factory_config } = $config;
+
+    $self->init_data_files($config);
+
+    # import all the pre-loaded config data into the workspace for efficiency
+    my $data = $self->{ data } ||= { };
+    merge($data, $self->config->data);
+    $self->debug_data("merged config data: ", $data) if DEBUG;
+
     return $self;
 }
 
+sub init_data_files {
+    my ($self, $config) = shift;
+    my $type = $self->type;
 
-sub init_components {
-    my ($self, $config) = @_;
-    $self->{ component_factory } = $self->COMPONENT_FACTORY->new($config);
+    # import any data file corresponding to the workspace type, e.g. project,
+    # site, portfolio, etc.
+    $self->config->import_data_file_if_exists($type)
+        if $type;
+
+    # TODO: load any other data files, like deployment, local, etc
 }
 
+
+sub component_factory {
+    my $self = shift;
+    return  $self->{ component_factory }
+        ||= $self->init_factory( component => $self->COMPONENT_FACTORY );
+}
+
+sub workspace_factory {
+    my $self = shift;
+    return  $self->{ workspace_factory }
+        ||= $self->init_factory( workspace => $self->WORKSPACE_FACTORY );
+}
+
+sub init_factory {
+    my ($self, $type, $default) = @_;
+    my $name    = "${type}_factory";
+    my $fconfig = $self->{ factory_config };
+    my $factory = $fconfig->{ $name } || $self->config($name) || $default;
+
+    if (blessed $factory) {
+        return $factory;
+    }
+    else {
+        class($factory)->load;
+        return $factory->new($fconfig);
+    }
+}
 
 
 #-----------------------------------------------------------------------------
@@ -92,7 +135,6 @@ sub load_component {
         "+ config: ", $self->dump_data($config)
     ) if DEBUG;
 
-
     # see if a module name is specified in $args, config hash or use $pkgmod
     my $module = $config->{ module };
     my $object;
@@ -106,7 +148,7 @@ sub load_component {
     else {
         # component name may have been re-mapped by config or schema
         $name = $config->{ component } || $name;
-        $object = $self->{ component_factory }->item( $name => $config ) || return;
+        $object = $self->component_factory->item( $name => $config ) || return;
     }
 
     if ($single) {
@@ -126,6 +168,9 @@ sub component_config {
     my $params = params(@_);
     my $schema = $self->item_schema($name) || { };
     my $config = $self->config($name) || { };
+    # if $config isn't a HASH reference then we can't merge it with params
+    $config = { $name => $config } unless ref $config eq HASH;
+
     my $merged = extend({ }, $config, $params);
     my $final  = { 
         component => $name,
@@ -156,6 +201,57 @@ sub clear_component_cache {
 }
 
 
+
+#-----------------------------------------------------------------------------
+# The project is deemed to be the parent at the top of the chain
+#-----------------------------------------------------------------------------
+
+sub project {
+    my $self = shift;
+    return $self->{ project } 
+       ||= $self->{ parent  }
+         ? $self->{ parent  }->project
+         : $self;
+}
+
+sub project_uri {
+    my $self = shift;
+    my $base = $self->{ project_uri }
+           ||= $self->init_project_uri;
+
+    return @_
+        ? sprintf("%s%s", $base, resolve_uri(SLASH, @_))
+        : $base;
+}
+
+sub init_project_uri {
+    my $self    = shift;
+    my $uri     = $self->uri;
+    my $project = $self->project;
+
+    # Bit of a nasty situation here.  We use a URI like sites/completely 
+    # to reference a site, e.g. $project->workspace('sites/completely').
+    # But we also need to have a global uri for caching that includes the
+    # project uri, e.g. cog/sites/completely
+
+    if (refaddr $project == refaddr $self) {
+        # there isn't a project above us
+        return $uri;
+    }
+    else {
+        return $project->uri($uri);
+    }
+}
+
+sub config_uri {
+    # The Badger::Workspace base class calls this method to determine the uri 
+    # for the config module (and cache) to use.  We want it to have a uri that's
+    # unique so we use the project-relative uri, e.g. cog/sites/completely
+    # instead of the local uri, e.g. sites/completely.
+    shift->project_uri(@_);
+}
+
+
 #-----------------------------------------------------------------------------
 # subspaces require the use of a factory
 #-----------------------------------------------------------------------------
@@ -170,7 +266,7 @@ sub subspace {
 
     if ($type) {
         $self->debug("subspace() found workspace type: $type") if DEBUG;
-        return $self->WORKSPACE_FACTORY->workspace(
+        return $self->workspace_factory->workspace(
             $type => $params
         );
     }
@@ -181,8 +277,51 @@ sub subspace {
 }
 
 
-sub item_schema {
-    shift->config->item(shift);
+sub dirs_up {
+    my ($self, @path) = @_;
+    my $spaces = $self->ancestors;
+    my ($space, $dir, @dirs);
+
+    foreach $space (@$spaces) {
+        $dir = $space->dir(@path);
+        push(@dirs, $dir) if $dir->exists;
+    }
+
+    return wantarray
+        ?  @dirs
+        : \@dirs;
+}
+
+
+#-----------------------------------------------------------------------------
+# name and object identifier for debugging purposes
+#-----------------------------------------------------------------------------
+
+sub name {
+    my $self = shift;
+    return  $self->{ name }
+        ||= $self->config('name')
+        ||  $self->{ urn };             # was uri
+}
+
+sub names {
+    my $self = shift;
+    my $noms = $self->{ names }
+           ||= [$self->urn, $self->aliases];
+    return wantarray
+        ? @$noms
+        :  $noms;
+}
+
+sub aliases {
+    my $self = shift;
+    my $akas = $self->{ aliases }
+           ||= $self->config('aliases')
+           ||  [ ];
+
+    return wantarray
+        ? @$akas
+        :  $akas;
 }
 
 
@@ -192,6 +331,54 @@ sub ident {
         '%s:0x%x:%s', ref($self) || reftype($self), refaddr($self), $self->uri
     );
 }
+
+
+#-----------------------------------------------------------------------------
+# Modified config() method - I don't think we need to fallback on the
+# parent any more because Contentity::Config handles that.
+#-----------------------------------------------------------------------------
+
+sub config {
+    my $self   = shift;
+    my $config = $self->{ config };
+    return $config unless @_;
+    return $config->get(@_);
+#       // $self->parent_config(@_);
+}
+
+#-----------------------------------------------------------------------------
+# generic get (autoload) method using item_schema() to fetch schema
+#-----------------------------------------------------------------------------
+
+sub get {
+    my ($self, $name, @args) = @_;
+    my $data   = $self->config($name) // return;
+    my $schema = $self->item_schema($name);
+
+    if (DEBUG) {
+        $self->debug("Workspace got config: ", $self->dump_data($data));
+        $self->debug("Workspace got schema: ", $self->dump_data($schema));
+    }
+
+    my $type = $schema->{ type } || BLANK;
+
+    if ($schema->{ component } || $type eq COMPONENT) {
+        $self->debug("Found a component for $name: ", $self->dump_data($schema)) if DEBUG;
+        return $self->component($name)
+    }
+    # else other types...
+
+    return $data;
+}
+
+sub item_schema {
+    shift->config->item(shift);
+}
+
+
+#-----------------------------------------------------------------------------
+# Cleanup
+#-----------------------------------------------------------------------------
 
 sub destroy {
     my $self = shift;
@@ -247,7 +434,7 @@ directory name is C<config>.
 This optional parameter can be used to specify the name of the main 
 configuration file (without file extension) that should reside in the 
 L<config_dir> directory under the C<root> project directory.  The default 
-configuration file name is C<contentity>.
+configuration file name is C<workspace>.
 
 =head1 GENERAL PURPOSE OBJECT METHODS
 
@@ -297,6 +484,7 @@ This should generally be used in preference to L<resources_dir()>.
 
 =head1 OBJECT METHODS FOR READING CONFIGURATION FILES
 
+TODO
 
 =head1 OBJECT METHODS FOR LOADING COMPONENTS
 

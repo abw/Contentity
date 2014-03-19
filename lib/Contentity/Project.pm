@@ -4,19 +4,19 @@ use Contentity::Components;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
-    base        => 'Contentity::Workspace',
-    utils       => 'self_params',
+    base        => 'Contentity::Workspace::Web',
+    utils       => 'self_params id_safe',
+    constants   => ':vhost DOT',
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
         WORKSPACE_TYPE  => 'project',
-#        CONFIG_FILE     => 'project',
-        DOMAINS         => 'domains',
         WORKSPACES      => 'workspaces',
     },
     messages => {
         no_workspaces       => "There aren't any other workspaces defined",
         no_domain_workspace => "There isn't any workspace defined for the '%s' domain",
     };
+
 
 
 #-----------------------------------------------------------------------------
@@ -71,8 +71,11 @@ sub workspace_config {
 
 sub workspace_names {
     my $self   = shift;
-    my $spaces = $self->workspaces_config;
-    return [ sort keys %$spaces ];
+    my $spaces = $self->workspace_configs;
+    my @names  = sort keys %$spaces;
+    return wantarray
+        ?  @names
+        : \@names;
 }
 
 sub workspace_name_hash {
@@ -106,7 +109,6 @@ sub all_workspaces_hash {
     return $spaces;
 }
 
-
 sub has_workspace {
     my $self = shift;
     my $hash = $self->workspace_name_hash;
@@ -117,42 +119,25 @@ sub has_workspace {
 
 
 #-----------------------------------------------------------------------------
-# Domains
+# Virtual hosts
 #-----------------------------------------------------------------------------
 
-sub domains {
-    shift->component(DOMAINS);
+sub vhosts_file {
+    my $self = shift;
+    my $name = shift || return $self->error_msg( missing => 'vhosts file name' );
+    $self->file( vhosts => id_safe($name).DOT.VHOST_EXTENSION );
 }
 
-sub domain {
-    shift->domains->domain(@_);
+sub vhosts_file_exists {
+    shift->vhost_file(@_)->exists;
 }
 
-sub site_domains {
-    shift->domains->site_domains(@_);
+sub vhost_extension {
+    return VHOST_EXTENSION;
 }
 
-sub domain_site {
-    my ($self, $name) = @_;
-    my $domain = $self->domain($name) || return;
-    my $wsuri  = $self->domain_workspace_uri($domain);
-    return $self->workspace($wsuri);
-}
 
-sub domain_workspace_uri {
-    my ($self, $domain) = @_;
 
-    if ($domain->{ workspace }) {
-        return $domain->{ workspace };
-    }
-    elsif ($domain->{ site }) {
-        return "sites/$domain->{ site }";
-    }
-
-    return $self->error_msg(
-        no_domain_workspace => $domain->{ domain }
-    );
-}
 
 
 1;
@@ -356,10 +341,6 @@ sub roots {
 # Mappings to various components, etc
 #-----------------------------------------------------------------------------
 
-sub plack {
-    shift->component('plack');
-}
-
 sub lists {
     shift->component('lists');
 }
@@ -368,9 +349,6 @@ sub list {
     shift->lists->resource(@_);
 }
 
-sub templates {
-    shift->component('templates');
-}
 
 sub template {
     shift->templates->template(@_);

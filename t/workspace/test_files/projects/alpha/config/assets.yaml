@@ -1,0 +1,5 @@
+schemas:
+    forms:
+        cache:   20 minutes
+    lists:
+        cache:   25 minutes

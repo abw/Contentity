@@ -7,6 +7,7 @@ use Badger::Factory::Class
     path    => 'Contentity(X)::Component Contentity(X)',
     utils   => 'params';
 
+
 sub type_args {
     my $self   = shift;
     my $type   = shift;
@@ -31,10 +32,6 @@ __END__
 
 Contentity::Components - factory module for loading and instantiating component modules
 
-=head1 SYNOPSIS
-
-TODO
-
 =head1 DESCRIPTION
 
 This is a factory module for loading and instantiating component modules. It
@@ -42,7 +39,10 @@ is a subclass of L<Badger::Factory> which provides most of the functionality.
 
 =head1 METHODS
 
-TODO
+=head2 component($params)
+
+Factory method for loading a component module (if necessary) and instantiating
+an object.  This is used by L<Contentity::Workspace> to create components.
 
 =head1 AUTHOR
 
@@ -50,7 +50,7 @@ Andy Wardley L<http://wardley.org/>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2006-2013 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2006-2014 Andy Wardley.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

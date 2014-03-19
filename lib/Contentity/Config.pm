@@ -11,7 +11,7 @@ use Contentity::Class
     debug     => 0,
     import    => 'class',
     base      => 'Badger::Config::Filesystem Contentity::Base',
-    utils     => 'truelike falselike extend Filter',
+    utils     => 'truelike falselike extend merge split_to_list Filter',
     accessors => 'parent',
     constants => 'HASH ARRAY',
     constant    => {
@@ -27,6 +27,10 @@ use Contentity::Class
 
 sub init {
     my ($self, $config) = @_;
+
+    $self->debug_data("config", $config) if DEBUG;
+
+    $self->{ parent } = $config->{ parent };
  
     # First call Badger::Config base class method to handle any 'items' 
     # definitions and other general initialisation
@@ -43,14 +47,14 @@ sub init {
 
 sub init_contentity {
     my ($self, $config) = @_;
-    $self->{ parent } = $config->{ parent };
     $self->init_cache;
+    $self->init_data_files;
     return $self;
 }
 
 sub init_cache {
     my $self    = shift;
-    my $config  = $self->get('cache') || return;
+    my $config  = $self->get('cache')  || return;
     my $manager = $config->{ manager } || $self->CACHE_MANAGER;
 
     class($manager)->load;
@@ -59,6 +63,8 @@ sub init_cache {
         "cache manager config for $manager: ",
         $self->dump_data($config)
     ) if DEBUG;
+
+    $self->debug("cache URI: ", $self->uri) if DEBUG;
 
     my $cache = $manager->new(
         uri => $self->uri,
@@ -71,6 +77,41 @@ sub init_cache {
     return $self;
 }
 
+sub init_data_files {
+    my $self  = shift;
+    my $files = $self->get('data_files') || return;
+    $self->import_data_files($files);
+    $files = split_to_list($files);
+    $self->debug_data("data files: ", $files);
+}
+
+sub import_data_files {
+    my $self = shift;
+
+    while (@_) {
+        my $files = shift;
+        $files = split_to_list($files);
+
+        foreach my $file (@$files) {
+            $self->import_data_file($file)
+        }
+    }
+}
+
+sub import_data_file {
+    my ($self, $file) = @_;
+    my $data = $self->get($file)
+        || $self->error_msg( invalid => 'data file' => $file );
+    $self->debug_data("imported data from $file: ", $data) if DEBUG;
+    merge($self->{ data }, $data);
+}
+
+sub import_data_file_if_exists {
+    my ($self, $file) = @_;
+    my $data = $self->get($file) || return;
+    $self->debug_data("imported data from $file: ", $data) if DEBUG;
+    merge($self->{ data }, $data);
+}
 
 # TODO: init_schema() init_schemas() and other configure_XXX() methods in 
 # Contentity::Metadata
@@ -85,10 +126,21 @@ sub init_cache {
 
 sub head {
     my ($self, $name) = @_;
-    return $self->{ data }->{ $name }
-        // $self->cache_fetch($name)
-        // $self->fetch($name)
-        // $self->parent_fetch($name);
+    my $data = $self->{ data };
+
+    # may be a cached result, including undef
+    return $data->{ $name }
+        if exists $data->{ $name };
+
+    my $item = 
+            $self->cache_fetch($name)
+        //  $self->fetch($name)
+        //  $self->parent_fetch($name);
+
+    # store undefined value to avoid repeated false lookups
+    $data->{ $name } = $item if ! $item;
+
+    return $item
 }
 
 # this is called after a successful fetch();
@@ -129,6 +181,8 @@ sub tail_cache {
     my $duration;
 
     $schema ||= $self->schema($name);
+
+    #$self->debug_data("tail_cache", $schema);
 
     if ($data && $self->{ cache } && ($duration = $schema->{ cache })) {
         $self->debug("found cache duration option: $duration") if DEBUG;
@@ -221,7 +275,7 @@ sub parent_head {
 
 sub merge_data {
     my ($self, $name, $parent, $child, $schema) = @_;
-    my $merged = { };
+    my $merged;
 
     $parent = { 
         map { $_ => 1 }
@@ -240,35 +294,34 @@ sub merge_data {
             && ref($child)  eq HASH 
             && ref($parent) eq HASH;
 
-    my @keys = keys %$parent;
-    my $inherit = $schema->{ inherit_filter };
-    my $merge   = $schema->{ merge_filter   };
+    my $submerge = $schema->{ submerge };
 
-    if (! $inherit && ! $merge) {
-        $self->debug("No inherit or merge rules - doing a simple inherit") if DEBUG;
-        return {
+    if (! $submerge) {
+        $self->debug("No submerge rules - doing a simple inherit") if DEBUG;
+        $merged = {
             %$parent,
             %$child
         };
     }
+    else {
+        my $filter = $self->new_filter($submerge);
 
-    # first inherit the relevant items from the parent data set
-    while (my ($key, $value) = each %$parent) {
-        next if $inherit
-            &&  $inherit->item_rejected($key);
-        $merged->{ $key } = $value;
-    }
+        # first inherit all items from the parent data set
+        $merged = { %$parent };
 
-    # then add (or merge) in any items from the child data set
-    while (my ($key, $value) = each %$child) {
-        if ($merge && $merge->item_accepted($key)) {
-            my $old = $merged->{ $key };
-            $value = $self->merge_data_item($name, $key, $old, $value)
-                if defined $old;
+        # then add (or merge) in any items from the child data set
+        while (my ($key, $value) = each %$child) {
+            if ($filter->item_accepted($key)) {
+                $self->debug("merging $key") if DEBUG;
+                my $old = $merged->{ $key };
+                $value = $self->merge_data_item($name, $key, $old, $value)
+                    if defined $old;
+            }
+            $merged->{ $key } = $value;
         }
-        $merged->{ $key } = $value;
     }
 
+    $self->debug("MERGED: ", $self->dump_data($merged)) if DEBUG;
     return $merged;
 }
 
@@ -302,6 +355,29 @@ sub merge_data_item {
     }
 
     return [ $parent, $child ];
+}
+
+sub new_filter {
+    my ($self, $spec) = @_;
+
+    if (! ref $spec) {
+        # single word like 'all' or 'none'
+        $spec = {
+            accept => $spec
+        };
+    }
+    elsif (ref $spec ne HASH) {
+        $spec = {
+            include => $spec
+        };
+    }
+
+    $self->debug(
+        "filter spec: ",
+        $self->dump_data($spec),
+    ) if DEBUG;
+
+    return Filter($spec);
 }
 
 

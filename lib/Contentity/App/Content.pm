@@ -14,6 +14,12 @@ our $CONTENT_TYPE  = {
 };
 
 
+
+sub init_app {
+    my ($self, $config) = @_;
+    $self->debug("content app is in ", $self->workspace->ident, " workspace");
+}
+
 sub run {
     my ($self, $context) = @_;
     my $path = $context->path;

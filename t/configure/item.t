@@ -33,6 +33,7 @@ my $item = ITEM->new(
 
 ok( $item, 'created item for the foo thing' );
 
-print $item->help if DEBUG;
-
-#$item->prompt;
+if (DEBUG) {
+    print "Help option:\n", $item->help, "\n";
+    $item->prompt;
+}

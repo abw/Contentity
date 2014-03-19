@@ -1,0 +1,11 @@
+schemas:
+  site:
+    type:       component
+    tree_type:  nest
+    merge:      true
+    submerge:   humans
+
+  pages:
+    tree_type:  uri
+    merge:      true
+    uri_paths:  absolute

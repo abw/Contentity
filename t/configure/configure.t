@@ -19,25 +19,16 @@ use Badger
     Debug  => [import => ':all'];
 
 use Badger::Test 
-    tests => 2,
-    debug => 'Contentity::Configure',
+    tests => 1,
+    debug => 'Contentity::Configure::App',
     args  => \@ARGV;
 
-use Contentity::Configure;
+use Contentity::Configure::App;
 
-my $script = Contentity::Configure->new(
+my $app = Contentity::Configure::App->new(
     directory => Bin,
     args      => \@ARGV,
     prompt    => 0,
 );
 
-ok( $script, 'created configure script' );
-
-my $data = $script->data;
-
-is( $data->{ database }->{ hostname }, 'localhost', 'got database.hostname' );
-
-main->debug(
-    "data: ",
-    main->dump_data($data)
-) if DEBUG;
+ok( $app, 'created app' );

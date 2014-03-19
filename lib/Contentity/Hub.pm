@@ -20,7 +20,7 @@ use Contentity::Class
 our $CONFIG     = 'Contentity::Config';
 our $COMPONENTS = {
     project     => 'Contentity::Project',
-    middlewares => 'Contentity::Middlewares',
+    middlewares => 'Contentity::Plack::Middlewares',
 };
 
 

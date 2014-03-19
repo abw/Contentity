@@ -12,7 +12,7 @@ use Contentity::Class
         CODEC        => 'storable',
         CODECS       => 'Badger::Codecs',
         CACHE_MODULE => 'Contentity::Cache::Memory',
-        URI_FORMAT   => '%s:/%s',
+        URI_FORMAT   => '%s:%s',
     };
 
 

@@ -5,8 +5,8 @@ use Badger::Class
     version   => 0.01,
     debug     => 0,
     uber      => 'Badger::Class',
-    hooks     => 'constructor component resource resources autolook',
-    utils     => 'is_object split_to_list camel_case',
+    hooks     => 'constructor component asset assets autolook',
+    utils     => 'is_object split_to_list camel_case blessed',
     constants => 'CODE',
     constant  => {
         UTILS            => 'Contentity::Utils',
@@ -52,16 +52,17 @@ sub component {
 }
 
 
-sub resource {
+sub asset {
     my ($self, $name) = @_;
-    $self->constant( RESOURCE => $name );
+    $self->constant( ASSET => $name );
+    $self->alias( $name => 'asset' );   # e.g. form() => asset()
     return $self;
 }
 
 
-sub resources {
+sub assets {
     my ($self, $name) = @_;
-    $self->constant( RESOURCES => $name );
+    $self->constant( ASSETS => $name );
     return $self;
 }
 
@@ -74,7 +75,7 @@ sub resources {
 #-----------------------------------------------------------------------------
 
 our $AUTOLOAD;
-our $CALLUP = 1;
+our $CALLUP = 0;
 
 sub autolook {
     my ($self, $methods) = @_;
@@ -86,15 +87,19 @@ sub autolook {
         AUTOLOAD => sub {
             my ($this, @args) = @_;
             my ($name) = ($AUTOLOAD =~ /([^:]+)$/ );
-            return if $name eq 'DESTROY';
             my $value;
+
+            return if $name eq 'DESTROY';
+
+            confess "AUTOLOAD $name() called on unblessed value '$this'"
+                unless blessed $this;
 
             foreach my $method (@$methods) {
                 $value = $this->$method($name, @args);
                 #print STDERR "tried $method got ", $value // '<undef>', "\n";
                 return $value if defined $value;
             }
-            my @caller = caller($CALLUP) || caller(0);
+            my @caller = caller($CALLUP);
             return $this->error_msg( 
                 bad_method => $name, ref($this) || $this, 
                 (@caller)[1,2] 
@@ -107,6 +112,9 @@ sub autolook {
 
 
 1;
+
+__END__
+
 =head1 NAME
 
 Contentity::Class - Contentity metaclass construction module

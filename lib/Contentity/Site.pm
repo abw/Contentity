@@ -1,5 +1,7 @@
 package Contentity::Site;
 
+die __PACKAGE__, " is deprecated\n";
+
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
@@ -10,36 +12,10 @@ use Contentity::Class
     };
 
 
-#-----------------------------------------------------------------------------
-# Initialisation methods
-#-----------------------------------------------------------------------------
-
-sub init {
-    my ($self, $config) = @_;
-    $self->init_workspace($config);
-    $self->init_site($config);
-    return $self;
-}
-
-sub init_site {
-    my ($self, $config) = @_;
-}
-
-sub project {
-    shift->uberspace;
-}
-
 1;
 
 
 __END__
-    constant    => {
-        CONFIG_FILE => 'site',
-        ROUTER      => 'Contentity::Router'
-    },
-    messages => {
-        no_app => "No application defined for $path",
-    };
 
 sub dispatch {
     my ($self, $context) = @_;
@@ -67,74 +43,9 @@ sub dispatch {
     return $context->response;
 }
 
-#sub init {
-#    my ($self, $config) = @_;
-#    $self->init_project($config);
-#    $self->debug("site init");
-#    return $self;
-#}
-
-
-sub project {
-    shift->grand_master;
-}
-
-sub domains {
-    my $self = shift;
-    return  $self->{ domains }
-        ||= $self->project->site_domains($self->urn);
-}
-
-sub domain {
-    my $self = shift;
-    return  $self->{ domain }
-        ||= $self->domains->[0];
-}
-
 #-----------------------------------------------------------------------------
 # Mapping simple names to URLs, e.g. scheme_info => /scheme/:id/info
 #-----------------------------------------------------------------------------
-
-sub urls {
-    my $self = shift;
-    return  $self->{ urls }
-        ||= $self->config_underscore_tree('urls');
-}
-
-sub url {
-    my $self = shift;
-    my $urls = $self->urls;
-    my $name = shift || return $urls;
-    return $urls->{ $name }
-        || $self->decline_msg( invalid => url => $name );
-}
-
-#-----------------------------------------------------------------------------
-# URL routing, e.g. from /scheme/:id/info to get the correct metadata
-#-----------------------------------------------------------------------------
-
-sub routes {
-    my $self = shift;
-    return  $self->{ routes }
-        ||= $self->config_uri_tree('routes');
-}
-
-sub router {
-    my $self = shift;
-    return  $self->{ router }
-        ||= $self->ROUTER->new(
-                routes => $self->routes
-            );
-}
-
-
-sub match_route {
-    shift->router->match(@_);
-}
-
-sub add_route {
-    shift->router->add_route(@_);
-}
 
 sub apps {
     shift->component('apps');
@@ -142,44 +53,6 @@ sub apps {
 
 sub app {
     shift->apps->app(@_);
-}
-
-#-----------------------------------------------------------------------------
-# RGB colours
-#-----------------------------------------------------------------------------
-
-sub rgb {
-    my $self = shift;
-    return  $self->{ rgb } 
-        ||= $self->load_rgb;
-}
-
-sub load_rgb {
-    my $self = shift;
-    my $rgb  = $self->config_underscore_tree('rgb');
-    foreach my $key (keys %$rgb) {
-        $rgb->{ $key } = Colour($rgb->{ $key });
-    }
-    return $rgb;
-}
-
-
-#-----------------------------------------------------------------------------
-# Font stacks
-#-----------------------------------------------------------------------------
-
-sub fonts {
-    my $self = shift;
-    return  $self->{ fonts } 
-        ||= $self->config_underscore_tree('fonts');
-}
-
-sub font {
-    my $self  = shift;
-    my $fonts = $self->fonts;
-    my $name  = shift || return $fonts;
-    return $fonts->{ $name }
-        || $self->decline_msg( invalid => font => $name );
 }
 
 #-----------------------------------------------------------------------------

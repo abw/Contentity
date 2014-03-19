@@ -1,15 +1,12 @@
 package Contentity::Plack::Builder;
 
-use Contentity::Plack::Middlewares;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::Base Badger::Prototype',
+    base      => 'Contentity::Plack::Base Badger::Prototype',
     accessors => 'middlewares',
-    constants => 'CODE',
-    constant  => {
-        MIDDLEWARES_FACTORY => 'Contentity::Plack::Middlewares',
-    };
+    constants => 'CODE';
+
 
 sub init {
     my ($self, $config) = @_;
@@ -25,10 +22,6 @@ sub init_builder {
 
 sub build {
     shift->not_implemented('in base class');
-}
-
-sub middleware {
-    shift->MIDDLEWARES_FACTORY->middleware(@_);
 }
 
 sub add_middleware {
@@ -59,7 +52,7 @@ __END__
 
 =head1 NAME
 
-Contentity::Web::Plack::Builder - Contentity base class for Plack application builders
+Contentity::Plack::Builder - Contentity base class for Plack application builders
 
 =head1 DESCRIPTION
 

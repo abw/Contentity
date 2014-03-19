@@ -2,8 +2,8 @@ package Contentity::Context;
 
 use Badger::URL;
 use Badger::Utils;
-use Badger::Web::Hub;
-use Badger::Web::Path;
+#use Badger::Web::Hub;
+#use Badger::Web::Path;
 use Badger::Debug 'debug_callers';
 
 use Contentity::Request;

@@ -3,9 +3,12 @@ package Contentity::Plack::Component;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::Base Plack::Component',
+    base      => 'Contentity::Plack::Base Plack::Component',
     accessors => 'env',
-    constants => 'HASH';
+    constants => 'HASH',
+    constant  => {
+        CONTEXT_NAME => 'context',
+    };
 
 
 #-----------------------------------------------------------------------------
@@ -37,7 +40,7 @@ sub init_component {
 # wrapper to store local (temporary) environment reference in $self->{ env }.
 #-----------------------------------------------------------------------------
 
-sub to_app {
+sub NOT_to_app {
     my $self = shift;
     return $self->wrap_app(
         $self->SUPER::to_app(@_)
@@ -61,7 +64,8 @@ sub wrap_app {
 
 sub context {
     my $self    = shift;
-    my $context = $self->env->{ context } ||= { };
+    my $cname   = $self->CONTEXT_NAME;
+    my $context = $self->env->{ $cname } ||= { };
 
     return $self->get_or_set(
         $context, @_
@@ -125,7 +129,7 @@ __END__
 
 =head1 NAME
 
-Contentity::Web::Plack::Component - Contentity base class for Plack components
+Contentity::Plack::Component - Contentity base class for Plack components
 
 =head1 DESCRIPTION
 

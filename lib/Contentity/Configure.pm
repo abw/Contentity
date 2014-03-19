@@ -1,26 +1,30 @@
 package Contentity::Configure;
 
+# Deprecated - being moved to C::Configure::App
+
 use Badger::Rainbow 
     ANSI => 'red green yellow cyan blue white grey';
 
-use Contentity::Metadata::Filesystem;
+use Badger::Config::Filesystem;
+use Contentity::Project;
 use Contentity::Configure::Script;
-use Contentity::Configure::Scaffold;
+#use Contentity::Configure::Scaffold;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Base',
-    accessors   => 'script data',
-    utils       => 'Bin Dir prompt split_to_list floor',
+    accessors   => 'script data root',
+    utils       => 'Bin Dir prompt split_to_list floor extend',
     constants   => 'HASH BLANK',
     constant    => {
         INTRO           => 'intro',
         SECTION         => 'section',
         CONFIG_SCRIPT   => 'config_script',
         CONFIG_SAVE     => 'config_save',
+        PROJECT_MODULE  => 'Contentity::Project',
         SCRIPT_MODULE   => 'Contentity::Configure::Script',
-        SCAFFOLD_MODULE => 'Contentity::Configure::Scaffold',
-        METADATA_MODULE => 'Contentity::Metadata::Filesystem',
+#        SCAFFOLD_MODULE => 'Contentity::Configure::Scaffold',
+        CONFIG_MODULE   => 'Badger::Config::Filesystem',
     };
 
 *title_colour  = \&white;
@@ -41,16 +45,17 @@ sub init {
     my $cfgdir   = $self->{ config_dir  } = $root->dir($cdir);
     my $data     = $self->{ data        } = $config->{ data } ||= { };
     my $args     = $config->{ args };
-    my $metamod  = $self->METADATA_MODULE->new( directory => $cfgdir );
-    my $metadata = $metamod->get($script)
+    my $confmod  = $self->CONFIG_MODULE->new( directory => $cfgdir );
+    my $metadata = $confmod->get($script)
         || return $self->error("Configuration script not found: $cdir/$script.yaml");
 
     # quick hack to set quite/verbose mode ahead of full config read
     if ($args) {
-        $self->{ verbose } = grep { /^--?v(erbose)?$/ } @$args;
-        $self->{ quiet   } = grep { /^--?q(uiet)?$/   } @$args;
-        $self->{ white   } = grep { /^--?w(hite)?$/   } @$args;
-        $self->{ reset   } = grep { /^--?r(eset)?$/   } @$args;
+        $self->{ verbose } = grep { /^--?v(erbose)?$/     } @$args;
+        $self->{ quiet   } = grep { /^--?q(uiet)?$/       } @$args;
+        $self->{ dry_run } = grep(/--?(n(othing)?|dry[-_]?run)/, @$args);
+        $self->{ white   } = grep { /^--?w(hite)?$/       } @$args;
+        $self->{ reset   } = grep { /^--?r(eset)?$/       } @$args;
     }
 
     $config->{ script } ||= $metadata;
@@ -60,7 +65,7 @@ sub init {
     $data->{ root } ||= $root->definitive;
 
     if ($sfile && ! $self->{ reset }) {
-        my $lastrun = $metamod->get($sfile);
+        my $lastrun = $confmod->get($sfile);
         if ($lastrun) {
             $self->note("Loaded saved configuration values from $cdir/$sfile");
             $self->debug("last run:", $self->dump_data($lastrun)) if DEBUG;
@@ -94,16 +99,20 @@ sub init {
         exit;
     }
 
+    $config->{ verbose } = $self->{ verbose };
+    $config->{ quiet   } = $self->{ quiet   };
+    $config->{ dry_run } = $data->{ dry_run };
+
     if ($config->{ prompt }) {
         $self->options_prompt;
     }
 
     if ($config->{ scaffold }) {
-        $self->scaffold;
+        $self->scaffold($config);
     }
 
     if ($sfile) {
-        $metamod->write_config_file(
+        $confmod->write_config_file(
             $sfile => $self->stripped_data
         );
         $self->note("Saved current configuration as $sfile");
@@ -393,6 +402,7 @@ sub option_group_blurb {
           "\n\n";
 
 }
+
 sub option_prompt {
     my ($self, $name, $option) = @_;
     return if defined $option->{ prompt } && ! $option->{ prompt };
@@ -483,20 +493,25 @@ sub random_insult {
 }
 
 sub scaffold {
-    shift->scaffold_module->scaffold;
+    my ($self, $config) = @_;
+    my $project = $self->project;
+    my $params = {
+        # take a copy of data to avoid self-referencing problems
+        data    => extend({ }, $config->{ data }),
+        verbose => $config->{ verbose },
+        quiet   => $config->{ quiet   },
+        dry_run => $config->{ dry_run },
+    };
+    $project->scaffold($params)->build;
 }
 
-sub scaffold_module {
-    my $self = shift;
-    my $conf = $self->{ config };
-
-#    $conf = { 
-#        %$conf,
-##        data => $self->{ data }
-#    };
-
-    return  $self->{ scaffold_module }
-        ||= $self->SCAFFOLD_MODULE->new($conf);
+sub project {
+    my ($self, $config) = @_;
+    return  $self->{ project }
+        ||= $self->PROJECT_MODULE->new(
+                root  => $self->root,
+                #quiet => 1,
+            );
 }
 
 sub note {
