@@ -40,8 +40,9 @@ sub init_context {
     $self->{ env } = $env;
     weaken $self->{ env };
 
-    #$self->{ path         } = $self->WEB_PATH->new($path);
     #$self->{ url          } = $self->WEB_URL->new($request->uri);
+    #$self->{ path         } = $self->WEB_PATH->new($path);
+    $self->{ path         } = $path;
     $self->{ request      } = $request;
     $self->{ data         } = $config->{ data } || { };
     $self->{ apps         } = [ ];

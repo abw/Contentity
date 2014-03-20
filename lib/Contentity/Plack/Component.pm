@@ -10,6 +10,18 @@ sub call {
     shift->not_implemented('in base class');
 }
 
+sub add_middleware {
+    my $self  = shift;
+    my $wares = $self->middleware(@_);
+    return $wares->wrap(
+        $self->to_app
+    );
+}
+
+sub middleware {
+    shift->workspace->middleware(@_);
+}
+
 
 1;
 

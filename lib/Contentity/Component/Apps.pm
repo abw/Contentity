@@ -9,7 +9,10 @@ use Contentity::Class
     constant  => {
         FACTORY_TYPE    => 'apps',
         FACTORY_MODULE  => 'Contentity::Apps',
-        CACHE_INSTANCES => 1,
+        # Hmmm... I don't think we should cache app instances... what if we
+        # have different instances of the same app running in different 
+        # locations?
+        CACHE_INSTANCES => 0,
     };
 
 1;

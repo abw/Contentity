@@ -4,8 +4,14 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::App',
-    constants => ':html SLASH';
+    accessors => 'renderer vfs',
+    constants => ':html SLASH',
+    constant  => {
+        RENDERER => 'content',
+    };
 
+
+# TODO: set the appropriate content type from the file extension
 our $CONTENT_TYPE  = {
     xml => 'text/xml',
     css => 'text/css',
@@ -14,45 +20,106 @@ our $CONTENT_TYPE  = {
 };
 
 
-
 sub init_app {
     my ($self, $config) = @_;
-    $self->debug("content app is in ", $self->workspace->ident, " workspace") if DEBUG;
+    my $workspace = $self->workspace;
+    my $renderer  = $config->{ renderer } || $self->RENDERER;
+    $self->{ renderer } = $workspace->renderer($renderer);
+    $self->{ vfs      } = $self->renderer->source_vfs;
+    $self->{ found    } = { };
+    $self->debug("$renderer renderer is $self->{ renderer }");
+    $self->debug("content app is in ", $workspace->ident, " workspace") if DEBUG;
 }
+
 
 sub run {
-    my ($self, $context) = @_;
-    my $path = $context->path;
-    my $site = $context->site;
-    my $tmps = $site->templates;
-    my $exts = $site->extensions || { };
-    my $file = $path;
+    my $self  = shift;
+    my $uri   = $self->context->path;
+    my $found = $self->{ found }->{ $uri };
 
-    LOOK: {
-        last if $tmps->template_file($file)->exists;
-        $self->debug("$file not found, adding ", DOT_HTML);
-        $file = $path . DOT_HTML;
-        last if $tmps->template_file($file)->exists;
-        $self->debug("$file not found, adding ", INDEX_HTML);
-        $file = $path . SLASH . INDEX_HTML;
-        last if $tmps->template_file($file)->exists;
-        $self->debug("$file not found, returning ");
-        $context->output(
-            "Template not found: $path in ", 
-            $self->dump_data($tmps->vfs->roots)
-        );
-        return;
-    }
-    $file =~ s[^/+][];
-
-    if ($file =~ /\.(\w+)$/) {
-        $self->extension_specific($context, $file, lc $1);
+    if (defined $found) {
+        return $found
+            ? $self->found($uri, $found)
+            : $self->not_found($uri);
     }
 
-    $context->output(
-        $tmps->render($file, $context->data)
+    my $vfs  = $self->vfs;
+    my $path = $vfs->path($uri);
+    my ($dir, $file);
+
+    #$self->debug(
+    #    "self is $self, renderer is $self->{ renderer }, uri:$uri path:$path is_file:", 
+    #    $path->is_file, "  is_dir:", $path->is_dir
+    #);
+    #$self->debug_data("$vfs roots", [$self->vfs->roots]);
+
+    if ($path->is_file) {
+        # Yay!  We found a file
+        $self->debug("$path is a file: ", $path->definitive);
+        $file = $vfs->file($path);
+        $dir  = $file->dir;
+    }
+    elsif ($path->is_dir) {
+        # We found a directory, so look for an index.html file in it
+        $self->debug("$path is a directory: ", $path->definitive);
+        $dir  = $vfs->dir($path);
+        $file = $dir->file(INDEX_HTML);
+
+        if ($file->exists) {
+            $self->debug("found index.html  $uri => $file");
+        }
+        else {
+            # no index file!
+            # TODO: put in a directory handler
+            return $self->error_msg( missing => "index.html in $dir" );
+        }
+    }
+    else {
+        # Otherwise try appending '.html' to find a file
+        $path = $vfs->path($uri.DOT_HTML);
+
+        if ($path->is_file) {
+            $file = $vfs->file($path);
+            $dir  = $file->dir;
+        }
+        else {
+            return $self->not_found($uri);
+        }
+    }
+
+    return $self->found($uri, $file);
+
+}
+
+sub found {
+    my ($self, $uri, $file) = @_;
+    $self->{ found }->{ $uri } = $file;
+    return $self->render($file);
+}
+
+sub not_found {
+    my ($self, $uri) = @_;
+
+    $self->{ found }->{ $uri } = 0;
+
+    return $self->send_not_found(
+        "Not found: $uri"
     );
 }
+
+sub render {
+    my ($self, $file) = @_;
+    my $data = $self->context->data;
+    my $html = $self->renderer->render($file->absolute, $data);
+    my $ext  = $file->extension;
+    $self->debug("TODO: extension-specific handling for $ext");
+    return $self->send_html($html);
+}
+
+#    if ($file =~ /\.(\w+)$/) {
+#        $self->extension_specific($context, $file, lc $1);
+#    }
+
 
 sub extension_specific {
     my ($self, $context, $file, $ext) = @_;

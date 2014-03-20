@@ -55,6 +55,10 @@ use Badger::Class
         BLACK               => '#000000',
         WHITE               => '#FFFFFF',
 
+        # response codes
+        OK                  => 200,
+        NOT_FOUND           => 404,
+
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
         @components,
@@ -72,6 +76,7 @@ use Badger::Class
             html            => 'INDEX_HTML DOT_HTML',
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
             http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
+            http_status     => 'OK NOT_FOUND',
         },
     };
 

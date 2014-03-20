@@ -1,8 +1,3 @@
-# New attempt (Feb 11th 2014, March 4th) to make subclass of Badger::Config with 
-# additional caching
-
-# Work in progress
-
 package Contentity::Config;
 
 use Contentity::Cache;
@@ -11,14 +6,13 @@ use Contentity::Class
     debug     => 0,
     import    => 'class',
     base      => 'Badger::Config::Filesystem Contentity::Base',
-    utils     => 'truelike falselike extend merge split_to_list Filter',
+    utils     => 'truelike falselike extend merge split_to_list blessed Filter',
     accessors => 'parent',
     constants => 'HASH ARRAY',
     constant    => {
         # caching options
-        CACHE_MANAGER     => 'Contentity::Cache',
+        CACHE_MANAGER => 'Contentity::Cache',
     };
-
 
 
 #-----------------------------------------------------------------------------
@@ -47,34 +41,40 @@ sub init {
 
 sub init_contentity {
     my ($self, $config) = @_;
-    $self->init_cache;
+    $self->init_cache($config);
     $self->init_data_files;
     return $self;
 }
 
 sub init_cache {
-    my $self    = shift;
-    my $config  = $self->get('cache')  || return;
+    my ($self, $config) = @_;
+    my $cache = $config->{ cache };
+
+    if ($cache && blessed $cache) {
+        $self->debug("got a cache object: $cache") if DEBUG;
+        $self->{ cache } = $cache;
+        return;
+    }
+
+    my $cconfig = $self->get('cache')  || return;
     my $manager = $config->{ manager } || $self->CACHE_MANAGER;
 
     class($manager)->load;
 
     $self->debug(
         "cache manager config for $manager: ",
-        $self->dump_data($config)
+        $self->dump_data($cconfig)
     ) if DEBUG;
 
     $self->debug("cache URI: ", $self->uri) if DEBUG;
 
-    my $cache = $manager->new(
+    $cache = $manager->new(
         uri => $self->uri,
-        %$config,
+        %$cconfig,
     );
 
     $self->debug("created new cache manager: $cache") if DEBUG;
     $self->{ cache } = $cache;
-
-    return $self;
 }
 
 sub init_data_files {
@@ -182,7 +182,7 @@ sub tail_cache {
 
     $schema ||= $self->schema($name);
 
-    #$self->debug_data("tail_cache", $schema);
+    $self->debug_data("tail_cache $name", $schema) if DEBUG;
 
     if ($data && $self->{ cache } && ($duration = $schema->{ cache })) {
         $self->debug("found cache duration option: $duration") if DEBUG;
@@ -217,7 +217,7 @@ sub cache_fetch {
             $self->debug("cache_fetch($name) got data: ", $self->dump_data($data));
         }
         else {
-            $self->debug("cache_fetch($name) found nothing") if DEBUG;
+            $self->debug("cache_fetch($name) found nothing");
         }
     }
     return $data;

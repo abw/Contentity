@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     component => 'web',
     accessors => 'context',
-    constants => 'BLANK';
+    constants => 'BLANK :http_status';
 
 
 sub init_component {
@@ -66,6 +66,13 @@ sub send_text {
 
 sub send_html {
     shift->response( 
+        content => join(BLANK, @_)
+    );
+}
+
+sub send_not_found {
+    shift->response( 
+        status  => NOT_FOUND,
         content => join(BLANK, @_)
     );
 }

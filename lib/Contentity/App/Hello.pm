@@ -16,7 +16,9 @@ sub run {
     }
 #    $self->debug_data( env => $self->env ) if DEBUG;
 
-    $self->send_text('Hi there!');
+    my $message = $self->config('message') || 'Hello World';
+
+    $self->send_html($message);
 }
 
 

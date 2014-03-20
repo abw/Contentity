@@ -5,6 +5,17 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Plack::Component Plack::Middleware';
 
+sub wrap {
+    my ($self, $app) = @_;
+
+    $self->{ app } = $app;
+
+    # we want to be able to chain ->add_middleware() calls, so we return the
+    # middleware object rather than the plack handler from $self->to_app;
+    return $self;
+#   return $self->to_app;
+}
+
 1;
 
 __END__

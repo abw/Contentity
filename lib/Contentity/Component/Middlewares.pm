@@ -9,7 +9,8 @@ use Contentity::Class
     constant  => {
         FACTORY_TYPE    => 'middlewares',
         FACTORY_MODULE  => 'Contentity::Middlewares',
-        CACHE_INSTANCES => 1,
+        # See comment in C::Component::Apps
+        CACHE_INSTANCES => 0,
     };
 
 1;

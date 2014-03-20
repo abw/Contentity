@@ -60,6 +60,7 @@ sub prepare_dirs {
 
 sub source_vfs {
     my $self = shift;
+
     return  $self->{ source_vfs }
         ||= VFS->new( root => $self->source_dirs );
 }
@@ -76,6 +77,11 @@ sub source_files {
     $self->debug("template source files:\n - ", join("\n - ", @$files)) if DEBUG;
 
     return $files;
+}
+
+sub source_path {
+    my $self = shift;
+    return $self->source_vfs->path(@_);
 }
 
 sub include_path {
@@ -170,6 +176,9 @@ sub render {
     my $params = params(@_);
     my $engine = $self->engine;
     my $output;
+
+    # remove leading slash - TT thinks you're trying to access an absolute path
+    $name =~ s[^/][];
 
     $engine->process($name, $params, \$output)
         || return $self->error_msg( engine_render => $name, $engine->error );
