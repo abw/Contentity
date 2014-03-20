@@ -5,29 +5,37 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Workspace',
     utils     => 'resolve_uri split_to_list Colour',
-    constants => 'SLASH HASH VHOST_FILE',
-    constant  => {
-        APPS      => 'apps',
-        ASSETS    => 'assets',
-        BUILDER   => 'builder',
-        COLOURS   => 'colours',
-        DOMAINS   => 'domains',
-        FONTS     => 'fonts',
-        FORMS     => 'forms',
-        PLACK     => 'plack',
-        RGB       => 'rgb',
-        ROUTES    => 'routes',
-        RESOURCES => 'resources',
-        SCAFFOLD  => 'scaffold',
-        SITEMAP   => 'sitemap',
-        TEMPLATES => 'templates',
-        URLS      => 'urls',
-    },
+    constants => ':components SLASH HASH VHOST_FILE',
     messages => {
         bad_col_rgb => 'Invalid RGB colour name specified for %s: %s',
         bad_col_dot => 'Invalid colour method for %s: .%s',
         bad_col_val => 'Invalid colour value for %s: %s',
     };
+
+
+#------------------------------------------------------------------------
+# apps are web applications
+#------------------------------------------------------------------------
+
+sub apps {
+    shift->component(APPS, @_);
+}
+
+sub app {
+    shift->apps->app(@_);
+}
+
+#-----------------------------------------------------------------------------
+# middlewares wrap around apps, e.g. for serving resources, error pages, etc
+#-----------------------------------------------------------------------------
+
+sub middlewares {
+    shift->component(MIDDLEWARES, @_);
+}
+
+sub middleware {
+    shift->middlewares->middleware(@_);
+}
 
 
 #------------------------------------------------------------------------
@@ -42,18 +50,30 @@ sub asset_config {
     shift->assets->config(@_);
 }
 
-#------------------------------------------------------------------------
-# apps are web applications
-#------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+# context provides a temporary worker for request/response handling
+#-----------------------------------------------------------------------------
 
-sub apps {
-    shift->component(APPS, @_);
+sub context {
+    shift->component(CONTEXT, @_);
 }
 
-sub app {
-    shift->apps->app(@_);
+sub request {
+    shift->component(REQUEST, @_);
 }
 
+sub response {
+    shift->component(RESPONSE, @_);
+}
+
+
+#-----------------------------------------------------------------------------
+# content types for requests and responses
+#-----------------------------------------------------------------------------
+
+sub content_types {
+    shift->component(CONTENT_TYPES, @_);
+}
 
 #------------------------------------------------------------------------
 # domains

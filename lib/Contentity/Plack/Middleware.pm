@@ -1,7 +1,7 @@
 package Contentity::Plack::Middleware;
 
 use Contentity::Class
-    version   => 0.01,
+    version   => 0.02,
     debug     => 0,
     base      => 'Contentity::Plack::Component Plack::Middleware';
 

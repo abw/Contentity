@@ -1,10 +1,15 @@
 package Contentity::Constants;
 
-our (@status);
+our (@components, @status);
 
 BEGIN {
     # all these upper case words are defined as constants for their lower
     # case eqivalent, e.g. ACTIVE => 'active'
+    @components = qw( 
+        APPS ASSETS BUILDER COLOURS CONTEXT CONTENT_TYPES DOMAINS FONTS FORMS 
+        MIDDLEWARES PLACK RGB ROUTES REQUEST RESPONSE RESOURCES SCAFFOLD 
+        SITEMAP TEMPLATES URLS
+    );
     @status = qw( 
         ACTIVE INACTIVE
     );
@@ -16,6 +21,7 @@ use Badger::Class
     debug    => 0,
     base     => 'Badger::Constants',
     import   => 'class',
+    words    => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
     constant => {
         COMPONENT           => 'component',
         MIDDLEWARE          => 'middleware',
@@ -51,18 +57,21 @@ use Badger::Class
 
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
+        @components,
         @status,
     },
     exports  => {
         any  => 'COMPONENT MIDDLEWARE',
         tags => {
             status          => \@status,
+            components      => \@components,
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
             html            => 'INDEX_HTML DOT_HTML',
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
+            http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
         },
     };
 

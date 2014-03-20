@@ -65,7 +65,7 @@ sub found {
 
 sub not_found {
     my $self = shift;
-    $self->debug("returning 404 as undef");
+    $self->debug("returning 404 as undef") if DEBUG;
     #return [404, [ 'Content-Type' => 'text/plain' ], [ "Not Found" ]];
     return undef;
 }

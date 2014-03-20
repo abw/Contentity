@@ -1,6 +1,6 @@
 package Contentity::Component::Plack::Resources;
 
-# Work in progress
+# moved to C::Middleware::Resources
 
 use Contentity::Class
     version   => 0.01,

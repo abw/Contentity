@@ -1,10 +1,9 @@
-package Contentity::Plack::Middleware::Resources;
+package Contentity::Middleware::Resources;
 
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::Plack::Middleware',
-    accessors => 'site',
+    component => 'middleware',
     constant  => {
         URL_MAP => 'URLMap',
         DIR_APP => 'Directory',
@@ -13,16 +12,18 @@ use Contentity::Class
 
 sub init_component {
     my ($self, $config) = @_;
-    my $site = $config->{ site }
-        || return $self->error_msg( missing => 'site' );
+
+    $self->debug_data( resources => $config ) if DEBUG;
 
     $self->{ resources } = $self->resources_url_map;
+
+    return $self;
 }
 
 
 sub resources_url_map {
     my $self    = shift;
-    my $site    = $self->site;
+    my $site    = $self->workspace;
     my $reslist = $site->resource_list;
     my $urlmap  = $self->handler( $self->URL_MAP );
 
@@ -48,7 +49,7 @@ sub resources_url_map {
 sub call {
     my($self, $env) = @_;
     my $resources = $self->{ resources };
-    my $res    = $resources->($env);
+    my $res       = $resources->($env);
 
     if ($res) {
         $self->debug("resources response: ", $self->dump_data($res)) if DEBUG;

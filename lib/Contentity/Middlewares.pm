@@ -1,10 +1,10 @@
-package Contentity::Plack::Middlewares;
+package Contentity::Middlewares;
 
 use Badger::Factory::Class
     version => 0.01,
     debug   => 0,
     item    => 'middleware',
-    path    => 'Contentity(X)::Plack::Middleware';
+    path    => 'Contentity(X)::Middleware';
 
 1;
 

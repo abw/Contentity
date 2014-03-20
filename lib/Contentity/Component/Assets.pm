@@ -30,6 +30,10 @@ sub init_config {
     my $space   = $self->workspace;
     my $parent  = $space->parent;
     my $dir     = $space->directory(ASSETS);
+
+    # if the directory doesn't exists then this workspace doesn't have any assets
+    return $self->null_config unless $dir->exists;
+
     my $module  = delete $config->{ config_module } ||  $self->CONFIG_MODULE;
     my $pconfig = $parent && $parent->assets->config;
 
@@ -48,6 +52,11 @@ sub init_config {
     );
 
     return $self;
+}
+
+sub null_config {
+    my $self = shift;
+    $self->{ config } = Badger::Config->new;
 }
 
 sub config {
