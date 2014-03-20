@@ -12,7 +12,7 @@ use Contentity::Class
         # Hmmm... I don't think we should cache app instances... what if we
         # have different instances of the same app running in different 
         # locations?
-        CACHE_INSTANCES => 0,
+        CACHE_INSTANCES => 1,
     };
 
 1;
