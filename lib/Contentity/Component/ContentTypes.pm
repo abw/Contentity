@@ -1,7 +1,7 @@
 package Contentity::Component::ContentTypes;
 
 use Contentity::Class
-    debug     => 1,
+    debug     => 0,
     base      => 'Contentity::Component',
     accessors => 'request_types response_types';
 

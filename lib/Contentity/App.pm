@@ -10,7 +10,7 @@ use Contentity::Class
 
 sub init_component {
     my ($self, $config) = @_;
-    $self->debug_data( config => $config );
+    $self->debug_data( app => $config ) if DEBUG;
     $self->init_app($config);
     return $self;
 }

@@ -17,7 +17,7 @@ our $CONTENT_TYPE  = {
 
 sub init_app {
     my ($self, $config) = @_;
-    $self->debug("content app is in ", $self->workspace->ident, " workspace");
+    $self->debug("content app is in ", $self->workspace->ident, " workspace") if DEBUG;
 }
 
 sub run {
