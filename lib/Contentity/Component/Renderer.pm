@@ -172,8 +172,7 @@ sub data {
 sub render {
     my $self   = shift;
     my $name   = shift;
-    # what about merging in our own data, e.g. workspace and Project refs
-    my $params = params(@_);
+    my $params = $self->template_data(@_);
     my $engine = $self->engine;
     my $output;
 
@@ -189,9 +188,24 @@ sub render {
 sub process {
     my $self   = shift;
     my $name   = shift;
+    my $params = $self->template_data(shift);
     my $engine = $self->engine;
-    return $engine->process($name, @_)
+    return $engine->process($name, $params, @_)
         || $self->error_msg( engine_render => $name, $engine->error );
+}
+
+sub template_data {
+    my $self  = shift;
+    my $space = $self->workspace;
+    return extend(
+        {
+            Project   => $space->project,
+            Workspace => $space,
+            Space     => $space,
+            Site      => $space,
+        },
+        @_
+    );
 }
 
 
