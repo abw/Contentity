@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Workspace',
     utils     => 'resolve_uri split_to_list Colour',
-    constants => ':components SLASH HASH VHOST_FILE',
+    constants => ':components :deployment SLASH HASH STATIC VHOST_FILE',
     messages => {
         bad_col_rgb => 'Invalid RGB colour name specified for %s: %s',
         bad_col_dot => 'Invalid colour method for %s: .%s',
@@ -185,12 +185,14 @@ sub fix_resources {
     my $fixed     = shift || { };
     my $resources = $self->config(RESOURCES) || return $fixed;
     my $purn      = $self->urn;
+    my $puri      = $self->uri;
 
     $self->debug_data("local resources: ", $resources) if DEBUG;
 
     while (my ($key, $resource) = each %$resources) {
         my  $urn  = $resource->{ urn       } ||= $key;
         my  $uri  = $resource->{ uri       } ||= $urn;
+        my  $type = $resource->{ type      } ||= STATIC;
         my  $file = $resource->{ file      };
         my  $dir  = $resource->{ directory };
         my  $purn = resolve_uri($purn, $urn);
@@ -207,31 +209,39 @@ sub fix_resources {
                     || $purl =~ /\/$/;
 
         if ($file) {
-            $resource->{ file } = $self->file($file);
+            my $f = $resource->{ file } = $self->file($file);
+            next unless $f->exists;
         }
         elsif ($dir) {
-            $resource->{ directory } = $self->dir($dir);
+            my $d = $resource->{ directory } = $self->dir($dir);
             $self->debug("set for $urn, $dir => $resource->{ directory }") if DEBUG;
+            next unless $d->exists;
         }
         else {
-            $resource->{ directory } = $self->dir( resources => $urn );
+            my $d = $resource->{ directory } = $self->dir( resources => $urn );
             $self->debug("no directory for $urn, defaulting to $resource->{ directory }") if DEBUG;
+            next unless $d->exists;
         }
 
         my $loc = $resource->{ file } || ($resource->{ directory } . SLASH);
 
         $self->dbg("$key: [$purn] + $urn => $uri") if DEBUG;
 
-        $fixed->{ $urn } = {
+        my $entry = {
             %$resource,
+            uri      => $uri,
             url      => $url,
+            type     => $type,
+            space    => $puri,
+            prefix   => $purn,
             location => $loc,
         };
+
+        $fixed->{ $urn  } = $entry;
         $fixed->{ $purn } = {
-            %$resource,
+            %$entry,
             url      => $purl,
-            location => $loc,
-        }
+        };
     }
 
     $self->debug_data("combined fixed resources: ", $fixed) if DEBUG;
@@ -241,12 +251,14 @@ sub fix_resources {
 
 sub inherit_resource_list {
     my $self      = shift;
-    my $resources = $self->resources;
+    my $resources = $self->inherit_resources;
+    my %seen;
 
     # Schwartzian transform to sort resources, see resource_sort_sig() below
     my $list = [
         map     { $_->[1] }
         sort    { $a->[0] cmp $b->[0] }
+#        grep    { ! $seen{ $_->[1]->{ url } }++ }
         map     { [ $self->resource_sort_sig($_), $_ ] }
         values  %$resources
     ];
@@ -437,13 +449,13 @@ sub add_route {
 # Plack
 #-----------------------------------------------------------------------------
 
-sub plack {
-    shift->component(PLACK, @_);
-}
+#sub plack {
+#    shift->component(PLACK, @_);
+#}
 
-sub plack_app {
-    shift->plack->app;
-}
+#sub plack_app {
+#    shift->plack->app;
+#}
 
 #-----------------------------------------------------------------------------
 # Other aliases
@@ -454,6 +466,30 @@ sub cog_server {
 }
 
 
+#-----------------------------------------------------------------------------
+# Deployment mode can be set to 'development' or 'production'.  In development
+# mode we enable certain extra features, such as generating CSS dynamically,
+# exposing directory indexes and so on.
+#-----------------------------------------------------------------------------
+
+sub deployment {
+    my $self   = shift;
+    my $deploy = $self->{ deployment }
+             ||= $self->config('deployment')
+             ||  $self->config('server.deployment')
+             ||  PRODUCTION;
+    return @_
+        ? $deploy eq $_[0]
+        : $deploy;
+}
+
+sub development {
+    shift->deployment(DEVELOPMENT);
+}
+
+sub production {
+    shift->deployment(PRODUCTION);
+}
 
 #-----------------------------------------------------------------------------
 # Sites are enable or disabled by creating or removing a symlink from the 

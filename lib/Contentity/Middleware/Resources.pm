@@ -29,20 +29,26 @@ sub resources_url_map {
 
     # create routes for all static resources
     foreach my $resource (@$reslist) {
-        $self->debug(
-            "adding static resource route: $resource->{ url } => $resource->{ location }"
-        ) if DEBUG;
+        $self->debug_data( $resource->{ url } => $resource );
 
         $urlmap->map(
-            $resource->{ url } => $self->handler( 
-                $self->DIR_APP => {
-                    root => $resource->{ location }
-                }
-            )->to_app
+            $resource->{ url } => $self->resource_handler($resource)->to_app
         );
     }
 
     return $urlmap->to_app;
+}
+
+sub resource_handler {
+    my ($self, $resource) = @_;
+    my $devel = $self->workspace->development;
+
+    return $self->handler( 
+        $self->DIR_APP => {
+            root  => $resource->{ location },
+            index => $devel,
+        }
+    );
 }
 
 

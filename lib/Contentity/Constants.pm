@@ -1,6 +1,6 @@
 package Contentity::Constants;
 
-our (@components, @status);
+our (@components, @status, @mutate, @deployment);
 
 BEGIN {
     # all these upper case words are defined as constants for their lower
@@ -12,6 +12,12 @@ BEGIN {
     );
     @status = qw( 
         ACTIVE INACTIVE
+    );
+    @mutate = qw( 
+        STATIC DYNAMIC
+    );
+    @deployment = qw(
+        DEVELOPMENT PRODUCTION
     );
 }
 
@@ -63,12 +69,16 @@ use Badger::Class
         map { $_ => lc $_ }
         @components,
         @status,
+        @mutate,
+        @deployment,
     },
     exports  => {
         any  => 'COMPONENT MIDDLEWARE',
         tags => {
             status          => \@status,
             components      => \@components,
+            mutate          => \@mutate,
+            deployment      => \@deployment,
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
