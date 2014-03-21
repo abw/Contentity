@@ -8,8 +8,8 @@ use Contentity::Class
     component => 'asset',
     constants => 'SLASH',
     constant  => {
-        FACTORY_TYPE    => 'anon',
-        CACHE_INSTANCES => 0,
+        FACTORY_TYPE => 'anon',
+        SINGLETONS   => 0,
     };
 
 

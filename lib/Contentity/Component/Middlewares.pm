@@ -10,7 +10,7 @@ use Contentity::Class
         FACTORY_TYPE    => 'middlewares',
         FACTORY_MODULE  => 'Contentity::Middlewares',
         # See comment in C::Component::Apps
-        CACHE_INSTANCES => 1,
+        SINGLETONS      => 1,
     };
 
 1;

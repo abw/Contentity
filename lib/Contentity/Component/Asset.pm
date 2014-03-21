@@ -4,12 +4,12 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Component',
-    accessors => 'assets',
+    accessors => 'assets singletons',
     utils     => 'extend params plural',
     constant  => {
-        ASSET           => undef,
-        ASSETS          => undef,
-        CACHE_INSTANCES => 0,
+        ASSET      => undef,
+        ASSETS     => undef,
+        SINGLETONS => 0,
     };
 
 
@@ -28,10 +28,11 @@ sub init_component {
         "Asset component [singular:$asset] [plural:$assets]", $config
     ) if DEBUG;
 
-    $self->{ asset           } = $asset;
-    $self->{ assets          } = $assets;
-    $self->{ cache_instances } = $config->{ cache_instances } 
-                             //= $self->CACHE_INSTANCES;
+    $self->{ asset      } = $asset;
+    $self->{ assets     } = $assets;
+    $self->{ instances  } = { };
+    $self->{ singletons } = $config->{ singletons } 
+                        //= $self->SINGLETONS;
 
     return $self->init_asset($config);
 }
@@ -59,20 +60,23 @@ sub asset {
 }
 
 sub lookup_asset {
-    my $self = shift;
+    my $self  = shift;
+    my $name  = shift;
+    my $cache = $self->{ instances };
+    my $asset = $cache->{ $name };
 
-    # Cache-aware asset fetcher
+    # Yay!  We found a cached instance
+    return $asset if $asset;
 
-    $self->debug("lookup $_[0]  cache_instances: $self->{ cache_instances }") if DEBUG;
+    # Otherwise go and fetch it anew
+    $asset = $self->fetch_asset($name, @_)
+        || return;
 
-    if ($self->{ cache_instances }) {
-        my $name  = shift;
-        my $cache = $self->{ instance_cache } ||= { };
-        return  $cache->{ $name } 
-            ||= $self->fetch_asset($name, @_);
-    }
+    # Maybe store this instance in the cache?
+    $cache->{ $name } = $asset
+        if $self->cache_asset($name, $asset);
 
-    return $self->fetch_asset(@_);
+    return $asset;
 }
 
 
@@ -108,6 +112,13 @@ sub prepare_asset {
     # stub method for subclasses to re-implement
     return $data;
 }
+
+sub cache_asset {
+    # Default behaviour is to depend on singletons config option, subclasses
+    # may modify this to test each asset to determine if it should be cached
+    shift->singletons;
+}
+
 
 # TODO: methods to fetch index, all assets, etc.
 
