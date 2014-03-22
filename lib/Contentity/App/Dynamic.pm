@@ -2,7 +2,7 @@ package Contentity::App::Dynamic;
 
 use Contentity::Class
     version   => 0.01,
-    debug     => 1,
+    debug     => 0,
     base      => 'Contentity::App::Content',
     accessors => 'uri_prefix uri_match',
     constant  => {
