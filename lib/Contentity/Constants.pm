@@ -5,15 +5,15 @@ our (@components, @status, @mutate, @deployment);
 BEGIN {
     # all these upper case words are defined as constants for their lower
     # case eqivalent, e.g. ACTIVE => 'active'
-    @components = qw( 
-        APPS ASSETS BUILDER COLOURS CONTEXT CONTENT_TYPES DOMAINS FONTS FORMS 
-        MIDDLEWARES PLACK RGB ROUTES REQUEST RESPONSE RESOURCES SCAFFOLD 
-        SITEMAP TEMPLATES URLS
+    @components = qw(
+        APPS ASSETS BUILDER COLOURS CONTEXT CONTENT_TYPES DOMAINS EXTENSIONS
+        FONTS FORMS MIDDLEWARES PLACK RGB ROUTES REQUEST RESPONSE RESOURCES
+        SCAFFOLD SITEMAP TEMPLATES URLS
     );
-    @status = qw( 
+    @status = qw(
         ACTIVE INACTIVE
     );
-    @mutate = qw( 
+    @mutate = qw(
         STATIC DYNAMIC
     );
     @deployment = qw(
@@ -44,7 +44,7 @@ use Badger::Class
         NULL_TIME           => '00:00:00',
         NULL_STAMP          => '0000-00-00 00:00:00',
         LAST_TIME           => '23:59:59',
- 
+
         # Date formats
         SHORT_DATE          => '%d-%b-%Y',
         MEDIUM_DATE         => '<ord> %B %Y',
@@ -99,7 +99,7 @@ Contentity::Constants - defines constants for Contentity
 =head1 SYNOPSIS
 
     package Contentity::Constants 'CONFIG_FILE';
-    
+
     print CONFIG_FILE;   # contentity.yaml
 
 =head1 DESCRIPTION
@@ -120,7 +120,7 @@ The name of the default directory containing configuration files: C<config>.
 
 =head2 CONFIG_FILE
 
-The name of the default configuration file relative to the configuration 
+The name of the default configuration file relative to the configuration
 directory: C<contentity.yaml>.
 
 =head2 CONFIG_CODEC

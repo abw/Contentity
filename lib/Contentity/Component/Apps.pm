@@ -16,5 +16,3 @@ use Contentity::Class
     };
 
 1;
-
-
