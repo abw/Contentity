@@ -4,6 +4,7 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     import    => 'class',
+    utils     => 'self_params',
     accessors => 'type factory',
     component => 'asset',
     constants => 'SLASH',
@@ -34,13 +35,25 @@ sub init_factory {
 }
 
 sub prepare_asset {
-    my $self   = shift;
-    my $config = $self->instance_config(@_);
+    my ($self, $params) = self_params(@_);
+
+    # In the usual case the type of asset object we want to create is the 
+    # same as the component name/config file, e.g. the 'content' app corresponds
+    # to Contentity::App::Content and can be loaded and instantiated via the
+    # Contentity::Component::Apps factory module.  The asset configuration can
+    # contain an entry indicating that a different object type should be used
+    # instead, e.g. app_type for an 'app' asset, 'form_type' for a form, etc.
+    my $config = $self->instance_config($params);
     my $urn    = $config->{ urn };
+    my $asset  = $self->{ asset };
+    my $type   = $params->{"${asset}_type"} || $urn;
 
-    $self->debug_data("creating app [$urn] [$config->{uri}]", $config) if DEBUG;
+    $self->debug_data(
+        "creating app [$urn] [${asset}_type:$type] [$config->{uri}]", 
+        $config
+    ) if DEBUG;
 
-    return $self->factory->item($urn, $config);
+    return $self->factory->item($type, $config);
 }
 
 sub instance_config {

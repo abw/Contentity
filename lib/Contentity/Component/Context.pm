@@ -21,6 +21,7 @@ use Contentity::Class
         REQUEST_MODULE => 'Plack::Request',
         WEB_PATH        => 'Badger::Web::Path',
         WEB_URL         => 'Badger::URL',
+        SINGLETON       => 0,
     };
 
 sub init_component {
@@ -70,13 +71,13 @@ sub response {
         # update existing response with new params
         my $params = Badger::Utils::params(@_);
         my ($key, $value);
-        
+
         foreach $key (qw{ status redirect }) {
             if ($value = delete $params->{ $key }) {
                 $response->$key($value);
             }
         }
-        if ($value = delete $params->{ content }) {
+        if ($value = delete $params->{ body } || delete $params->{ content }) {
             $response->body($value);
         }
         if ($value = delete $params->{ type }) {
@@ -124,17 +125,17 @@ sub content {
 # The HTTP_ACCEPT_ENCODING and HTTP_ACCEPT_LANGUAGE headers use a similar
 # formar.
 #
-# The parse_accept() method parses such a header and returns a hash array  
-# listing types against order of preference level, ignoring any set with a 
+# The parse_accept() method parses such a header and returns a hash array
+# listing types against order of preference level, ignoring any set with a
 # preference of 0
 #
-# e.g. 
+# e.g.
 #   {
 #       1   => ['text/json'],
 #       0.5 => ['text/x-json', 'application/json'],
 #   }
 #
-# The parse_accept_list() returns a list of all acceptable types (a merged 
+# The parse_accept_list() returns a list of all acceptable types (a merged
 # list of the values in the above).  The parse_accept_hash() method returns
 # a lookup hash for quickly checking those values that are defined.
 #
@@ -147,7 +148,7 @@ sub content {
 # hash.
 #
 # In addition, the content types defined in HTTP_ACCEPT are mapped through
-# the content_types component (Contentity::Component::ContentTypes) which 
+# the content_types component (Contentity::Component::ContentTypes) which
 # allows multiple content types like 'application/json', 'text/json', etc.,
 # to be identified by short aliases like 'json'.
 #
@@ -194,7 +195,7 @@ sub accept_types {
 
 sub accept_encodings {
     my $self = shift;
-    return  $self->{ accept_encodings } 
+    return  $self->{ accept_encodings }
         ||= $self->parse_accept_hash(
                 $self->env(HTTP_ACCEPT_ENCODING)
             );
@@ -202,7 +203,7 @@ sub accept_encodings {
 
 sub accept_languages {
     my $self = shift;
-    return  $self->{ accept_languages } 
+    return  $self->{ accept_languages }
         ||= $self->parse_accept_hash(
                 $self->env(HTTP_ACCEPT_LANGUAGE)
             );
@@ -225,12 +226,12 @@ sub parse_accept_list {
 
     # We want a list of all content types in order of rank
 
-    return [ 
+    return [
         # expand the content types in the list corresponding to...
-        map  { @{ $prefs->{ $_ } } } 
+        map  { @{ $prefs->{ $_ } } }
         # ...each of the sorted (numerically descending) hash keys
-        sort { $b <=> $a } 
-        keys %$prefs 
+        sort { $b <=> $a }
+        keys %$prefs
     ];
 }
 

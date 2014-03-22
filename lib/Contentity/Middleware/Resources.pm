@@ -29,7 +29,7 @@ sub resources_url_map {
 
     # create routes for all static resources
     foreach my $resource (@$reslist) {
-        $self->debug_data( $resource->{ url } => $resource );
+        $self->debug_data( $resource->{ url } => $resource ) if DEBUG;
 
         $urlmap->map(
             $resource->{ url } => $self->resource_handler($resource)->to_app
@@ -42,10 +42,21 @@ sub resources_url_map {
 sub resource_handler {
     my ($self, $resource) = @_;
     my $devel = $self->workspace->development;
+    my $app   = $resource->{ app };
 
-    return $self->handler( 
+    # use the dynamic handler if we're in development mode
+    if ($app) {
+       $self->debug("found a pre-defined app for $resource->{ url }: $app") if DEBUG;
+       return $app;
+    }
+    else {
+       $self->debug("creating directory handler for $resource->{ url }") if DEBUG;
+    }
+
+    return $self->handler(
         $self->DIR_APP => {
             root  => $resource->{ location },
+            # allow directory indexes if we're in development mode
             index => $devel,
         }
     );

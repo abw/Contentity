@@ -16,11 +16,11 @@ use Contentity::Class
 sub init_component {
     my ($self, $config) = @_;
 
-    my $asset = $config->{ asset } 
+    my $asset = $config->{ asset }
         || $self->ASSET
         || return $self->error_msg( missing => 'asset' );
 
-    my $assets = $config->{ assets } 
+    my $assets = $config->{ assets }
         || $self->ASSETS
         || plural($asset);
 
@@ -31,7 +31,7 @@ sub init_component {
     $self->{ asset      } = $asset;
     $self->{ assets     } = $assets;
     $self->{ instances  } = { };
-    $self->{ singletons } = $config->{ singletons } 
+    $self->{ singletons } = $config->{ singletons }
                         //= $self->SINGLETONS;
 
     return $self->init_asset($config);
@@ -84,11 +84,11 @@ sub fetch_asset {
     my $self   = shift;
     my $name   = shift;
     my $config = extend(
-        { 
+        {
             urn => $name,
         #   uri => $self->uri( $self->{ assets }, $name ),
         },
-        $self->asset_config($name), 
+        $self->asset_config($name),
         @_
     );
 
@@ -114,13 +114,32 @@ sub prepare_asset {
 }
 
 sub cache_asset {
+    my ($self, $name, $asset) = @_;
+    my $single = $asset->singleton;
+
+    # Each component can be declared as a singleton via a scheme definition,
+    # or configuration option.
+    if (defined $single) {
+        $self->debug(
+            "$name asset declared itself as ",
+            $single ? "being" : "not being",
+            " a singleton"
+        ) if DEBUG;
+        return $single;
+    }
+
     # Default behaviour is to depend on singletons config option, subclasses
     # may modify this to test each asset to determine if it should be cached
-    shift->singletons;
+    $self->debug(
+        "using default singletons rule for $name which says they ",
+        $self->singletons ? "are" : "are not",
+        " singletons"
+    ) if DEBUG;
+
+    return $self->singletons;
 }
 
 
 # TODO: methods to fetch index, all assets, etc.
 
 1;
-
