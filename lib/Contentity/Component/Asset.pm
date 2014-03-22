@@ -5,11 +5,12 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Component',
     accessors => 'assets singletons',
-    utils     => 'extend params plural',
+    utils     => 'extend params plural is_object',
     constant  => {
         ASSET      => undef,
         ASSETS     => undef,
         SINGLETONS => 0,
+        COMPONENT  => 'Contentity::Component',
     };
 
 
@@ -115,7 +116,8 @@ sub prepare_asset {
 
 sub cache_asset {
     my ($self, $name, $asset) = @_;
-    my $single = $asset->singleton;
+    my $single = $asset->singleton
+        if is_object(COMPONENT, $asset);
 
     # Each component can be declared as a singleton via a scheme definition,
     # or configuration option.
