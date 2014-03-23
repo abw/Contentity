@@ -96,11 +96,12 @@ sub new_response {
     my $self     = shift;
     my $request  = $self->request;
     my $response = $request->new_response;
+    my $content  = $self->content;
 
     $response->status( $self->status );
     $response->headers( $self->headers );
     $response->content_type( $self->content_type );
-    $response->body( $self->content );
+    $response->body( $content ) if $content && @$content;
 
     return $response;
 }
@@ -286,9 +287,17 @@ sub env {
 
 sub data {
     my $self = shift;
-    return  @_ >  1 ? $self->set(@_)
-        :   @_ == 1 ? $self->get(@_)
-        :             $self->{ data };
+    my $data = $self->{ data };
+
+    if (@_ == 1) {
+        return $self->get(@_);
+    }
+
+    if (@_ > 1) {
+        $self->set(@_);
+    }
+
+    return $data;
 }
 
 sub get {

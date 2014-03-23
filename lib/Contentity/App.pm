@@ -3,9 +3,11 @@ package Contentity::App;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
+    import    => 'CLASS',
     component => 'web',
-    accessors => 'context',
-    constants => 'BLANK :http_status';
+    accessors => 'context env',
+    constants => 'BLANK :http_status',
+    utils     => 'is_object';
 
 
 sub init_component {
@@ -22,7 +24,7 @@ sub init_app {
 }
 
 #-----------------------------------------------------------------------------
-# Interface to Plack 
+# Interface to Plack
 #-----------------------------------------------------------------------------
 
 sub call {
@@ -45,6 +47,34 @@ sub run {
 }
 
 
+#-----------------------------------------------------------------------------
+# Dispatch another app in the same context
+#-----------------------------------------------------------------------------
+
+sub call_app {
+    my $self = shift;
+    my $app  = shift;
+
+    $self->debug("calling app: $app") if DEBUG or 1;
+
+    return $app->(
+        $self->context->env
+    );
+}
+
+sub dispatch_app {
+    my $self = shift;
+    my $app  = is_object(CLASS, $_[0])
+        ? shift
+        : $self->workspace->app(@_);
+
+    $self->debug("dispatching app: $app") if DEBUG or 1;
+
+    return $app->dispatch(
+        $self->context
+    );
+}
+
 #-----------------------------------------------------------------------
 # Response
 #-----------------------------------------------------------------------
@@ -58,21 +88,28 @@ sub response {
 }
 
 sub send_text {
-    shift->response( 
+    shift->response(
         type    => 'text/plain',
         content => join(BLANK, @_)
     );
 }
 
 sub send_html {
-    shift->response( 
+    shift->response(
         content => join(BLANK, @_)
     );
 }
 
 sub send_not_found {
-    shift->response( 
+    shift->response(
         status  => NOT_FOUND,
+        content => join(BLANK, @_)
+    );
+}
+
+sub send_forbidden {
+    shift->response(
+        status  => FORBIDDEN,
         content => join(BLANK, @_)
     );
 }

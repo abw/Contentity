@@ -11,12 +11,15 @@ use Contentity::Class
     };
 
 
+# ARSE!  In the case of js, for example, we have both static files in
+# static/js and dynamic templates in templates/static/js
+
 sub init_app {
     my ($self, $config) = @_;
 
     $self->debug_data( dynamic => $config ) if DEBUG;
 
-    $self->init_content($config);
+    $self->init_directory($config);
 
     $self->{ uri_prefix } = $config->{ uri_prefix };
 

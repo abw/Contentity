@@ -41,7 +41,8 @@ sub resources_url_map {
 
 sub resource_handler {
     my ($self, $resource) = @_;
-    my $devel = $self->workspace->development;
+    my $space = $self->workspace;
+    my $devel = $space->development;
     my $app   = $resource->{ app };
 
     # use the dynamic handler if we're in development mode
@@ -53,13 +54,18 @@ sub resource_handler {
        $self->debug("creating directory handler for $resource->{ url }") if DEBUG;
     }
 
-    return $self->handler(
+    $self->debug_data( resource => $resource ) if DEBUG;
+
+    my $dirapp = $space->app(
         $self->DIR_APP => {
-            root  => $resource->{ location },
+            root      => $resource->{ location },
             # allow directory indexes if we're in development mode
-            index => $devel,
+            index     => $devel,
+            singleton => 0,
         }
     );
+    $self->debug("created directory app for $resource->{ location }: $dirapp") if DEBUG or 1;
+    return $dirapp;
 }
 
 

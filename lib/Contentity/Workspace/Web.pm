@@ -263,10 +263,6 @@ sub fix_resources {
         # if we're in development mode then we can attach any specified dev_app
         # to handle this resource
 
-        # Hmmm... this isn't good enough.  We also need to have the handler/app
-        # strip the prefix, e.g. /cog/css/example.css is /css/example.css
-        # in the cog webspace
-        #
         if ($devmode && $devapp) {
             my $base = SLASH . $urn;
             $rel->{ app } = $devapps->{ $devapp       } ||= $self->app($devapp);

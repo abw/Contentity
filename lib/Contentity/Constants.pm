@@ -32,8 +32,11 @@ use Badger::Class
         COMPONENT           => 'component',
         MIDDLEWARE          => 'middleware',
 
+        # misc constants relating to directory/file handling
         INDEX_HTML          => 'index.html',
         DOT_HTML            => '.html',
+        TEXT_HTML           => 'text/html',
+        TEXT_PLAIN          => 'text/plain',
 
         # virtual host files
         VHOST_FILE          => 'vhost.conf',
@@ -63,6 +66,7 @@ use Badger::Class
 
         # response codes
         OK                  => 200,
+        FORBIDDEN           => 403,
         NOT_FOUND           => 404,
 
         # map the various constants defined above to lower case equivalents
@@ -83,10 +87,10 @@ use Badger::Class
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
-            html            => 'INDEX_HTML DOT_HTML',
+            html            => 'INDEX_HTML DOT_HTML TEXT_HTML TEXT_PLAIN',
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
             http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
-            http_status     => 'OK NOT_FOUND',
+            http_status     => 'OK FORBIDDEN NOT_FOUND',
         },
     };
 

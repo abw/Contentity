@@ -12,20 +12,30 @@ sub init_component {
     my ($self, $config) = @_;
 
     $self->debug(
-        "Flyweight component init_component(): ", 
+        "Flyweight component init_component(): ",
         $self->dump_data($config)
     ) if DEBUG;
 
     $self->{ data } = $config->{ data } || $config;
+
+    $self->debug_data( "Flyweight data ", $self->{ data }) if DEBUG;
 
     return $self;
 }
 
 sub data {
     my $self = shift;
-    return  @_ >  1 ? $self->set(@_)
-        :   @_ == 1 ? $self->get(@_)
-        :             $self->{ data };
+    my $data = $self->{ data };
+
+    if (@_ == 1) {
+        return $self->get(@_);
+    }
+
+    if (@_ > 1) {
+        $self->set(@_);
+    }
+
+    return $data;
 }
 
 sub get {
@@ -60,4 +70,3 @@ sub shut_up {
 
 
 1;
-
