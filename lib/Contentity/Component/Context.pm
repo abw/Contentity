@@ -12,7 +12,7 @@ use Contentity::Class
     base        => 'Contentity::Component',
     accessors   => 'request path url status headers',
     mutators    => 'content_type',
-    utils       => 'is_object weaken',
+    utils       => 'is_object weaken extend',
     constants   => 'HASH ARRAY :http_accept',
     alias       => {
         output  => \&content,
@@ -281,6 +281,11 @@ sub env {
         : $_[0]->{ env };
 }
 
+sub script_name {
+    shift->request->script_name;
+}
+
+
 #-----------------------------------------------------------------------
 # Context data
 #-----------------------------------------------------------------------
@@ -308,13 +313,7 @@ sub get {
 
 sub set {
     my $self = shift;
-    my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
-    my $data = $self->{ data };
-
-    while (my ($key, $value) = each %$args) {
-        $data->{ $key } = $value;
-    }
-
+    extend($self->{ data }, @_);
     return $self;
 }
 

@@ -64,7 +64,11 @@ sub resource_handler {
             singleton => 0,
         }
     );
-    $self->debug("created directory app for $resource->{ location }: $dirapp") if DEBUG or 1;
+
+    $self->debug(
+        "created directory app for $resource->{ location }: $dirapp"
+    ) if DEBUG;
+
     return $dirapp;
 }
 
