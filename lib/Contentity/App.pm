@@ -7,7 +7,7 @@ use Contentity::Class
     component => 'web',
     accessors => 'context env',
     constants => 'BLANK :http_status',
-    utils     => 'is_object';
+    utils     => 'is_object extend';
 
 
 sub init_component {
@@ -75,6 +75,33 @@ sub dispatch_app {
     );
 }
 
+
+#-----------------------------------------------------------------------------
+# Template rendering
+#-----------------------------------------------------------------------------
+
+sub renderer {
+    my $self = shift;
+    return  $self->{ renderer }
+        ||= $self->workspace->renderer(
+                $self->config('renderer')
+             || $self->RENDERER
+            );
+}
+
+sub render {
+    my $self = shift;
+    my $name = shift;
+    my $data = extend(
+        { App => $self },
+        $self->context->data,
+        @_
+    );
+    $self->debug_data( "rendering $name with" => $data ) if DEBUG or 1;
+
+    return $self->renderer->render($name, $data);
+}
+
 #-----------------------------------------------------------------------
 # Response
 #-----------------------------------------------------------------------
@@ -111,6 +138,12 @@ sub send_forbidden {
     shift->response(
         status  => FORBIDDEN,
         content => join(BLANK, @_)
+    );
+}
+
+sub send_redirect {
+    shift->response(
+        redirect => join(BLANK, @_)
     );
 }
 
