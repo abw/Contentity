@@ -2,14 +2,17 @@ package Contentity::App::Directory;
 
 use Contentity::Class
     version   => 0.01,
-    debug     => 1,
+    debug     => 0,
     base      => 'Contentity::App',
-    accessors => 'root index renderer vfs',
+    accessors => 'root template index vfs',
     constants => ':html :http_status SLASH BLANK TRUE FALSE',
-    utils     => 'extend VFS',
+    utils     => 'extend join_uri VFS',
     constant  => {
         RENDERER => 'dynamic',
+        TEMPLATE => 'directory/index.html',
     };
+
+# TODO: This needs to take SCRIPT_NAME into account when generating URLs
 
 
 sub init_app {
@@ -18,15 +21,14 @@ sub init_app {
 
 sub init_directory {
     my ($self, $config) = @_;
-    my $workspace = $self->workspace;
-    my $renderer  = $config->{ renderer } || $self->RENDERER;
 
     $self->debug_data( directory => $config ) if DEBUG;
 
-    $self->{ renderer   } = $workspace->renderer($renderer);
+    $self->{ template   } = $config->{ template } || $self->TEMPLATE;
     $self->{ index      } = $config->{ index };
     $self->{ files      } = { };
     $self->{ dirs       } = { };
+    $self->{ redirects  } = { };
     $self->{ not_found  } = { };
 
     $self->init_vfs($config);
@@ -38,33 +40,40 @@ sub init_vfs {
     my $vdir = $self->{ root } = $self->workspace->dir($root);
 
     $self->{ vfs } = VFS->new( root => $vdir->definitive );
-    $self->debug("created directory VFS with root $vdir => ", $vdir->definitive) if DEBUG or 1;
+    $self->debug(
+        "created directory VFS with root $vdir => ", $vdir->definitive
+    ) if DEBUG;
 }
 
 sub run {
     my $self = shift;
     my $root = $self->root;
     my $uri  = $self->uri;
-    my ($path, $dir, $file);
+    my ($path, $dir, $file, $url);
 
-    $self->debug("URI: $uri") if DEBUG or 1;
-
-    # Is it something we've previously looked for but not found?
-    return $self->not_found($uri)
-        if $self->{ not_found }->{ $uri };
+    $self->debug("URI: $uri") if DEBUG;
 
     # Is it a file we've previously found?
-    return $self->found_file($uri, $file)
+    return $self->present_file($uri, $file)
         if $file = $self->{ files }->{ $uri };
 
     # Or a directory we've previously found?
-    return $self->found_dir($uri, $dir)
+    return $self->present_dir($uri, $dir)
         if $dir = $self->{ dirs }->{ $uri };
+
+    # Or something that required a redirect
+    return $self->send_redirect($url)
+        if $url = $self->{ redirects }->{ $uri };
+
+    # Is it something we've previously looked for but not found?
+    return $self->send_not_found($uri)
+        if $self->{ not_found }->{ $uri };
+
 
     # Have a look for it in the virtual filesystem
     $path = $self->path($uri);
 
-    $self->debug("URL: ", $path->definitive) if DEBUG or 1;
+    $self->debug("URL: ", $path->definitive) if DEBUG;
 
     # Is it a file?
     return $self->found_file($uri, $self->file($path))
@@ -75,9 +84,13 @@ sub run {
         $dir  = $self->dir($path);
         $file = $dir->file(INDEX_HTML);
 
-        # Is there an index.html file in the directory?
-        return $self->found_file($uri, $file)
+        # Is there an index.html file in the directory?  Redirect to it.
+        return $self->found_redirect($uri, $file->path)
             if $file->exists;
+
+        # Redirect to /some/dir/ if we're at /some/dir
+        return $self->found_redirect($uri, $uri . SLASH)
+            unless $uri =~ m/\/$/;
 
         return $self->found_dir($uri, $dir);
     }
@@ -99,24 +112,32 @@ sub run {
 
 sub found_file {
     my ($self, $uri, $file) = @_;
-    $self->debug("found a file for $uri: ", $file->definitive);
+    $self->debug("found a file for $uri: ", $file->definitive) if DEBUG;
     $self->{ files }->{ $uri } = $file;
     return $self->present_file($uri, $file);
 }
 
 sub found_dir {
     my ($self, $uri, $dir) = @_;
-    $self->debug("found a dir for $uri: ", $dir->definitive);
+    $self->debug("found a dir for $uri: ", $dir->definitive) if DEBUG;
     $self->{ dirs }->{ $uri } = $dir;
     return $self->present_dir($uri, $dir);
+}
+
+sub found_redirect {
+    my ($self, $uri, $url) = @_;
+    $self->debug("found a redirect for $uri => $url") if DEBUG;
+    my $base = $self->context->script_name;
+    $self->debug("[base:$base] + [url:$url]") if DEBUG or 1;
+    my $goto = join_uri($base, $url);
+    $self->{ redirects }->{ $uri } = $goto;
+    return $self->send_redirect($goto);
 }
 
 sub not_found {
     my ($self, $uri) = @_;
     $self->{ not_found }->{ $uri } = 1;
-    return $self->send_not_found(
-        "Not found: $uri"
-    );
+    return $self->send_not_found($uri);
 }
 
 #-----------------------------------------------------------------------------
@@ -131,12 +152,10 @@ sub present_file {
     # TODO
     #   - check file permissions
     #   - Last-Modified header?
+    #     'Content-Length' => $stat[7],
+    #     'Last-Modified'  => HTTP::Date::time2str( $stat[9] )
 
-    $self->debug("sending file:$file type:$type  fh:$fh") if DEBUG;
-
-    # 'Content-Type'   => $content_type,
-    # 'Content-Length' => $stat[7],
-    # 'Last-Modified'  => HTTP::Date::time2str( $stat[9] )
+    $self->debug("sending [file:$file] [type:$type]  [fh:$fh]") if DEBUG or 1;
 
     return $self->response(
         status => OK,
@@ -148,12 +167,21 @@ sub present_file {
 
 sub present_dir {
     my ($self, $uri, $dir) = @_;
-    my $data = $self->context->data( dir => $dir );
-    my $html = $self->renderer->render(
-        'directory/index.html',
-        $data
+
+    # TODO: fix up the mess of file paths vs VFS paths vs resource URLS
+    my $base = $self->context->script_name; #{ base };
+    $base =~ s[/$][];
+
+    return $self->send_html(
+        $self->render(
+            $self->template,
+            {
+                base => $base,
+                uri  => $uri,
+                dir  => $dir
+            }
+        )
     );
-    return $self->send_html($html);
 }
 
 
@@ -162,20 +190,13 @@ sub present_dir {
 #-----------------------------------------------------------------------------
 
 sub content_type {
+    shift->workspace->file_content_type(@_);
+}
+
+sub content_icon {
     my ($self, $file) = @_;
-    my $ext  = $file->extension;
-    my $meta = $self->workspace->extension($ext);
-    my $type = TEXT_HTML;
-    my $char;
-
-    if ($meta) {
-        $self->debug_data( "metadata for $ext extension" => $meta ) if DEBUG;
-        $type = $meta->{ content_type } || $type;
-        $char = $meta->{ charset };
-        $type .= "; charset=$char";
-    }
-
-    return $type;
+    my $type = $self->workspace->content_types->type($file->extension) || return;
+    return $type->{ icon };
 }
 
 sub uri {

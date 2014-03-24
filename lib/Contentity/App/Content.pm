@@ -4,7 +4,7 @@ use Contentity::Class
     version   => 0.01,
     debug     => 1,
     base      => 'Contentity::App::Directory',
-    accessors => 'renderer vfs',
+    accessors => 'vfs',
     constants => ':html SLASH TRUE FALSE',
     constant  => {
         RENDERER => 'content',
@@ -18,8 +18,11 @@ sub init_vfs {
 
 sub present_file {
     my ($self, $uri, $file) = @_;
-    $self->debug_data( file => $file->definitive ) if DEBUG;
     my $data = $self->context->data;
+    $self->debug_data(
+        "about to render [uri:$uri] from [file:$file] with",
+        $data
+    ) if DEBUG;
     my $html = $self->renderer->render($file->absolute, $data);
     my $type = $self->content_type($file);
 
