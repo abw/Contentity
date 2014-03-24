@@ -75,6 +75,14 @@ sub content_types {
     shift->component(CONTENT_TYPES, @_);
 }
 
+sub content_type {
+    shift->content_types->content_type(@_);
+}
+
+sub file_content_type {
+    shift->content_types->file_content_type(@_);
+}
+
 #------------------------------------------------------------------------
 # domains
 #------------------------------------------------------------------------
@@ -97,19 +105,6 @@ sub domain_aliases {
 
 sub server_domains {
     shift->config('server.domains') || [ ];
-}
-
-
-#-----------------------------------------------------------------------------
-# file extensions for returning the appropriate content-type and other things
-#-----------------------------------------------------------------------------
-
-sub extensions {
-    shift->component(EXTENSIONS, @_);
-}
-
-sub extension {
-    shift->extensions->extension(@_);
 }
 
 
