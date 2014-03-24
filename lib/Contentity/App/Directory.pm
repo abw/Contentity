@@ -12,8 +12,6 @@ use Contentity::Class
         TEMPLATE => 'directory/index.html',
     };
 
-# TODO: This needs to take SCRIPT_NAME into account when generating URLs
-
 
 sub init_app {
     shift->init_directory(@_);
@@ -71,9 +69,13 @@ sub run {
 
 
     # Have a look for it in the virtual filesystem
+    # Hmmm... I have my suspicions that this isn't working properly
     $path = $self->path($uri);
 
-    $self->debug("URL: ", $path->definitive) if DEBUG;
+    if (DEBUG) {
+        $self->debug("URL: ", $path->definitive);
+        $self->debug_data($uri, $path);
+    }
 
     # Is it a file?
     return $self->found_file($uri, $self->file($path))
@@ -126,10 +128,8 @@ sub found_dir {
 
 sub found_redirect {
     my ($self, $uri, $url) = @_;
-    $self->debug("found a redirect for $uri => $url") if DEBUG;
-    my $base = $self->context->script_name;
-    $self->debug("[base:$base] + [url:$url]") if DEBUG or 1;
-    my $goto = join_uri($base, $url);
+    my $goto = $self->url($url);
+    $self->debug("found a redirect for $uri => $url => $goto") if DEBUG;
     $self->{ redirects }->{ $uri } = $goto;
     return $self->send_redirect($goto);
 }
@@ -137,7 +137,7 @@ sub found_redirect {
 sub not_found {
     my ($self, $uri) = @_;
     $self->{ not_found }->{ $uri } = 1;
-    return $self->send_not_found($uri);
+    return $self->send_not_found_msg($uri);
 }
 
 #-----------------------------------------------------------------------------
@@ -155,7 +155,7 @@ sub present_file {
     #     'Content-Length' => $stat[7],
     #     'Last-Modified'  => HTTP::Date::time2str( $stat[9] )
 
-    $self->debug("sending [file:$file] [type:$type]  [fh:$fh]") if DEBUG or 1;
+    $self->debug("sending [file:$file] [type:$type]  [fh:$fh]") if DEBUG;
 
     return $self->response(
         status => OK,
@@ -168,15 +168,20 @@ sub present_file {
 sub present_dir {
     my ($self, $uri, $dir) = @_;
 
+    $self->debug_data( $uri => $dir ) if DEBUG or 1;
+    $self->debug_data( VFS => $dir->filesystem ) if DEBUG or 1;
+    my $kids = $dir->children;
+    $self->debug_data( kids => $kids ) if DEBUG or 1;
+
     # TODO: fix up the mess of file paths vs VFS paths vs resource URLS
-    my $base = $self->context->script_name; #{ base };
+    my $base = $self->script_name;
     $base =~ s[/$][];
 
     return $self->send_html(
         $self->render(
             $self->template,
             {
-                base => $base,
+                base => $base,    # TODO: get rid
                 uri  => $uri,
                 dir  => $dir
             }
@@ -199,10 +204,6 @@ sub content_icon {
     return $type->{ icon };
 }
 
-sub uri {
-    shift->context->path || SLASH;
-}
-
 sub path {
     shift->vfs->path(@_);
 }
@@ -213,6 +214,27 @@ sub file {
 
 sub dir {
     shift->vfs->dir(@_);
+}
+
+sub uri {
+    shift->context->path || SLASH;
+}
+
+sub url {
+    my $self = shift;
+    return $self->script_name(@_);
+}
+
+sub file_uri {
+    my ($self, $file) = @_;
+    return $file->absolute;
+}
+
+sub file_url {
+    my ($self, $file) = @_;
+    return $self->script_name(
+        $self->file_uri($file)
+    );
 }
 
 1;

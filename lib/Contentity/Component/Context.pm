@@ -281,10 +281,6 @@ sub env {
         : $_[0]->{ env };
 }
 
-sub script_name {
-    shift->request->script_name;
-}
-
 
 #-----------------------------------------------------------------------
 # Context data

@@ -28,16 +28,22 @@ package Contentity::App::Dynamic;
 # templates directory, so the cog.css page thinks that it's /css/cog.css.
 # This also makes directory indexes work just fine.
 #
-# However, in the template the file's path doesn't match the expected URL.
-#
+# We have further problems when it comes to rendering directory indexes in the
+# template.  Each file thinks it has an absolute path relative to the static
+# root (e.g. /css/cog.css) but this doesn't match the URL that should be
+# specified to access it (e.g. /cog/css/cog.css or /styles/cog.css).  To
+# work around this, we provide the file_uri() and file_url() methods
+# (accessible as [% App.file_uri(file) %] and [% App.file_url(file) %] to
+# return the correct file (or directory) URI and URL respectively.
 #
 
 use Contentity::Class
     version   => 0.01,
-    debug     => 1,
+    debug     => 0,
     base      => 'Contentity::App::Content',
-    accessors => 'uri_prefix uri_match',
+    accessors => 'uri_prefix uri_match source_vfs output_dir output_vfs',
     utils     => 'VFS join_uri',
+    constants => 'SLASH',
     constant  => {
         RENDERER  => 'dynamic',
         SINGLETON => 0,
@@ -46,19 +52,25 @@ use Contentity::Class
 
 sub init_app {
     my ($self, $config) = @_;
+    my $prefix;
 
     $self->debug_data( dynamic => $config ) if DEBUG;
 
     $self->init_directory($config);
 
-    $self->{ uri_prefix } = $config->{ uri_prefix };
-
-    if (my $prefix  = $config->{ uri_strip } || $config->{ uri_prefix }) {
+    if ($prefix = $config->{ uri_prefix }) {
         my $escaped = quotemeta $prefix;
-        $self->{ uri_strip } = $prefix;
-        $self->{ uri_match } = qr/^$escaped/;
+        $self->{ uri_prefix } = $prefix;
+        $self->{ uri_match  } = qr/^$escaped/;
         $self->debug("got a uri_prefix: $prefix matched by $self->{ uri_match }") if DEBUG;
     }
+
+    #if (my $prefix  = $config->{ uri_strip }) {#} || $config->{ uri_prefix }) {
+    #    my $escaped = quotemeta $prefix;
+    #    $self->{ uri_strip } = $prefix;
+    #    $self->{ uri_match } = qr/^$escaped/;
+    #    $self->debug("got a uri_prefix: $prefix matched by $self->{ uri_match }") if DEBUG;
+    #}
 
     return $self;
 }
@@ -77,7 +89,9 @@ sub init_vfs {
         $self->debug_data( paths => \@paths ) if DEBUG;
 
         $vfs = VFS->new( root => \@paths );
+        $self->{ source_vfs } = $renderer->source_vfs;
         $self->{ output_dir } = $outdir;
+        $self->{ output_vfs } = VFS->new( root => $outdir );
     }
     else {
         # simple source-only renderer
@@ -88,15 +102,6 @@ sub init_vfs {
     $self->{ vfs } = $vfs;
 
     return $vfs;
-}
-
-sub TEST_uri {
-    my $self   = shift;
-    my $uri    = $self->context->path;
-    my $script = $self->context->script_name;
-    my $path   = join_uri($uri, $script);
-    $self->debug("[script:$script] + [uri:$uri] => [path:$path]") if DEBUG;
-    return $path;
 }
 
 sub uri {
@@ -120,12 +125,59 @@ sub uri {
     return $path;
 }
 
+sub url {
+    my $self  = shift;
+    my $uri   = shift || return $self->script_name;
+    my $match = $self->{ uri_match } || return $self->script_name($uri);
+    my $path  = $uri;
+
+    # Special case handling to remove the prefix we added in uri()
+    $path =~ s/$match//;
+    $self->debug("[$uri] - [$self->{ uri_prefix }] => $path") if DEBUG;
+
+    return $self->script_name($path);
+}
+
+
 sub file_uri {
     my ($self, $file) = @_;
     my $path = $file->absolute;
-    my $base = $self->{ uri_prefix };
+    my $base = $self->{ uri_prefix } || return $path;
+    my $uri  = $path;
 
+    # Special case handling to remove the prefix we added in uri()
+    $uri =~ s/$self->{ uri_match }//;
+
+    # add a trailing slash if it's a directory
+    $uri .= SLASH if $file->is_dir && $uri !~ /\/$/;
+
+    $self->debug("[$path] - [$base] => $uri") if DEBUG;
+
+    return $uri;
 }
+
+
+sub present_file {
+    my ($self, $uri, $file) = @_;
+    my $data = $self->context->data;
+    my $srcf = $self->source_vfs->file($file);
+    my $outf = $self->output_dir && $self->output_vfs->file($file);
+
+    $self->debug("srcf: ", $srcf->definitive) if DEBUG;
+
+    if ($srcf->exists) {
+        $self->debug("We found a source template file: $srcf") if DEBUG;
+        return $self->present_source_file($uri, $srcf);
+    }
+    elsif ($outf && $outf->exists) {
+        $self->debug("We found an output file: $outf") if DEBUG;
+        return $self->present_output_file($uri, $outf);
+    }
+    return $self->not_found($uri);
+}
+
+*present_source_file = \&Contentity::App::Content::present_file;
+*present_output_file = \&Contentity::App::Directory::present_file;
 
 
 1;

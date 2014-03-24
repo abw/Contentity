@@ -7,7 +7,10 @@ use Contentity::Class
     component => 'web',
     accessors => 'context env',
     constants => 'BLANK :http_status',
-    utils     => 'is_object extend';
+    utils     => 'is_object extend join_uri',
+    messages  => {
+        not_found => 'Resource not found: %s',
+    };
 
 
 sub init_component {
@@ -102,13 +105,31 @@ sub render {
     return $self->renderer->render($name, $data);
 }
 
-#-----------------------------------------------------------------------
-# Response
-#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------
+# Request
+#-----------------------------------------------------------------------------
 
 sub request {
     shift->context->request;
 }
+
+sub path {
+    shift->context->path;
+}
+
+sub script_name {
+    my $self = shift;
+    my $base = $self->request->script_name;
+    return @_
+        ? join_uri($base, @_)
+        : $base;
+}
+
+
+#-----------------------------------------------------------------------
+# Response
+#-----------------------------------------------------------------------
 
 sub response {
     shift->context->response(@_);
@@ -124,6 +145,13 @@ sub send_text {
 sub send_html {
     shift->response(
         content => join(BLANK, @_)
+    );
+}
+
+sub send_not_found_msg {
+    my $self = shift;
+    return $self->send_not_found(
+        $self->message( not_found => @_ )
     );
 }
 

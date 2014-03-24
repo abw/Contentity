@@ -7,7 +7,7 @@ use Contentity::Class
     base      => 'Template Contentity::Base',
     utils     => 'self_params params
                   commas floor id_safe inflect integer
-                  plural plurality uri_safe
+                  plural plurality random uri_safe
                   H data_attrs',
     codecs    => 'html json',
     constants => 'ARRAY';
@@ -15,7 +15,7 @@ use Contentity::Class
 our $ITEM_VMETHODS = {
     commas        => \&commas,
     floor         => \&floor,
-    html          => \&encode_html(shift),
+    html          => \&encode_html,
     #html_syntax   => \&html_syntax,
     idsafe        => \&id_safe,
     id_safe       => \&id_safe,
@@ -26,6 +26,7 @@ our $ITEM_VMETHODS = {
     lcfirst       => \&CORE::lcfirst,
     plural        => \&plural,
     plurality     => \&plurality,
+    random        => \&random,
     uc            => \&CORE::uc,
     upper         => \&CORE::uc,
     ucfirst       => \&CORE::ucfirst,
@@ -44,6 +45,10 @@ our $LIST_VMETHODS = {
 };
 
 
+#-----------------------------------------------------------------------------
+# Initialisation methods
+#-----------------------------------------------------------------------------
+
 sub new {
     my ($class, $config) = self_params(@_);
 
@@ -54,13 +59,13 @@ sub new {
 
     my $self = $class->SUPER::new($config);
 
-    $self->init_extra($config);
+    $self->init_vmethods($config);
+    $self->init_template($config);
 
     return $self;
 }
 
-
-sub init_extra {
+sub init_vmethods {
     my ($self, $config) = @_;
     my $class = $self->class;
 
@@ -91,6 +96,15 @@ sub define_vmethods {
     }
 }
 
+sub init_template {
+    # stub for subclasses
+    my $self = shift;
+}
+
+
+#-----------------------------------------------------------------------------
+# Rendering methods
+#-----------------------------------------------------------------------------
 
 sub render {
     my $self   = shift;
@@ -103,6 +117,11 @@ sub render {
 
     return $output;
 }
+
+
+#-----------------------------------------------------------------------------
+# Misc stuff
+#-----------------------------------------------------------------------------
 
 
 sub class_attr {

@@ -26,9 +26,14 @@ sub resources_url_map {
     my $site    = $self->workspace;
     my $reslist = $site->resource_list;
     my $urlmap  = $self->handler( $self->URL_MAP );
+    my $seen    = { };
+
+    $self->debug_data( resource_list => $reslist ) if DEBUG;
 
     # create routes for all static resources
     foreach my $resource (@$reslist) {
+        my $app = $resource->{ app } || 'none';
+        $self->debug_data( $resource->{ url } => $resource->{ location } . " ($app)" ) if DEBUG;
         $self->debug_data( $resource->{ url } => $resource ) if DEBUG;
 
         $urlmap->map(
@@ -59,6 +64,7 @@ sub resource_handler {
     my $dirapp = $space->app(
         $self->DIR_APP => {
             root      => $resource->{ location },
+          # uri_prefix => $resource->{ }
             # allow directory indexes if we're in development mode
             index     => $devel,
             singleton => 0,

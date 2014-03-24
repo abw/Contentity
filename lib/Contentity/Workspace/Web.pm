@@ -260,11 +260,14 @@ sub fix_resources {
 
         if ($devmode && $devapp) {
             my $base = SLASH . $urn;
-            $rel->{ app } = $devapps->{ $devapp       } ||= $self->app($devapp);
-            $abs->{ app } = $devapps->{"$devapp-$base"} ||= $self->app($devapp, { uri_prefix => $base });
+            #$rel->{ app } = $devapps->{"$devapp-$base"} ||= $self->app($devapp, { uri_prefix => $base });
+            #$abs->{ app } = $devapps->{"$devapp-$purn"} ||= $self->app($devapp, { uri_prefix => $base });
+            $rel->{ app } = $abs->{ app } = $self->app($devapp, { uri_prefix => $base });
+            #$abs->{ app } = $self->app($devapp, { uri_prefix => $base });
+
             if (DEBUG) {
-                $self->debug("Created $devapp application for $url in developer mode");
-                $self->debug("Created $devapp-$purn application for $url via $base in developer mode");
+                $self->debug("Created $devapp-$base application for $url via $base in developer mode: $rel->{ app }");
+                $self->debug("Created $devapp-$purn application for $url via $base in developer mode: $abs->{ app }");
             }
         }
 

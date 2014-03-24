@@ -14,7 +14,6 @@ sub new_context {
 
 
 
-
 1;
 
 __END__
@@ -38,7 +37,7 @@ sub site {
     my $host    = $self->hostname($env);
     my $project = $self->project;
 
-    return $project->domain_site($host) 
+    return $project->domain_site($host)
         || $self->error_msg( invalid => domain => $host );
 }
 
@@ -59,5 +58,4 @@ sub plack {
 # TODO: Move Contentity::Plack::Builder::Site into Contentity::Component::Plack::Builder::Site
 # and have Contentity::Component::Plack delegate to it, e.g. $self->plack returns
 # plack component, $self->plack->builder returns the appropriate builder class
-# for the workspace type. 
-
+# for the workspace type.

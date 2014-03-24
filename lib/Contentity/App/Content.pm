@@ -2,7 +2,7 @@ package Contentity::App::Content;
 
 use Contentity::Class
     version   => 0.01,
-    debug     => 1,
+    debug     => 0,
     base      => 'Contentity::App::Directory',
     accessors => 'vfs',
     constants => ':html SLASH TRUE FALSE',
