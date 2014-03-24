@@ -1,55 +1,42 @@
-# This file contains mappings for content types.  These are used in both the
-# request and response phases.  
-#
-# In the request it is used for content negotiation.  The browser can send an 
-# Accept: header to indicate that it's expecting a particular content type, 
-# e.g.
-#
-#    Accept: text/json,application/json
-#
-# A web application can call the accept($type) method to test if the general
-# class of content type is acceptable and act according.  e.g.
-#
-#   if ($self->accept('json')) {
-#       return $self->send_json($data);
-#   }
-#
-# In the response phase, a web application can set the response type using
-# the general (short) name (e.g. json) and the first content type listed will
-# be used, e.g. text/json when sending json.
-#
-#   $self->send_response(
-#       type    => 'json',
-#       content => $json,
-#   );
-#
-
-text:
-    - text/plain
-
-html:
-    - text/html
-
-css:
-    - text/css
-
-js:
-    - text/javascript
-
-json:
-    - text/json
-    - text/x-json
-    - application/json
-
-xml:
-    - text/xml
-    - application/xml
-
-xhtml: 
-    - application/xhtml+xml
+#-----------------------------------------------------------------------------
+# This is a wildcard entry for "accept: *" headers
+#-----------------------------------------------------------------------------
 
 any:
-    - '*'
-    - '*/*'
-    - '*.*'
+    accept:
+                - '*'
+                - '*/*'
+                - '*.*'
+
+
+#-----------------------------------------------------------------------------
+# The main content types that we generate from templates or server statically
+#-----------------------------------------------------------------------------
+
+html:
+    content_type: text/html
+    charset:      utf-8
+
+css:
+    content_type: text/css
+    charset:      utf-8
+
+js:
+    content_type: text/javascript
+    charset:      utf-8
+
+json:
+    content_type: application/json
+    charset:      utf-8
+    accept:
+                - text/json
+                - text/x-json
+
+xml:
+    content_type: application/xml
+    charset:      utf-8
+    wrapper:      xml
+    accept:
+                - text/xml
+
 
