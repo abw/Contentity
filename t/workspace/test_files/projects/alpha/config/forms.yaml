@@ -1,3 +1,4 @@
 # Temporary test data
 module: My::Form::Module
 hello:  World
+cache:  20 minutes

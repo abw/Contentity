@@ -1,3 +1,7 @@
 message: Hello from the content app
 example: Blah blah blah
 cheese:  cheddar
+
+schema:
+  tree_type: none
+

@@ -8,6 +8,8 @@
 #
 #========================================================================
 
+use lib '/Users/abw/projects/badger/lib';
+
 use Badger
     lib        => 'lib ../../lib',
     Filesystem => 'Bin',
@@ -26,7 +28,7 @@ use Contentity::Project;
 #-----------------------------------------------------------------------------
 
 my $root    = Bin->dir( test_files => projects => 'alpha' );
-my $project = Contentity::Project->new( 
+my $project = Contentity::Project->new(
     root    => $root,
 );
 ok( $project, "created contentity project: $project" );

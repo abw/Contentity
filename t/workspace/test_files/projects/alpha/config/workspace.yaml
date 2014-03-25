@@ -21,9 +21,6 @@ schemas:
     component:  test
     singleton:  true
 
-  apps:
-    singleton:  true
-
 
 # no longer used
 #components:

@@ -4,13 +4,24 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Workspace',
-    utils     => 'resolve_uri split_to_list Colour',
+    utils     => 'join_uri resolve_uri split_to_list Colour',
     constants => ':components :deployment SLASH HASH STATIC DYNAMIC VHOST_FILE',
     messages => {
         bad_col_rgb => 'Invalid RGB colour name specified for %s: %s',
         bad_col_dot => 'Invalid colour method for %s: .%s',
         bad_col_val => 'Invalid colour value for %s: %s',
     };
+
+
+#------------------------------------------------------------------------
+# assets are things like forms, lists, etc., that get loaded on demand
+#------------------------------------------------------------------------
+
+sub asset_config {
+    shift->config(
+        join_uri(@_)
+    );
+}
 
 
 #------------------------------------------------------------------------
@@ -37,18 +48,6 @@ sub middleware {
     shift->middlewares->middleware(@_);
 }
 
-
-#------------------------------------------------------------------------
-# assets are things like forms, lists, etc., that get loaded on demand
-#------------------------------------------------------------------------
-
-sub assets {
-    shift->component(ASSETS, @_);
-}
-
-sub asset_config {
-    shift->assets->config(@_);
-}
 
 #-----------------------------------------------------------------------------
 # context provides a temporary worker for request/response handling

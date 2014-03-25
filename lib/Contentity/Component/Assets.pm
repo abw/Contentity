@@ -1,5 +1,10 @@
 package Contentity::Component::Assets;
 
+# deprecated - moving assets configuration back under config directory for the
+# sake of caching.
+use Carp 'confess';
+confess __PACKAGE__, " is deprecated - moved back into workspace";
+
 use Contentity::Config;
 use Contentity::Class
     version   => 0.02,
@@ -49,7 +54,7 @@ sub init_config {
     # load the configuration module
     class($module)->load;
 
-    # config directory 
+    # config directory
     $self->{ config_dir } = $dir;
 
     # config directory manager
