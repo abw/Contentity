@@ -6,14 +6,15 @@ use Contentity::Class
     import    => 'class',
     base      => 'Template Contentity::Base',
     utils     => 'self_params params
-                  commas floor id_safe inflect integer
-                  plural plurality random uri_safe
+                  commas falselike floor id_safe inflect integer
+                  plural plurality random truelike uri_safe
                   H data_attrs',
     codecs    => 'html json',
     constants => 'ARRAY';
 
 our $ITEM_VMETHODS = {
     commas        => \&commas,
+    false         => \&falselike,
     floor         => \&floor,
     html          => \&encode_html,
     #html_syntax   => \&html_syntax,
@@ -27,6 +28,7 @@ our $ITEM_VMETHODS = {
     plural        => \&plural,
     plurality     => \&plurality,
     random        => \&random,
+    true          => \&truelike,
     uc            => \&CORE::uc,
     upper         => \&CORE::uc,
     ucfirst       => \&CORE::ucfirst,
