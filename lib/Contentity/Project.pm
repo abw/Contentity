@@ -5,8 +5,8 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Workspace::Web',
-    utils       => 'self_params id_safe',
-    constants   => ':vhost DOT',
+    utils       => 'self_params id_safe split_to_list join_uri',
+    constants   => ':vhost DOT HASH',
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
         WORKSPACE_TYPE  => 'project',
@@ -51,8 +51,23 @@ sub load_workspace {
 
 sub workspace_configs {
     my $self = shift;
-    return $self->config(WORKSPACES)
-        || $self->decline_msg('no_workspaces');
+    return  $self->{ all_workspace_configs }
+        ||= $self->load_workspace_configs;
+}
+
+sub load_workspace_configs {
+    my $self    = shift;
+    my $configs = $self->config(WORKSPACES) || { };
+
+    # In addition to any workspaces defined in workspaces.yaml, we also look
+    # in any workspace_dirs defined to locate additional workspaces.  These
+    # get added into $configs
+
+    $self->workspace_dirs_configs($configs);
+
+    return %$configs
+        ?   $configs
+        :   $self->decline_msg('no_workspaces');
 }
 
 sub workspace_config {
@@ -73,16 +88,87 @@ sub workspace_names {
     my $self   = shift;
     my $spaces = $self->workspace_configs;
     my @names  = sort keys %$spaces;
+
     return wantarray
         ?  @names
         : \@names;
 }
 
+sub workspace_dirs_configs {
+    my $self    = shift;
+    my $configs = shift || { };
+    my $dirs    = $self->config('workspace_dirs') || return $configs;
+    my ($kids, $kid, $name, $kuri, $kdir, $config);
+
+    $dirs = split_to_list($dirs);
+
+    $self->debug_data("workspace dirs:" => $dirs ) if DEBUG;
+
+    foreach my $dircfg (@$dirs) {
+        my ($dir, $uri, $root, $type);
+
+        if (ref $dircfg eq HASH) {
+            $dir  = $dircfg->{ directory }
+                || return $self->error_msg( missing => "workspace_dirs directory" );
+            $uri  = $dircfg->{ uri } || $dir;
+            $type = $dircfg->{ type };
+            $root = $self->dir($dir)->must_exist;
+        }
+        elsif (! ref $dircfg) {
+            $dir  = $dircfg;
+            $uri  = $dircfg;
+            $root = $self->dir($dir)->must_exist;
+            $type = undef;
+        }
+        else {
+            return $self->error_msg( invalid => workspace_dirs => $dir );
+        }
+
+        $self->debug("workspace dir: [uri:$uri] => [dir:$dir] => [root:$root]") if DEBUG;
+
+        my $kids   = $root->dirs;
+        my $cfgdir = $self->CONFIG_DIR;
+
+        $self->debug_data("sub-dirs" => $kids) if DEBUG;
+
+        foreach my $kid (@$kids) {
+            # Only consider sub-directories that have a config directory - it's
+            # not a perfect test to indicate that it's a workspace and not just
+            # some other directory, but it's the one thing that we require to
+            # create a workspace object for it, so we should at least weed out
+            # those that don't.
+            next unless $kid->dir($cfgdir)->exists;
+            my $name   = $kid->name;
+            my $kuri   = join_uri($uri, $name);
+            my $kdir   = join_uri($dir, $name);
+            my $config = {
+                uri  => $kuri,
+                root => $kdir,
+                type => $type,
+            };
+            $self->debug_data("added workspace config for $kuri" => $config ) if DEBUG;
+            $configs->{ $kuri } = $config;
+        }
+    }
+    return $configs;
+}
+
+sub workspace_dir_names {
+    my $self = shift;
+    my $dirs = $self->workspace_dirs || return;
+    # TODO: should we check that these are real workspace directories?
+    return [
+        map { $self->name }
+        @$dirs
+    ];
+}
+
+
 sub workspace_name_hash {
     my $self  = shift;
     my $names = $self->workspace_names;
     return {
-        map { $_ => $_ } 
+        map { $_ => $_ }
         @$names
     };
 }
@@ -195,7 +281,7 @@ sub resources_dir {
 sub resource_dir {
     my ($self, $type, @spec) = @_;
 
-    return  $self->{"${type}_resource_dir"} 
+    return  $self->{"${type}_resource_dir"}
         ||= $self->resources_dir(
                 $type,
                 $self->config_filespec(@spec)
@@ -232,7 +318,7 @@ sub resource_file {
 sub resource_vfs {
     my ($self, $type) = @_;
 
-    return VFS->new( 
+    return VFS->new(
         root => $self->resource_dir($type)
     );
 }
@@ -425,7 +511,7 @@ Contentity::Project - an object representing a project
 
 This module implements an object for representing a Contentity project.
 A project is comprised of a root directory, a master configuration
-file and perhaps other configuration files, resource files and other 
+file and perhaps other configuration files, resource files and other
 bits and pieces.  A C<Contentity::Project> object is a central manager
 for such a collection of data.
 
@@ -436,7 +522,7 @@ for such a collection of data.
 This is the constructor method to create a new C<Contentity::Project> object.
 
     use Contentity::Project;
-    
+
     my $project = Contentity::Project->new(
         root => '/path/to/project'
     );
@@ -451,28 +537,28 @@ to the project directory.
 =head4 config_dir
 
 This optional parameter can be used to specify the name of the configuration
-direction under the L<root> project directory.  The default configuration 
+direction under the L<root> project directory.  The default configuration
 directory name is C<config>.
 
 =head4 config_file
 
-This optional parameter can be used to specify the name of the main 
-configuration file (without file extension) that should reside in the 
-L<config_dir> directory under the C<root> project directory.  The default 
+This optional parameter can be used to specify the name of the main
+configuration file (without file extension) that should reside in the
+L<config_dir> directory under the C<root> project directory.  The default
 configuration file name is C<contentity>.
 
 =head4 config_codec
 
-This optional parameter can be used to specify an alternate data codec 
+This optional parameter can be used to specify an alternate data codec
 for reading the data in the configuration files.  By default, Contentity
 used YAML for configuration files.  Thus, the default C<config_codec>
 value is C<yaml>.
 
 =head4 config_extension
 
-This optional parameter can be used to specify the file extension on 
-configuration files.  It defaults to the value in C<config_code>.  
-Assuming you don't change that value, all configuration files will be 
+This optional parameter can be used to specify the file extension on
+configuration files.  It defaults to the value in C<config_code>.
+Assuming you don't change that value, all configuration files will be
 expected to have a C<.yaml> file extension.
 
 =head4 config_encoding
@@ -484,21 +570,21 @@ of configuration files.  The default value is C<utf8>.
 
 =head2 uri($path)
 
-When called without any arguments this method returns the base URI for the 
+When called without any arguments this method returns the base URI for the
 project.
 
     print $project->uri;            # e.g. foo
 
 When called with a relative URI path as an argument, it returns the URI
-resolved relative to the project base URI. 
+resolved relative to the project base URI.
 
     print $project->uri;
 
 =head2 dir($path)
 
 Returns a L<Badger::Filesystem::Directory> object representing a directory
-under the project root directory denoted by the C<$path> argument (or 
-arguments).  Returns the root directory object when called without any 
+under the project root directory denoted by the C<$path> argument (or
+arguments).  Returns the root directory object when called without any
 arguments.
 
     my $root   = $project->dir;
@@ -506,11 +592,11 @@ arguments.
 
 =head2 resources_dir($path)
 
-Returns a L<Badger::Filesystem::Directory> object for the directory in 
-which resource data files are stored.  This is defined via the 
-C<resources_dir> configuration option and is usually specified relative 
+Returns a L<Badger::Filesystem::Directory> object for the directory in
+which resource data files are stored.  This is defined via the
+C<resources_dir> configuration option and is usually specified relative
 to the project root directory (C<resources> by default).  If one or more
-C<$path> arguments are specified then it returns a directory underneath 
+C<$path> arguments are specified then it returns a directory underneath
 the resources directory, in a similar fashion to L<dir()>.
 
     my $resources = $project->resources_dir;
@@ -520,7 +606,7 @@ the resources directory, in a similar fashion to L<dir()>.
 =head2 resource_dir($type,$spec)
 
 This is a more strict wrapper around L<resources_dir()> which provides
-additional configuration parameters (from L<config_filespec()>) and asserts 
+additional configuration parameters (from L<config_filespec()>) and asserts
 that the directory exists.  It caches the directory object for subequent use.
 This should generally be used in preference to L<resources_dir()>.
 
@@ -535,15 +621,15 @@ object representing the configuration directory for the project.
 
     my $dir = $project->config_dir;
 
-When called with a relative directory path as argument it returns a 
+When called with a relative directory path as argument it returns a
 L<Badger::Filesystem::Directory> representing the directory relative to
-configuration directory. 
+configuration directory.
 
     my $dir = $project->config_dir('forms');
 
 =head2 config_filename($name)
 
-This method is used to construct the name of configuration files under the 
+This method is used to construct the name of configuration files under the
 configuration directory.  It automatically appends the correct file extension.
 
     my $filename = $project->config_filename('foo');
@@ -559,14 +645,14 @@ parameters passed as arguments.
 
 =head2 config_file($name)
 
-This method returns a L<Badger::Filesystem::File> object representing a 
+This method returns a L<Badger::Filesystem::File> object representing a
 configuration file in the configuration directory.  It will automatically
 have the correct filename extension added (via a call to L<config_filename>)
-and the correct C<codec> and C<encoding> parameters set (via a call to 
-L<config_filespec>) so that the data in the configuration file can be 
+and the correct C<codec> and C<encoding> parameters set (via a call to
+L<config_filespec>) so that the data in the configuration file can be
 automatically loaded (see L<config_data($name)>).
 
-EDIT: Hmmm... it appear it doesn't add the filename extension, etc.  You 
+EDIT: Hmmm... it appear it doesn't add the filename extension, etc.  You
 have to do that via an additional call to L<config_filename()>.  This may
 get changed RSN.  Watch this space.
 
@@ -577,7 +663,7 @@ and then returns the data contained therein.
 
 =head2 config_tree($name)
 
-This method constructs a tree of configuration data from one or more 
+This method constructs a tree of configuration data from one or more
 configuration files under the configuration directory.  For example,
 suppose there are F<config/urls.yaml> and F<config/urls/admin.yaml>
 files that look like this:
@@ -631,7 +717,7 @@ Will return a hash array like this:
         /baz        => '/path/to/baz',
     }
 
-Note that relative URIs (e.g. C<bar>) in nested files get appended to the 
+Note that relative URIs (e.g. C<bar>) in nested files get appended to the
 file basename (e.g. C</admin/bar>) whereas those that are absolute (starting
 with a C</> do not).  At present all resultant URIs from nested files are
 absolute (i.e. C</admin/bar> instead of C<admin/bar>).  I'm not sure that's
@@ -639,24 +725,24 @@ necessarily correct but that's how it is for now.
 
 =head2 scan_config_dir()
 
-This method is used internally by L<config_tree()> to scan the files in a 
+This method is used internally by L<config_tree()> to scan the files in a
 configuration directory.
 
 =head2 scan_config_file()
 
-This method is used internally by L<config_tree()> to load an individual 
+This method is used internally by L<config_tree()> to load an individual
 files in a configuration directory.
 
 =head2 uri_binder()
 
-This method is used internally by L<config_uri_tree()> for resolving for 
+This method is used internally by L<config_uri_tree()> for resolving for
 constructing composite URIs.
 
 =head1 OBJECT METHODS FOR LOADING COMPONENTS
 
 Components are one-off (singleton) objects that can be loaded into a contentity
-project.  For example, a database can be implemented as a component.  You 
-generally only ever need to load one database component into a project and 
+project.  For example, a database can be implemented as a component.  You
+generally only ever need to load one database component into a project and
 all other internal components and external code using the project can share it.
 
 =head2 component($name)
@@ -686,14 +772,14 @@ object.
 =head2 init(\%config)
 
 This is the main initialisation method.  It performs some object initalisation,
-sets sensible defaults for any missing values in the C<\%config> parameters 
-and loads the configuration data defined in the main configuration file.  It 
-then calls each of the following initialisation methods passing a reference 
+sets sensible defaults for any missing values in the C<\%config> parameters
+and loads the configuration data defined in the main configuration file.  It
+then calls each of the following initialisation methods passing a reference
 to a hash array of merged configuration parameters.
 
 =head2 init_project(\%merged_config)
 
-This doesn't do anything much at present but is provided as a stub for 
+This doesn't do anything much at present but is provided as a stub for
 future expansion.
 
 =head2 init_components(\%merged_config)
