@@ -5,7 +5,7 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Workspace::Web',
-    utils       => 'self_params id_safe split_to_list join_uri',
+    utils       => 'self_params id_safe split_to_list join_uri extend',
     constants   => ':vhost DOT HASH',
     constant    => {
         SUBSPACE_MODULE => 'Contentity::Workspace',
@@ -34,7 +34,8 @@ sub load_workspace {
     my $self   = shift;
     my $uri    = shift;
     my $base   = $self;
-    my $config = $self->workspace_config($uri)
+    # Additional argument may be passed to us, e.g. by reload_workspace()
+    my $config = $self->workspace_config($uri, @_)
         || return $self->error( $self->reason );
 
     $self->debug("workspace config: ", $self->dump_data($config)) if DEBUG;
@@ -47,6 +48,16 @@ sub load_workspace {
     return $base->subspace(
         $config
     );
+}
+
+sub reload_workspace {
+    my $self = shift;
+    my $uri  = shift;
+
+    # Note: we forward any extra arguments so they can be used to update the
+    # relevant workspace_config() entry
+    return $self->{ workspace }->{ $uri }
+        =  $self->load_workspace($uri, @_);
 }
 
 sub workspace_configs {
@@ -80,6 +91,16 @@ sub workspace_config {
     # subspace root directory is relative to project workspace root
     $config->{ root }   = $self->dir( $config->{ root } );
     $config->{ uri  } ||= $uri;
+
+    if (@_) {
+        # Additional arguments can be passed in to update the configuration.
+        # For example, a workspace can discover that it's supposed to have a
+        # base workspace via it's own workspace.yaml configuration file. In
+        # that case it can call reload_workspace($uri, { base => $whatever})
+        # which will pass those updated arguments onto this method.  Here we
+        # push them into the configuration for that workspace
+        extend($config, @_);
+    }
 
     return $config;
 }

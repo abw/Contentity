@@ -29,30 +29,33 @@ use Contentity::Class
         no_module        => 'No %s module defined.',
         no_config        => 'No configuration data for %s',
         no_resource_data => 'No resource data for %s/%s',
+        no_parent_base   => 'No parent defined to fetch %s base workspace from',
     };
 
 
-our $LOADED = { };
+our $LOADED    = { };
+our $BASEWATCH = { };
 
-
-#-----------------------------------------------------------------------------
-# Initialisation methods
-#-----------------------------------------------------------------------------
-
-sub init_workspace {
+sub init {
     my ($self, $config) = @_;
 
-#   $self->debug_data( workspace => $config );
+    return
+        $self->init_workplace($config)
+             ->pre_init_workspace($config)
+             ->init_workspace($config)
+             ->post_init_workspace($config);
+}
 
-    my $type = $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
-    my $uri  = $self->{ uri  } = $config->{ uri  } || join(
-        ':',
-        grep { defined $_ and length $_ }
-        #$self->{ type },
-        $self->{ urn }
-    );
+sub pre_init_workspace {
+    my ($self, $config) = @_;
+    $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
+    $self->{ uri  } = $config->{ uri  } || $self->{ urn };
+    return $self;
+}
 
-    $self->SUPER::init_workspace($config);
+sub post_init_workspace {
+    my ($self, $config) = @_;
+    my $uri = $self->{ uri };
 
     # ugly temporary hack to allow 'component_path' configuration option to
     # be passed to component factory - see t/workspace/components.t around
@@ -64,10 +67,36 @@ sub init_workspace {
     # import all the pre-loaded config data into the workspace for efficiency
     my $data = $self->{ data } ||= { };
     merge($data, $self->config->data);
+
+    # Now hold on a second!  If there's a 'base' URI defined and we don't have
+    # a parent with a matching URI then we ask the master project to load it for
+    # us.  It's troublesome because we want to allow the base to be defined in
+    # the workspace.yaml file, so we have to bootstrap the workspace far enough
+    # to see if a base configuration option is defined, and then start all over
+    # again if it doesn't match the parent we've got
+    my $base = $data->{ base };
+
+    if ($base) {
+        my $parent = $self->parent || return $self->error_msg( no_parent_base => $base );
+        my $puri   = $parent->uri;
+
+        if ($base eq $puri) {
+            $self->debug("All is well - the parent is our base: $base") if DEBUG;
+        }
+        else {
+            $self->debug("asking project to reload $uri workspace with new base: $base") if DEBUG;
+
+            return $self->project->reload_workspace(
+                $uri, { base => $base }
+            );
+        }
+    }
+
     $self->debug_data("merged config data: ", $data) if DEBUG;
 
     return $self;
 }
+
 
 sub init_data_files {
     my ($self, $config) = shift;
