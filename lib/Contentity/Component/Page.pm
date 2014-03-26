@@ -16,6 +16,12 @@ sub uri {
         : $self->{ data }->{ uri };
 }
 
+sub title {
+    my $self = shift;
+    return $self->{ data }->{ title }
+      //   $self->{ data }->{ name  };
+}
+
 sub trail {
     my $self = shift;
     return [
