@@ -16,6 +16,7 @@ use Badger
     Debug => [import => ':all'];
 
 use Badger::Test
+    skip  => 'Plack component is deprecated',
     tests => 2,
     debug => 'Contentity::Component::Scaffold',
     args  => \@ARGV;

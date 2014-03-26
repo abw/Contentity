@@ -17,6 +17,7 @@ use Badger
     Debug  => [import => ':all'];
 
 use Badger::Test 
+    skip  => 'Contentity::Scaffold has moved',
     tests => 5,
     debug => 'Contentity::Scaffold',
     args  => \@ARGV;
