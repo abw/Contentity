@@ -4,32 +4,39 @@ use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Contentity::Base',
-    utils       => '',
-    accessors   => 'workspace component urn schema';
+    accessors   => 'workspace component urn schema singleton',
+    constant    => {
+        SINGLETON => undef,
+    };
 
 
 sub init {
     my ($self, $config) = @_;
 
-    $self->debug(
-        "initialising $config->{ component } component module: ", 
-        $self->dump_data1($config)
+    $self->debug_data(
+        "initialising $config->{ component } component module: ",
+        $config
     ) if DEBUG;
 
-    my $component = $config->{ component } 
+    my $component = $config->{ component }
         || 'component';
 
-    my $workspace = $config->{ workspace } 
+    my $workspace = $config->{ workspace }
         || return $self->error_msg( missing => 'workspace' );
 
     my $subconfig = $config->{ config } || $config;
+    my $schema    = $config->{ schema };
+    my $single    = $subconfig->{ singleton }
+                 // $config->{ singleton }
+                 // $schema->{ singleton }
+                 // $self->SINGLETON;
 
-
+    $self->{ urn       } = $config->{ urn    };
     $self->{ workspace } = $workspace;
     $self->{ component } = $component;
-    $self->{ schema    } = $config->{ schema };
-    $self->{ urn       } = $config->{ urn    };
+    $self->{ schema    } = $schema;
     $self->{ config    } = $subconfig;
+    $self->{ singleton } = $single;
 
     return $self->init_component($subconfig);
 }
@@ -107,7 +114,7 @@ sub DESTROY {
 
 =head1 NAME
 
-Contentity::Component - base class for component modules 
+Contentity::Component - base class for component modules
 
 =head1 SYNPOSIS
 
@@ -138,14 +145,14 @@ Contentity::Component - base class for component modules
 =head1 DESCRIPTION
 
 This is a base class for component modules which plug into a workspace.
-Components are created by a L<Contentity::Workspace>, typically via the 
+Components are created by a L<Contentity::Workspace>, typically via the
 L<Contentity::Components> factory module.
 
-The base class implements a custom L<init()> method which attaches the 
-component to the parent workspace, extracts the component name and data 
-schema from the arguments passed (from the L<Contentity::Workspace> 
-L<component()|Contentity::Workspace/component()> method) and then calls the 
-L<init_component()> method.  
+The base class implements a custom L<init()> method which attaches the
+component to the parent workspace, extracts the component name and data
+schema from the arguments passed (from the L<Contentity::Workspace>
+L<component()|Contentity::Workspace/component()> method) and then calls the
+L<init_component()> method.
 
 The L<init_component()> method does nothing in the base class.  Subclasses
 may redefine it to implement custom initialisation functionality.
@@ -153,8 +160,8 @@ may redefine it to implement custom initialisation functionality.
 =head1 CONFIGURATION OPTIONS
 
 The following configuration options can be passed to the L<new()> constructor
-method.  These are usually provided by the 
-L<component_config()|Contentity::Workspace/component_config()> method in 
+method.  These are usually provided by the
+L<component_config()|Contentity::Workspace/component_config()> method in
 L<Contentity::Workspce>.
 
 =head2 workspace
@@ -175,13 +182,13 @@ of the same type with different names.
 =head2 schema
 
 An optional hash reference containing the data schema for this component.
-This would typically be defined in a C<schemas> block in the main 
-C<workspace> configuration file, or possible in a separate C<schemas> 
+This would typically be defined in a C<schemas> block in the main
+C<workspace> configuration file, or possible in a separate C<schemas>
 configuration file.
 
 =head2 config
 
-A hash reference of configuration data, typically read from a workspace 
+A hash reference of configuration data, typically read from a workspace
 configuration file.  If this is undefined then the configuration is assumed
 to be all configuration options passed to the constructor function.
 
@@ -189,7 +196,7 @@ to be all configuration options passed to the constructor function.
 
 =head2 new()
 
-Public constructor method called to create a new workspace.  
+Public constructor method called to create a new workspace.
 
 See L<CONFIGURATION OPTIONS> for further information about the parameters
 this method accepts.
@@ -220,7 +227,7 @@ initialisation.
 
 =head2 destroy()
 
-Called automatically when the component is no longer referenced.  Can also be 
+Called automatically when the component is no longer referenced.  Can also be
 called manually by a L<Contentity::Workspace> as part of a clean-up process.
 
 =head1 AUTHOR

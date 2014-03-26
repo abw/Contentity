@@ -1,12 +1,23 @@
 package Contentity::Constants;
 
-our (@status);
+our (@components, @status, @mutate, @deployment);
 
 BEGIN {
     # all these upper case words are defined as constants for their lower
     # case eqivalent, e.g. ACTIVE => 'active'
-    @status = qw( 
+    @components = qw(
+        APPS ASSETS BUILDER COLOURS CONTEXT CONTENT_TYPES DOMAINS FONTS FORMS
+        MIDDLEWARES PLACK RGB ROUTES REQUEST RESPONSE RESOURCES SCAFFOLD SITEMAP
+        TEMPLATES URLS
+    );
+    @status = qw(
         ACTIVE INACTIVE
+    );
+    @mutate = qw(
+        STATIC DYNAMIC
+    );
+    @deployment = qw(
+        DEVELOPMENT PRODUCTION
     );
 }
 
@@ -16,12 +27,16 @@ use Badger::Class
     debug    => 0,
     base     => 'Badger::Constants',
     import   => 'class',
+    words    => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
     constant => {
         COMPONENT           => 'component',
         MIDDLEWARE          => 'middleware',
 
+        # misc constants relating to directory/file handling
         INDEX_HTML          => 'index.html',
         DOT_HTML            => '.html',
+        TEXT_HTML           => 'text/html',
+        TEXT_PLAIN          => 'text/plain',
 
         # virtual host files
         VHOST_FILE          => 'vhost.conf',
@@ -32,7 +47,7 @@ use Badger::Class
         NULL_TIME           => '00:00:00',
         NULL_STAMP          => '0000-00-00 00:00:00',
         LAST_TIME           => '23:59:59',
- 
+
         # Date formats
         SHORT_DATE          => '%d-%b-%Y',
         MEDIUM_DATE         => '<ord> %B %Y',
@@ -49,20 +64,33 @@ use Badger::Class
         BLACK               => '#000000',
         WHITE               => '#FFFFFF',
 
+        # response codes
+        OK                  => 200,
+        FORBIDDEN           => 403,
+        NOT_FOUND           => 404,
+
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
+        @components,
         @status,
+        @mutate,
+        @deployment,
     },
     exports  => {
         any  => 'COMPONENT MIDDLEWARE',
         tags => {
             status          => \@status,
+            components      => \@components,
+            mutate          => \@mutate,
+            deployment      => \@deployment,
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
-            html            => 'INDEX_HTML DOT_HTML',
+            html            => 'INDEX_HTML DOT_HTML TEXT_HTML TEXT_PLAIN',
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
+            http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
+            http_status     => 'OK FORBIDDEN NOT_FOUND',
         },
     };
 
@@ -75,7 +103,7 @@ Contentity::Constants - defines constants for Contentity
 =head1 SYNOPSIS
 
     package Contentity::Constants 'CONFIG_FILE';
-    
+
     print CONFIG_FILE;   # contentity.yaml
 
 =head1 DESCRIPTION
@@ -96,7 +124,7 @@ The name of the default directory containing configuration files: C<config>.
 
 =head2 CONFIG_FILE
 
-The name of the default configuration file relative to the configuration 
+The name of the default configuration file relative to the configuration
 directory: C<contentity.yaml>.
 
 =head2 CONFIG_CODEC

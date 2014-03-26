@@ -7,7 +7,7 @@ use Contentity::Class
     component => 'resource',
     resource  => 'workspace',
     constant  => {
-        CACHE_INSTANCES => 1,
+        SINGLETONS => 1,
     };
 
 

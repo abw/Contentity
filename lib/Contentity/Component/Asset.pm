@@ -4,23 +4,24 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Component',
-    accessors => 'assets',
-    utils     => 'extend params plural',
+    accessors => 'assets singletons',
+    utils     => 'extend params plural is_object',
     constant  => {
-        ASSET           => undef,
-        ASSETS          => undef,
-        CACHE_INSTANCES => 0,
+        ASSET      => undef,
+        ASSETS     => undef,
+        SINGLETONS => 0,
+        COMPONENT  => 'Contentity::Component',
     };
 
 
 sub init_component {
     my ($self, $config) = @_;
 
-    my $asset = $config->{ asset } 
+    my $asset = $config->{ asset }
         || $self->ASSET
         || return $self->error_msg( missing => 'asset' );
 
-    my $assets = $config->{ assets } 
+    my $assets = $config->{ assets }
         || $self->ASSETS
         || plural($asset);
 
@@ -28,10 +29,11 @@ sub init_component {
         "Asset component [singular:$asset] [plural:$assets]", $config
     ) if DEBUG;
 
-    $self->{ asset           } = $asset;
-    $self->{ assets          } = $assets;
-    $self->{ cache_instances } = $config->{ cache_instances } 
-                             //= $self->CACHE_INSTANCES;
+    $self->{ asset      } = $asset;
+    $self->{ assets     } = $assets;
+    $self->{ instances  } = { };
+    $self->{ singletons } = $config->{ singletons }
+                        //= $self->SINGLETONS;
 
     return $self->init_asset($config);
 }
@@ -59,20 +61,23 @@ sub asset {
 }
 
 sub lookup_asset {
-    my $self = shift;
+    my $self  = shift;
+    my $name  = shift;
+    my $cache = $self->{ instances };
+    my $asset = $cache->{ $name };
 
-    # Cache-aware asset fetcher
+    # Yay!  We found a cached instance
+    return $asset if $asset;
 
-    $self->debug("lookup $_[0]  cache_instances: $self->{ cache_instances }") if DEBUG;
+    # Otherwise go and fetch it anew
+    $asset = $self->fetch_asset($name, @_)
+        || return;
 
-    if ($self->{ cache_instances }) {
-        my $name  = shift;
-        my $cache = $self->{ instance_cache } ||= { };
-        return  $cache->{ $name } 
-            ||= $self->fetch_asset($name, @_);
-    }
+    # Maybe store this instance in the cache?
+    $cache->{ $name } = $asset
+        if $self->cache_asset($name, $asset);
 
-    return $self->fetch_asset(@_);
+    return $asset;
 }
 
 
@@ -80,11 +85,11 @@ sub fetch_asset {
     my $self   = shift;
     my $name   = shift;
     my $config = extend(
-        { 
+        {
             urn => $name,
         #   uri => $self->uri( $self->{ assets }, $name ),
         },
-        $self->asset_config($name), 
+        $self->asset_config($name),
         @_
     );
 
@@ -109,7 +114,34 @@ sub prepare_asset {
     return $data;
 }
 
+sub cache_asset {
+    my ($self, $name, $asset) = @_;
+    my $single = $asset->singleton
+        if is_object(COMPONENT, $asset);
+
+    # Each component can be declared as a singleton via a scheme definition,
+    # or configuration option.
+    if (defined $single) {
+        $self->debug(
+            "$name asset declared itself as ",
+            $single ? "being" : "not being",
+            " a singleton"
+        ) if DEBUG;
+        return $single;
+    }
+
+    # Default behaviour is to depend on singletons config option, subclasses
+    # may modify this to test each asset to determine if it should be cached
+    $self->debug(
+        "using default singletons rule for $name which says they ",
+        $self->singletons ? "are" : "are not",
+        " singletons"
+    ) if DEBUG;
+
+    return $self->singletons;
+}
+
+
 # TODO: methods to fetch index, all assets, etc.
 
 1;
-

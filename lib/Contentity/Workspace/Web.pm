@@ -4,25 +4,8 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Workspace',
-    utils     => 'resolve_uri split_to_list Colour',
-    constants => 'SLASH HASH VHOST_FILE',
-    constant  => {
-        APPS      => 'apps',
-        ASSETS    => 'assets',
-        BUILDER   => 'builder',
-        COLOURS   => 'colours',
-        DOMAINS   => 'domains',
-        FONTS     => 'fonts',
-        FORMS     => 'forms',
-        PLACK     => 'plack',
-        RGB       => 'rgb',
-        ROUTES    => 'routes',
-        RESOURCES => 'resources',
-        SCAFFOLD  => 'scaffold',
-        SITEMAP   => 'sitemap',
-        TEMPLATES => 'templates',
-        URLS      => 'urls',
-    },
+    utils     => 'join_uri resolve_uri split_to_list Colour',
+    constants => ':components :deployment SLASH HASH STATIC DYNAMIC VHOST_FILE',
     messages => {
         bad_col_rgb => 'Invalid RGB colour name specified for %s: %s',
         bad_col_dot => 'Invalid colour method for %s: .%s',
@@ -34,13 +17,12 @@ use Contentity::Class
 # assets are things like forms, lists, etc., that get loaded on demand
 #------------------------------------------------------------------------
 
-sub assets {
-    shift->component(ASSETS, @_);
+sub asset_config {
+    shift->config(
+        join_uri(@_)
+    );
 }
 
-sub asset_config {
-    shift->assets->config(@_);
-}
 
 #------------------------------------------------------------------------
 # apps are web applications
@@ -54,6 +36,51 @@ sub app {
     shift->apps->app(@_);
 }
 
+#-----------------------------------------------------------------------------
+# middlewares wrap around apps, e.g. for serving resources, error pages, etc
+#-----------------------------------------------------------------------------
+
+sub middlewares {
+    shift->component(MIDDLEWARES, @_);
+}
+
+sub middleware {
+    shift->middlewares->middleware(@_);
+}
+
+
+#-----------------------------------------------------------------------------
+# context provides a temporary worker for request/response handling
+#-----------------------------------------------------------------------------
+
+sub context {
+    shift->component(CONTEXT, @_);
+}
+
+sub request {
+    shift->component(REQUEST, @_);
+}
+
+sub response {
+    shift->component(RESPONSE, @_);
+}
+
+
+#-----------------------------------------------------------------------------
+# content types for requests and responses
+#-----------------------------------------------------------------------------
+
+sub content_types {
+    shift->component(CONTENT_TYPES, @_);
+}
+
+sub content_type {
+    shift->content_types->content_type(@_);
+}
+
+sub file_content_type {
+    shift->content_types->file_content_type(@_);
+}
 
 #------------------------------------------------------------------------
 # domains
@@ -78,6 +105,7 @@ sub domain_aliases {
 sub server_domains {
     shift->config('server.domains') || [ ];
 }
+
 
 #-----------------------------------------------------------------------------
 # forms
@@ -165,53 +193,87 @@ sub fix_resources {
     my $fixed     = shift || { };
     my $resources = $self->config(RESOURCES) || return $fixed;
     my $purn      = $self->urn;
+    my $puri      = $self->uri;
+    my $devmode   = $self->development;
+    my $devapps   = { };
 
     $self->debug_data("local resources: ", $resources) if DEBUG;
 
     while (my ($key, $resource) = each %$resources) {
-        my  $urn  = $resource->{ urn       } ||= $key;
-        my  $uri  = $resource->{ uri       } ||= $urn;
-        my  $file = $resource->{ file      };
-        my  $dir  = $resource->{ directory };
-        my  $purn = resolve_uri($purn, $urn);
-        my  $url  = resolve_uri(SLASH, $uri);
-            $url .= SLASH 
-                unless $file 
+        $self->debug("RESOURCE: $purn $key") if DEBUG;
+        my  $urn    = $resource->{ urn       } ||= $key;
+        my  $uri    = $resource->{ uri       } ||= $urn;
+        my  $type   = $resource->{ type      } ||= STATIC;
+        my  $file   = $resource->{ file      };
+        my  $dir    = $resource->{ directory };
+        my  $devapp = $resource->{ dev_app   };
+        my  $purn   = resolve_uri($purn, $urn);
+        my  $url    = resolve_uri(SLASH, $uri);
+            $url   .= SLASH
+                unless $file
                     || $url =~ /\/$/;
 
         # Ugh!  Big fat mess!  Must add local (e.g. /css/) and also explicit
         # name (e.g. /cog/css/) for sites to inherit.  Needs cleaning up.
         my  $purl = resolve_uri(SLASH, $purn);
-            $purl.= SLASH 
-                unless $file 
+            $purl.= SLASH
+                unless $file
                     || $purl =~ /\/$/;
 
         if ($file) {
-            $resource->{ file } = $self->file($file);
+            my $f = $resource->{ file } = $self->file($file);
+            next unless $f->exists;
         }
         elsif ($dir) {
-            $resource->{ directory } = $self->dir($dir);
+            my $d = $resource->{ directory } = $self->dir($dir);
             $self->debug("set for $urn, $dir => $resource->{ directory }") if DEBUG;
+            next unless $d->exists;
         }
         else {
-            $resource->{ directory } = $self->dir( resources => $urn );
+            my $d = $resource->{ directory } = $self->dir( resources => $urn );
             $self->debug("no directory for $urn, defaulting to $resource->{ directory }") if DEBUG;
+            next unless $d->exists;
         }
 
         my $loc = $resource->{ file } || ($resource->{ directory } . SLASH);
 
-        $self->dbg("$key: [$purn] + $urn => $uri") if DEBUG;
+        $self->dbg("$key: [purn:$purn] + [urn:$urn] => [uri:$uri]") if DEBUG;
 
-        $fixed->{ $urn } = {
+        my $rel = {
             %$resource,
+            uri      => $uri,
             url      => $url,
+            type     => $type,
+            space    => $puri,
+            prefix   => $purn,
             location => $loc,
         };
-        $fixed->{ $purn } = {
-            %$resource,
+
+        my $abs = {
+            %$rel,
             url      => $purl,
-            location => $loc,
+        };
+
+        # if we're in development mode then we can attach any specified dev_app
+        # to handle this resource
+
+        if ($devmode && $devapp) {
+            my $base = SLASH . $urn;
+            #$rel->{ app } = $devapps->{"$devapp-$base"} ||= $self->app($devapp, { uri_prefix => $base });
+            #$abs->{ app } = $devapps->{"$devapp-$purn"} ||= $self->app($devapp, { uri_prefix => $base });
+            $rel->{ app } = $abs->{ app } = $self->app($devapp, { uri_prefix => $base });
+            #$abs->{ app } = $self->app($devapp, { uri_prefix => $base });
+
+            if (DEBUG) {
+                $self->debug("Created $devapp-$base application for $url via $base in developer mode: $rel->{ app }");
+                $self->debug("Created $devapp-$purn application for $url via $base in developer mode: $abs->{ app }");
+            }
         }
+
+        #$self->debug("+++ [$urn => $url] + [$purn => $purl]");
+
+        $fixed->{ $urn  } = $rel;
+        $fixed->{ $purn } = $abs;
     }
 
     $self->debug_data("combined fixed resources: ", $fixed) if DEBUG;
@@ -221,12 +283,14 @@ sub fix_resources {
 
 sub inherit_resource_list {
     my $self      = shift;
-    my $resources = $self->resources;
+    my $resources = $self->inherit_resources;
+    my %seen;
 
     # Schwartzian transform to sort resources, see resource_sort_sig() below
     my $list = [
         map     { $_->[1] }
         sort    { $a->[0] cmp $b->[0] }
+#        grep    { ! $seen{ $_->[1]->{ url } }++ }
         map     { [ $self->resource_sort_sig($_), $_ ] }
         values  %$resources
     ];
@@ -238,13 +302,13 @@ sub inherit_resource_list {
 
 sub resource_sort_sig {
     my ($self, $resource) = @_;
-    # We want to sort directories before files, and then those resources with 
-    # longer paths (in terms of slash-separated elements) first, and then 
+    # We want to sort directories before files, and then those resources with
+    # longer paths (in terms of slash-separated elements) first, and then
     # alphanumerically within resources of the same path length.  So we create
-    # a comparison string that starts with 'file' or 'diry' (the latter sorts 
+    # a comparison string that starts with 'file' or 'diry' (the latter sorts
     # before the former), then has the number of path segments subtracted
     # from a suitably large number (e.g. 20) so that longer paths have lower
-    # number (and thus sort first).  Finally, we append each path segment 
+    # number (and thus sort first).  Finally, we append each path segment
     # padded to a fixed width.  e.g "diry:18:cog         :images      "
     my $url  = $resource->{ url  };
     my $type = $resource->{ file } ? 'file' : 'diry';
@@ -306,7 +370,7 @@ sub prepare_colours {
             $col = $self->prepare_colours($value);
         }
         elsif ($value =~ /^(\w+)(?:\.(.*))?/) {
-            # colours can have names that refer to RGB entries, they may also 
+            # colours can have names that refer to RGB entries, they may also
             # have a dotted part after the name, e.g. red.lighter
             $self->debug("colour ref: [$1] [$2]") if DEBUG;
             $name = $1;
@@ -417,13 +481,13 @@ sub add_route {
 # Plack
 #-----------------------------------------------------------------------------
 
-sub plack {
-    shift->component(PLACK, @_);
-}
+#sub plack {
+#    shift->component(PLACK, @_);
+#}
 
-sub plack_app {
-    shift->plack->app;
-}
+#sub plack_app {
+#    shift->plack->app;
+#}
 
 #-----------------------------------------------------------------------------
 # Other aliases
@@ -434,9 +498,33 @@ sub cog_server {
 }
 
 
+#-----------------------------------------------------------------------------
+# Deployment mode can be set to 'development' or 'production'.  In development
+# mode we enable certain extra features, such as generating CSS dynamically,
+# exposing directory indexes and so on.
+#-----------------------------------------------------------------------------
+
+sub deployment {
+    my $self   = shift;
+    my $deploy = $self->{ deployment }
+             ||= $self->config('deployment')
+             ||  $self->project->config('server.deployment')
+             ||  PRODUCTION;
+    return @_
+        ? $deploy eq $_[0]
+        : $deploy;
+}
+
+sub development {
+    shift->deployment(DEVELOPMENT);
+}
+
+sub production {
+    shift->deployment(PRODUCTION);
+}
 
 #-----------------------------------------------------------------------------
-# Sites are enable or disabled by creating or removing a symlink from the 
+# Sites are enable or disabled by creating or removing a symlink from the
 # project etc/vhosts directory to the site's etc/vhost.conf
 #-----------------------------------------------------------------------------
 
@@ -453,7 +541,7 @@ sub disabled {
 
 sub enableable {
     my $self = shift;
-    return $self->disabled 
+    return $self->disabled
         && $self->vhost_file_exists;
 }
 
@@ -463,9 +551,9 @@ sub enable {
     my $file = $self->vhost_file;
     my $link = $self->project_vhosts_file;
     $self->debug("enabling site with symlink from $link to $file") if DEBUG;
-    # note seemingly backwards args: link(X,Y) is like copy(X,Y) but it 
-    # copies a link of X instead of the actual file and puts it at Y.  
-    # So we end up with the link pointing BACK from Y to X. 
+    # note seemingly backwards args: link(X,Y) is like copy(X,Y) but it
+    # copies a link of X instead of the actual file and puts it at Y.
+    # So we end up with the link pointing BACK from Y to X.
     symlink($file->absolute, $link->absolute);
 }
 
@@ -497,4 +585,3 @@ sub project_vhosts_file_exists {
 
 
 1;
-

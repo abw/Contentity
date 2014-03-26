@@ -80,6 +80,9 @@ sub page {
         $page, @parents
     );
 
+    $data->{ uri }   = $uri;
+    $data->{ url } ||= $uri;
+
     $self->debug_data("merged page data for $uri", $data) if DEBUG;
 
     return $self->workspace->component(

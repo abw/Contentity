@@ -1,6 +1,8 @@
 # Moving into Contentity::Config
 package Contentity::Metadata;
 
+die __PACKAGE__, " is deprecated\n";
+
 use Badger::Debug ':all';
 use Contentity::Class
     version   => 0.01,

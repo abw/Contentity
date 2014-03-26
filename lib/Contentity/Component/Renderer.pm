@@ -60,6 +60,7 @@ sub prepare_dirs {
 
 sub source_vfs {
     my $self = shift;
+
     return  $self->{ source_vfs }
         ||= VFS->new( root => $self->source_dirs );
 }
@@ -78,12 +79,17 @@ sub source_files {
     return $files;
 }
 
+sub source_path {
+    my $self = shift;
+    return $self->source_vfs->path(@_);
+}
+
 sub include_path {
     my $self = shift;
     return  $self->{ include_path }
-        ||= [ 
+        ||= [
             # Template engine INCLUDE_PATH expects absolute directory strings
-            map { $_->absolute } 
+            map { $_->absolute }
             @{ $self->source_dirs  },
             @{ $self->library_dirs }
         ];
@@ -124,7 +130,7 @@ sub engine_config {
     $self->debug_data("templates config ", $config) if DEBUG;
 
     $ttcfg->{ INCLUDE_PATH } = $self->include_path;
- 
+
     for (qw( config before header )) {
         push(@pre, $config->{ $_ })
             if $config->{ $_ };
@@ -166,10 +172,12 @@ sub data {
 sub render {
     my $self   = shift;
     my $name   = shift;
-    # what about merging in our own data, e.g. workspace and Project refs
-    my $params = params(@_);
+    my $params = $self->template_data(@_);
     my $engine = $self->engine;
     my $output;
+
+    # remove leading slash - TT thinks you're trying to access an absolute path
+    $name =~ s[^/][];
 
     $engine->process($name, $params, \$output)
         || return $self->error_msg( engine_render => $name, $engine->error );
@@ -180,9 +188,24 @@ sub render {
 sub process {
     my $self   = shift;
     my $name   = shift;
+    my $params = $self->template_data(shift);
     my $engine = $self->engine;
-    return $engine->process($name, @_)
+    return $engine->process($name, $params, @_)
         || $self->error_msg( engine_render => $name, $engine->error );
+}
+
+sub template_data {
+    my $self  = shift;
+    my $space = $self->workspace;
+    return extend(
+        {
+            Project   => $space->project || undef,
+            Workspace => $space,
+            Space     => $space,
+            Site      => $space,
+        },
+        @_
+    );
 }
 
 
@@ -206,7 +229,7 @@ TODO
 
 =head2 source_dirs
 
-One or more source directories.  This can be a single string containing 
+One or more source directories.  This can be a single string containing
 a directory path:
 
     my $builder = Contentity::Builder->new(
@@ -238,9 +261,9 @@ Or a reference to a list of one or more directory paths or objects:
     );
 
 When multiple paths are specified, those specified earlier in the list will
-take precedence over those specified later.  In the previous example, a file 
-name F<foo> that exists as both C</path/to/source/one/foo> and 
-C</path/to/source/two/foo> will be read from C</path/to/source/one/foo>, 
+take precedence over those specified later.  In the previous example, a file
+name F<foo> that exists as both C</path/to/source/one/foo> and
+C</path/to/source/two/foo> will be read from C</path/to/source/one/foo>,
 effectively masking C</path/to/source/two/foo>.
 
 =head2 library_dirs
@@ -251,9 +274,9 @@ L<source_dirs>.
 
 =head2 output_dir
 
-Defines the directory where the output files should be written.  Source 
+Defines the directory where the output files should be written.  Source
 templates in sub-directories will be written to corresponding sub-directories
-under the C<output_dir>.  File permissions for the output file will be set to 
+under the C<output_dir>.  File permissions for the output file will be set to
 the same permissions that the source file has.
 
 =head1 METHODS

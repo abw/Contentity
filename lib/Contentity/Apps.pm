@@ -12,7 +12,7 @@ __END__
 
 =head1 NAME
 
-Contentity::App - factory module for loading and instantiating application modules
+Contentity::Apps - factory module for loading and instantiating application modules
 
 =head1 SYNOPSIS
 

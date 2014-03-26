@@ -1,5 +1,8 @@
 package Contentity::Context;
 
+# DEPRECATED
+
+
 use Badger::URL;
 use Badger::Utils;
 #use Badger::Web::Hub;
@@ -88,11 +91,32 @@ sub init_context {
     return $self;
 }
 
-
 sub response {
-    my $self = shift;
-    return  $self->{ response }
-        ||= $self->new_response;
+    my $self     = shift;
+    my $response = $self->{ response } ||= $self->new_response;
+
+    if (@_) {
+        # update existing response with new params
+        my $params = Badger::Utils::params(@_);
+        my ($key, $value);
+        
+        foreach $key (qw{ status redirect }) {
+            if ($value = delete $params->{ $key }) {
+                $response->$key($value);
+            }
+        }
+        if ($value = delete $params->{ content }) {
+            $response->body($value);
+        }
+        if ($value = delete $params->{ type }) {
+            $response->content_type($value);
+        }
+        if (%$params) {
+            $self->error("Invalid response parameters: ", $self->dump_data($params));
+        }
+    }
+
+    return $response;
 }
 
 
@@ -152,39 +176,6 @@ sub accept_map {
     }
 }
 
-
-#-----------------------------------------------------------------------
-# Response handling
-#-----------------------------------------------------------------------
-
-sub OLD_response {
-    my $self     = shift;
-    my $response = $self->{ response };
-
-    if (! $response) {
-        # create a new response
-        return ($self->{ response } = $self->request->response(@_));
-    }
-    elsif (@_) {
-        # update existing response with new params
-        my $params = Badger::Utils::params(@_);
-        my ($key, $value);
-        
-        foreach $key (qw{ status type }) {
-            if ($value = delete $params->{ $key }) {
-                $response->$key($value);
-            }
-        }
-        if ($value = delete $params->{ content }) {
-            $response->body($value);
-        }
-        if (%$params) {
-            $self->error("Invalid response parameters: ", $self->dump_data($params));
-        }
-    }
-
-    return $response;
-}
 
 
 #-----------------------------------------------------------------------

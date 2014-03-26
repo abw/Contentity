@@ -1,0 +1,13 @@
+number: 42
+extra:  TEST message in config/apps.yaml
+
+schema:
+  # config data is cached for 30 minutes
+  cache:     30 minutes
+
+  # only reads apps.yaml, don't descend into apps/*
+  tree_type: none
+
+  # the apps component object can be reused
+  singleton: true
+

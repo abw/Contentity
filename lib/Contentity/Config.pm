@@ -1,8 +1,3 @@
-# New attempt (Feb 11th 2014, March 4th) to make subclass of Badger::Config with 
-# additional caching
-
-# Work in progress
-
 package Contentity::Config;
 
 use Contentity::Cache;
@@ -11,14 +6,13 @@ use Contentity::Class
     debug     => 0,
     import    => 'class',
     base      => 'Badger::Config::Filesystem Contentity::Base',
-    utils     => 'truelike falselike extend merge split_to_list Filter',
+    utils     => 'truelike falselike extend merge split_to_list blessed Filter',
     accessors => 'parent',
     constants => 'HASH ARRAY',
     constant    => {
         # caching options
-        CACHE_MANAGER     => 'Contentity::Cache',
+        CACHE_MANAGER => 'Contentity::Cache',
     };
-
 
 
 #-----------------------------------------------------------------------------
@@ -31,8 +25,8 @@ sub init {
     $self->debug_data("config", $config) if DEBUG;
 
     $self->{ parent } = $config->{ parent };
- 
-    # First call Badger::Config base class method to handle any 'items' 
+
+    # First call Badger::Config base class method to handle any 'items'
     # definitions and other general initialisation
     $self->init_config($config);
 
@@ -47,34 +41,40 @@ sub init {
 
 sub init_contentity {
     my ($self, $config) = @_;
-    $self->init_cache;
+    $self->init_cache($config);
     $self->init_data_files;
     return $self;
 }
 
 sub init_cache {
-    my $self    = shift;
-    my $config  = $self->get('cache')  || return;
+    my ($self, $config) = @_;
+    my $cache = $config->{ cache };
+
+    if ($cache && blessed $cache) {
+        $self->debug("got a cache object: $cache") if DEBUG;
+        $self->{ cache } = $cache;
+        return;
+    }
+
+    my $cconfig = $self->get('cache')  || return;
     my $manager = $config->{ manager } || $self->CACHE_MANAGER;
 
     class($manager)->load;
 
     $self->debug(
         "cache manager config for $manager: ",
-        $self->dump_data($config)
+        $self->dump_data($cconfig)
     ) if DEBUG;
 
     $self->debug("cache URI: ", $self->uri) if DEBUG;
 
-    my $cache = $manager->new(
+    $cache = $manager->new(
         uri => $self->uri,
-        %$config,
+        %$cconfig,
     );
 
     $self->debug("created new cache manager: $cache") if DEBUG;
     $self->{ cache } = $cache;
-
-    return $self;
 }
 
 sub init_data_files {
@@ -113,7 +113,7 @@ sub import_data_file_if_exists {
     merge($self->{ data }, $data);
 }
 
-# TODO: init_schema() init_schemas() and other configure_XXX() methods in 
+# TODO: init_schema() init_schemas() and other configure_XXX() methods in
 # Contentity::Metadata
 
 
@@ -132,7 +132,7 @@ sub head {
     return $data->{ $name }
         if exists $data->{ $name };
 
-    my $item = 
+    my $item =
             $self->cache_fetch($name)
         //  $self->fetch($name)
         //  $self->parent_fetch($name);
@@ -148,12 +148,13 @@ sub head {
 sub tail {
     my ($self, $name, $data, $schema) = @_;
 
+
     $schema ||= $self->schema($name);
 
-    $self->debug(
-        "tail($name)\n  DATA: ", $self->dump_data($data), 
-        "\n SCHEMA: ", $self->dump_data($schema)
-    ) if DEBUG;
+    if (DEBUG) {
+        $self->debug_data( "tail($name) data"   => $data );
+        $self->debug_data( "tail($name) schema" => $schema );
+    }
 
     # should we merge this with any parent data?
 
@@ -162,11 +163,11 @@ sub tail {
 
         $self->debug(
             "MERGE\nparent=", ($self->{ parent } ?  $self->{ parent }->uri : 'none'), " ",
-            "parent_head($name): ", $self->dump_data($pdata), 
+            "parent_head($name): ", $self->dump_data($pdata),
         ) if DEBUG;
 
         if ($pdata) {
-            # we may fetch the parent data if the merge ruleset says we can 
+            # we may fetch the parent data if the merge ruleset says we can
             $data = $self->merge_data($name, $pdata, $data, $schema);
         }
 
@@ -182,7 +183,7 @@ sub tail_cache {
 
     $schema ||= $self->schema($name);
 
-    #$self->debug_data("tail_cache", $schema);
+    $self->debug_data("tail_cache $name", $schema) if DEBUG;
 
     if ($data && $self->{ cache } && ($duration = $schema->{ cache })) {
         $self->debug("found cache duration option: $duration") if DEBUG;
@@ -199,7 +200,7 @@ sub tail_cache {
 sub cache {
     my $self = shift;
 
-    return $self->{ cache } 
+    return $self->{ cache }
         unless @_;
 
     return @_ > 1
@@ -217,29 +218,29 @@ sub cache_fetch {
             $self->debug("cache_fetch($name) got data: ", $self->dump_data($data));
         }
         else {
-            $self->debug("cache_fetch($name) found nothing") if DEBUG;
+            $self->debug("cache_fetch($name) found nothing");
         }
     }
     return $data;
 }
 
 sub cache_store {
-    my ($self, $name, $data, $expires) = @_;
+    my ($self, $name, $data, $duration) = @_;
     my $cache = $self->cache || return;
 
-    if (falselike($expires)) {
-        $self->debug("cache $name never") if DEBUG;
+    if (falselike($duration)) {
+        $self->debug("cache $name never (duration:$duration)") if DEBUG;
         return;
     }
 
     # see if we need to set an expiry timestamp
-    if (truelike($expires)) {
-        $self->debug("cache $name forever") if DEBUG;
+    if (truelike($duration)) {
+        $self->debug("cache $name forever (duration:$duration)") if DEBUG;
         $cache->set($name, $data);
     }
     else {
-        $self->debug("cache $name for $expires") if DEBUG;
-        $cache->set($name, $data, "$expires");
+        $self->debug("cache $name for duration:$duration") if DEBUG;
+        $cache->set($name, $data, "$duration");
     }
 }
 
@@ -277,7 +278,7 @@ sub merge_data {
     my ($self, $name, $parent, $child, $schema) = @_;
     my $merged;
 
-    $parent = { 
+    $parent = {
         map { $_ => 1 }
         @$parent
     } if ref $parent eq ARRAY;
@@ -290,8 +291,8 @@ sub merge_data {
     }
 
     return $child || $parent
-        unless $child && $parent 
-            && ref($child)  eq HASH 
+        unless $child && $parent
+            && ref($child)  eq HASH
             && ref($parent) eq HASH;
 
     my $submerge = $schema->{ submerge };
@@ -386,15 +387,15 @@ sub new_filter {
 #-----------------------------------------------------------------------------
 
 sub schemas {
-    # for now, schemas as the same thing as config items, but that may change 
+    # for now, schemas as the same thing as config items, but that may change
     # at some point in the future
     shift->{ item };
 }
 
 sub schema {
-    # for now, schemas as the same thing as config items, but that may change 
+    # for now, schemas as the same thing as config items, but that may change
     # at some point in the future
-    shift->item(@_);
+    shift->item_schema(@_);
 }
 
 sub lookup_item {

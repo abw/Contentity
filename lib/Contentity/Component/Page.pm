@@ -6,11 +6,20 @@ use Contentity::Class
     base    => 'Contentity::Component::Flyweight',
     utils   => 'resolve_uri';
 
+
+
 sub uri {
     my $self = shift;
+    $self->debug_data("fetch uri: ", $self->{ data }) if DEBUG;
     return @_
-        ? resolve_uri($self->{ config }->{ uri }, @_)
-        : $self->{ config }->{ uri };
+        ? resolve_uri($self->{ data }->{ uri }, @_)
+        : $self->{ data }->{ uri };
+}
+
+sub title {
+    my $self = shift;
+    return $self->{ data }->{ title }
+      //   $self->{ data }->{ name  };
 }
 
 sub trail {
@@ -28,7 +37,7 @@ sub menu {
     my $self = shift;
     my $name = shift || 'menu';
 
-    # Append _menu suffix unless it already has one, e.g. 
+    # Append _menu suffix unless it already has one, e.g.
     #   menu    => menu
     #   my_menu => my_menu
     #   main    => main_menu,
@@ -52,7 +61,7 @@ __END__
 sub trail {}
     delete $self->{ trail } if @_;
     return $self->{ trail } ||= do {
-        my $uri   = $self->{ uri }; 
+        my $uri   = $self->{ uri };
         $uri =~ s[^/][];
         $uri =~ s[\/index.html][];
         my @path  = split(/\/+/, $uri);
@@ -71,4 +80,3 @@ sub trail {}
 
 
 1;
-

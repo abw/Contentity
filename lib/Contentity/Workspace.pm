@@ -7,7 +7,7 @@ use Contentity::Class
     debug       => 0,
     base        => 'Badger::Workspace Contentity::Base',
     import      => 'class',
-    utils       => 'truelike falselike extend merge params self_params 
+    utils       => 'truelike falselike extend merge params self_params
                     blessed reftype refaddr resolve_uri',
     autolook    => 'get',
     accessors   => 'type',
@@ -46,7 +46,7 @@ sub init_workspace {
 
     my $type = $self->{ type } = $config->{ type } || $self->WORKSPACE_TYPE;
     my $uri  = $self->{ uri  } = $config->{ uri  } || join(
-        ':', 
+        ':',
         grep { defined $_ and length $_ }
         #$self->{ type },
         $self->{ urn }
@@ -54,7 +54,7 @@ sub init_workspace {
 
     $self->SUPER::init_workspace($config);
 
-    # ugly temporary hack to allow 'component_path' configuration option to 
+    # ugly temporary hack to allow 'component_path' configuration option to
     # be passed to component factory - see t/workspace/components.t around
     # line 30
     $self->{ factory_config } = $config;
@@ -126,7 +126,7 @@ sub load_component {
     my $urn    = shift; # urn is what they ask for
     my $name   = $urn;  # name is initially the same but may change
     my $config = $self->component_config($name, @_);
-    my $single = truelike( 
+    my $single = truelike(
         $config->{ singleton } // $config->{ cache_object }
     );
 
@@ -166,13 +166,18 @@ sub component_config {
     my $self   = shift;
     my $name   = shift;
     my $params = params(@_);
-    my $schema = $self->item_schema($name) || { };
     my $config = $self->config($name) || { };
+    # NOTE: we MUST load the schema after loading the config, in case the config
+    # file contains schema modifications
+    my $schema = $self->item_schema($name) || { };
+
     # if $config isn't a HASH reference then we can't merge it with params
     $config = { $name => $config } unless ref $config eq HASH;
 
+    $self->debug_data( "$name component config schema" => $schema ) if DEBUG;
+
     my $merged = extend({ }, $config, $params);
-    my $final  = { 
+    my $final  = {
         component => $name,
         urn       => $name,
         schema    => $schema,
@@ -208,7 +213,7 @@ sub clear_component_cache {
 
 sub project {
     my $self = shift;
-    return $self->{ project } 
+    return $self->{ project }
        ||= $self->{ parent  }
          ? $self->{ parent  }->project
          : $self;
@@ -229,7 +234,7 @@ sub init_project_uri {
     my $uri     = $self->uri;
     my $project = $self->project;
 
-    # Bit of a nasty situation here.  We use a URI like sites/completely 
+    # Bit of a nasty situation here.  We use a URI like sites/completely
     # to reference a site, e.g. $project->workspace('sites/completely').
     # But we also need to have a global uri for caching that includes the
     # project uri, e.g. cog/sites/completely
@@ -244,7 +249,7 @@ sub init_project_uri {
 }
 
 sub config_uri {
-    # The Badger::Workspace base class calls this method to determine the uri 
+    # The Badger::Workspace base class calls this method to determine the uri
     # for the config module (and cache) to use.  We want it to have a uri that's
     # unique so we use the project-relative uri, e.g. cog/sites/completely
     # instead of the local uri, e.g. sites/completely.
@@ -398,9 +403,9 @@ Contentity::Workspace - an object representing a project workspace
 
 This module implements an object for representing a Contentity workspace.
 
-NOTE: this documentation was cut-n-pasted from Contentity::Project which 
+NOTE: this documentation was cut-n-pasted from Contentity::Project which
 is in the process of being refactored.  Don't trust it to be accurate or
-up to date.  The documentation will be updated when the refactoring is 
+up to date.  The documentation will be updated when the refactoring is
 complete and the architecure more stable.
 
 =head1 CLASS METHODS
@@ -410,7 +415,7 @@ complete and the architecure more stable.
 This is the constructor method to create a new C<Contentity::Workspace> object.
 
     use Contentity::Workspace;
-    
+
     my $space = Contentity::Workspace->new(
         directory => '/path/to/workspace'
     );
@@ -426,35 +431,35 @@ C<dir> or C<root>
 =head4 config_dir
 
 This optional parameter can be used to specify the name of the configuration
-direction under the L<root> project directory.  The default configuration 
+direction under the L<root> project directory.  The default configuration
 directory name is C<config>.
 
 =head4 config_file
 
-This optional parameter can be used to specify the name of the main 
-configuration file (without file extension) that should reside in the 
-L<config_dir> directory under the C<root> project directory.  The default 
+This optional parameter can be used to specify the name of the main
+configuration file (without file extension) that should reside in the
+L<config_dir> directory under the C<root> project directory.  The default
 configuration file name is C<workspace>.
 
 =head1 GENERAL PURPOSE OBJECT METHODS
 
 =head2 uri($path)
 
-When called without any arguments this method returns the base URI for the 
+When called without any arguments this method returns the base URI for the
 project.
 
     print $project->uri;            # e.g. foo
 
 When called with a relative URI path as an argument, it returns the URI
-resolved relative to the project base URI. 
+resolved relative to the project base URI.
 
     print $project->uri;
 
 =head2 dir($path)
 
 Returns a L<Badger::Filesystem::Directory> object representing a directory
-under the project root directory denoted by the C<$path> argument (or 
-arguments).  Returns the root directory object when called without any 
+under the project root directory denoted by the C<$path> argument (or
+arguments).  Returns the root directory object when called without any
 arguments.
 
     my $root   = $project->dir;
@@ -462,11 +467,11 @@ arguments.
 
 =head2 resources_dir($path)
 
-Returns a L<Badger::Filesystem::Directory> object for the directory in 
-which resource data files are stored.  This is defined via the 
-C<resources_dir> configuration option and is usually specified relative 
+Returns a L<Badger::Filesystem::Directory> object for the directory in
+which resource data files are stored.  This is defined via the
+C<resources_dir> configuration option and is usually specified relative
 to the project root directory (C<resources> by default).  If one or more
-C<$path> arguments are specified then it returns a directory underneath 
+C<$path> arguments are specified then it returns a directory underneath
 the resources directory, in a similar fashion to L<dir()>.
 
     my $resources = $project->resources_dir;
@@ -476,7 +481,7 @@ the resources directory, in a similar fashion to L<dir()>.
 =head2 resource_dir($type,$spec)
 
 This is a more strict wrapper around L<resources_dir()> which provides
-additional configuration parameters (from L<config_filespec()>) and asserts 
+additional configuration parameters (from L<config_filespec()>) and asserts
 that the directory exists.  It caches the directory object for subequent use.
 This should generally be used in preference to L<resources_dir()>.
 
@@ -489,8 +494,8 @@ TODO
 =head1 OBJECT METHODS FOR LOADING COMPONENTS
 
 Components are one-off (singleton) objects that can be loaded into a contentity
-project.  For example, a database can be implemented as a component.  You 
-generally only ever need to load one database component into a project and 
+project.  For example, a database can be implemented as a component.  You
+generally only ever need to load one database component into a project and
 all other internal components and external code using the project can share it.
 
 =head2 component($name)

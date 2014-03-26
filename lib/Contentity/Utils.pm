@@ -19,6 +19,7 @@ use Contentity::Class
             Colour
             debug_caller strip_hash strip_hash_undef
             module_name
+            integer random
             uri_safe id_safe
             self_key self_keys
             H html_elem html_attrs data_attrs
@@ -30,6 +31,19 @@ use Contentity::Class
     };
 use Contentity::Colour  'Colour';
 
+
+#-----------------------------------------------------------------------------
+# Number utility functions
+#-----------------------------------------------------------------------------
+
+sub integer {
+    floor(shift(@_) + 0.0001);
+}
+
+sub random {
+    my $n = shift || 99999;
+    return int rand $n;
+}
 
 #-----------------------------------------------------------------------------
 # Hash utilities
@@ -62,7 +76,7 @@ sub strip_hash_undef {
 
 sub module_name(@) {
     # map {  } works backwards, so read this from bottom to top...
-    join(   
+    join(
         PKG,# join into a module path, e.g. User::SendInvite
         grep {
             # ignore any empty items
@@ -74,7 +88,7 @@ sub module_name(@) {
             join('',  map { s/(.)/\U$1/; $_ } split '_' )
         }
         map {
-            # split on slashes in the URI 
+            # split on slashes in the URI
             # e.g. 'user/send_invite' => 'user', 'send_invite'
             split qr</>
         }
@@ -127,7 +141,7 @@ sub self_keys {
     my $names  = shift;
     my $self   = shift;
     my ($params, @values);
-    
+
     $names = [ split(DELIMITER, $names) ]
         unless ref $names eq ARRAY;
 
@@ -146,7 +160,7 @@ sub self_keys {
         # otherwise we got a list of named parameters
         $params = { @_ };
     }
-        
+
     foreach my $name (@$names) {
         return $self->error_msg( missing => $name )
             unless defined $params->{ $name };
@@ -170,9 +184,9 @@ sub html_elem {
     my $body  = ($name =~ s/:(.*)//)
               ? $1
               : join(
-                    BLANK, 
+                    BLANK,
                     map { ref $_ eq ARRAY ? html_elem(@$_) : $_ }
-                    @_ 
+                    @_
                 );
 
     $name  = html_name($name, $attrs);
@@ -244,7 +258,7 @@ sub data_attrs {
 sub datestamp {
     my $date  = shift || return;
 
-    return $date 
+    return $date
         if is_object(TIMESTAMP, $date);
 
     $date = $date.SPACE.NULL_TIME
@@ -312,7 +326,7 @@ sub commas {
         while ($before =~ /((.{3})|(.+))/g);
 
         $number = join(',', @list);
-        $number .= $after 
+        $number .= $after
             if defined $after;
     }
     return $number;
@@ -366,8 +380,8 @@ sub prompt {
     my ($msg, $def, $yes, $params) = @_;
     my $ans = '';
     $def = '' unless defined $def;
-    my $defprompt = $def 
-        ? yellow("[") . green($def) . yellow("]") . ' ' 
+    my $defprompt = $def
+        ? yellow("[") . green($def) . yellow("]") . ' '
         : "";
 
     my $comment = $params->{ comment };
@@ -385,7 +399,7 @@ sub prompt {
 
         if ($options) {
             $options = split_to_list($options);
-            print "\n", yellow('Valid options: '), 
+            print "\n", yellow('Valid options: '),
                 join(', ', map { green($_) } @$options),
                 "\n";
         }
@@ -490,8 +504,8 @@ An exception will be thrown if the expected key parameter is not provided.
 Similar to L<self_key()> but for multiple keys.
 
     sub some_other_method {
-        my ($self, $user_id, $order_id) = self_key( 
-            'user_id order_id' => @_ 
+        my ($self, $user_id, $order_id) = self_key(
+            'user_id order_id' => @_
         );
         $self->debug("Got user id: $user_id");
         $self->debug("Got order id: $order_id");
@@ -525,13 +539,13 @@ created.
 
     # element with attributes and content
     html_element(
-        i => { class="important' }, 
+        i => { class="important' },
         'Some italic text'
     );
 
     # element with attributes and lots of content
     html_element(
-        i => { class="important' }, 
+        i => { class="important' },
         'Some italic text. ',
         'Some more italic text. ',
         ('Lorem Ipsum... ') x 100
@@ -565,8 +579,8 @@ This function is also available via the C<H> alias for the sake of brevity.
 
 =head2 html_name($name, $attrs)
 
-This function looks for any HTML element shortcuts included in C<$name>, 
-removes them and sets the appropriate attributes in the C<$attrs> hash 
+This function looks for any HTML element shortcuts included in C<$name>,
+removes them and sets the appropriate attributes in the C<$attrs> hash
 reference.
 
 =head3 foo.bar
@@ -583,9 +597,9 @@ C<foo[bar=baz]> is equivalent to C<E<lt>foo bar="baz"E<gt>>.
 
 =head2 html_attrs(\%attrs)
 
-Generates HTML attributes from a reference to a hash array or a list of 
+Generates HTML attributes from a reference to a hash array or a list of
 named parameters.
-    
+
     # hash reference
     my $attrs = {
         id    => 'foo',
@@ -601,7 +615,7 @@ named parameters.
 
 =head2 data_attrs(\%attrs)
 
-This generates HTML C<data-> attributes for the items in the hash array 
+This generates HTML C<data-> attributes for the items in the hash array
 or named parameters passed as a argument.
 
     data_attrs( foo => 10 );        # data-foo="10"
@@ -697,10 +711,10 @@ that may have more than one named.
 
 =head2 prompt($message, $default, $yes)
 
-Prompts the user by printing C<$message> and waiting for a response.  A 
-default response value can be provided as the second argument.  If the 
+Prompts the user by printing C<$message> and waiting for a response.  A
+default response value can be provided as the second argument.  If the
 third argument, C<$yes>, is set to any true value then the message will
-be printed but the function will immediately return as if the user had 
+be printed but the function will immediately return as if the user had
 accepted the default value.
 
     my $name = prompt('Your name', 'anon');

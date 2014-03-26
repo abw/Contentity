@@ -11,7 +11,7 @@ sub map {
     my $maps = $self->{ mappings } ||= [ ];
     $uri =~ s{/$}{};
     push(
-        @$maps, 
+        @$maps,
         [ $uri, qr/^\Q$uri\E/, $app ]
     );
 }
@@ -51,11 +51,12 @@ sub found {
     my $orig_path_info   = $env->{ PATH_INFO   };
     my $orig_script_name = $env->{ SCRIPT_NAME };
 
+    # Hmmm... why not use local instead?
     $env->{ PATH_INFO   }  = $path_info;
     $env->{ SCRIPT_NAME }  = $script_name;
 
     return $self->response_cb(
-        $app->($env), 
+        $app->($env),
         sub {
             $env->{ PATH_INFO   } = $orig_path_info;
             $env->{ SCRIPT_NAME } = $orig_script_name;
@@ -65,7 +66,7 @@ sub found {
 
 sub not_found {
     my $self = shift;
-    $self->debug("returning 404 as undef");
+    $self->debug("returning 404 as undef") if DEBUG;
     #return [404, [ 'Content-Type' => 'text/plain' ], [ "Not Found" ]];
     return undef;
 }

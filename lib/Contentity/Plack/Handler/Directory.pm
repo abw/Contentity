@@ -58,6 +58,10 @@ sub serve_path {
     if (-f $dir) {
         return $self->SUPER::serve_path($env, $dir, $fullpath);
     }
+    elsif (! $self->{ index }) {
+        $self->debug("$dir is a directory and indexes are disabled");
+        return $self->return_403;
+    }
 
     my $dir_url = $env->{SCRIPT_NAME} . $env->{PATH_INFO};
 

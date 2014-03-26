@@ -6,3 +6,6 @@ schemas:
   pages:
     tree_type:  uri
     uri_paths:  absolute
+
+  content_types:
+    type:       component

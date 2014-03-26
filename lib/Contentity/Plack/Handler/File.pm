@@ -7,7 +7,7 @@ use Contentity::Class
 
 sub NOT_return_404 {
     my $self = shift;
-    $self->debug("returning 404 as undef");
+    $self->debug("returning 404 as undef") if DEBUG;
     return undef;
 }
 

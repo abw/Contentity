@@ -8,6 +8,8 @@
 #
 #========================================================================
 
+use lib '/Users/abw/projects/badger/lib';
+
 use Badger
     lib        => 'lib ../../lib',
     Filesystem => 'Bin',
@@ -26,7 +28,7 @@ use Contentity::Project;
 #-----------------------------------------------------------------------------
 
 my $root    = Bin->dir( test_files => projects => 'alpha' );
-my $project = Contentity::Project->new( 
+my $project = Contentity::Project->new(
     root    => $root,
 );
 ok( $project, "created contentity project: $project" );
@@ -40,10 +42,10 @@ ok( $apps2, "got apps component: $apps2" );
 is( $apps1, $apps2, 'apps component is cached' );
 
 
-my $app1 = $project->app( 'content', pleasantly => 'Wibble my Frusset Pouch' );
-ok( $app1, "got content app once: $app1" );
+my $app1 = $project->app( 'hello', pleasantly => 'Wibble my Frusset Pouch' );
+ok( $app1, "got hello app once: $app1" );
 
-my $app2 = $project->app( 'content', pleasantly => 'Jangle my mangle' );
-ok( $app2, "got content app again: $app2" );
+my $app2 = $project->app( 'hello', pleasantly => 'Jangle my mangle' );
+ok( $app2, "got hello app again: $app2" );
 
 is( $app1, $app2, 'content app is cached' );

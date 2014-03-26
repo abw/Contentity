@@ -3,57 +3,44 @@ package Contentity::App::Content;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::App',
-    constants => ':html SLASH';
-
-our $CONTENT_TYPE  = {
-    xml => 'text/xml',
-    css => 'text/css',
-    js  => 'text/javascript',
-    txt => 'text/plain',
-};
+    base      => 'Contentity::App::Directory',
+    accessors => 'vfs',
+    constants => ':html SLASH TRUE FALSE',
+    constant  => {
+        RENDERER => 'content',
+    };
 
 
-
-sub init_app {
+sub init_vfs {
     my ($self, $config) = @_;
-    $self->debug("content app is in ", $self->workspace->ident, " workspace");
+    $self->{ vfs } = $self->renderer->source_vfs;
 }
 
-sub run {
-    my ($self, $context) = @_;
-    my $path = $context->path;
-    my $site = $context->site;
-    my $tmps = $site->templates;
-    my $exts = $site->extensions || { };
-    my $file = $path;
+sub present_file {
+    my ($self, $uri, $file) = @_;
+    my $data = $self->context->data;
+    $self->debug_data(
+        "about to render [uri:$uri] from [file:$file] with",
+        $data
+    ) if DEBUG;
+    my $html = $self->renderer->render($file->absolute, $data);
+    my $type = $self->content_type($file);
 
-    LOOK: {
-        last if $tmps->template_file($file)->exists;
-        $self->debug("$file not found, adding ", DOT_HTML);
-        $file = $path . DOT_HTML;
-        last if $tmps->template_file($file)->exists;
-        $self->debug("$file not found, adding ", INDEX_HTML);
-        $file = $path . SLASH . INDEX_HTML;
-        last if $tmps->template_file($file)->exists;
-        $self->debug("$file not found, returning ");
-        $context->output(
-            "Template not found: $path in ", 
-            $self->dump_data($tmps->vfs->roots)
-        );
-        return;
-    }
-    $file =~ s[^/+][];
-
-    if ($file =~ /\.(\w+)$/) {
-        $self->extension_specific($context, $file, lc $1);
-    }
-
-    $context->output(
-        $tmps->render($file, $context->data)
+    return $self->response(
+        type => $type,
+        body => $html,
     );
 }
 
+1;
+
+__END__
+
+#-----------------------------------------------------------------------------
+# TODO: old extension-specific stuff is below - don't know if it still makes
+# sense to access the $context->page to set wrapper...
+#-----------------------------------------------------------------------------
+==
 sub extension_specific {
     my ($self, $context, $file, $ext) = @_;
     my $site = $context->site       || return;
@@ -61,11 +48,6 @@ sub extension_specific {
     my $exts = $site->extensions    || return;
     my $meta = $exts->{ $ext }      || return;
     my $data;
-
-    if ($data = $meta->{ content_type }) {
-        $context->content_type($data);
-        $self->debug("EXT[$ext] $file set content_type to $data");
-    }
 
     if ($data = $meta->{ wrapper }) {
         $page->{ wrapper } = $data;

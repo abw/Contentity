@@ -1,126 +1,26 @@
 package Contentity::Plack::Component;
 
 use Contentity::Class
-    version   => 0.01,
+    version   => 0.02,
     debug     => 0,
-    base      => 'Contentity::Plack::Base Plack::Component',
-    accessors => 'env',
-    constants => 'HASH',
-    constant  => {
-        CONTEXT_NAME => 'context',
-    };
+    base      => 'Contentity::Plack::Base Plack::Component';
 
 
-#-----------------------------------------------------------------------------
-# Initialisation methods
-#-----------------------------------------------------------------------------
-
-sub init {
-    my ($self, $config) = @_;
-
-    $self->debugf("init(%s)", $self->dump_data($config)) 
-        if $self->DEBUG;
-
-    # copy all config items into self
-    @$self{ keys %$config } = values %$config;
-
-    # call component-specific init method
-    $self->init_component($config);
-
-    return $self;
+sub call {
+    shift->not_implemented('in base class');
 }
 
-sub init_component {
-    # stub for subclasses
-}
-
-
-#-----------------------------------------------------------------------------
-# Custom to_app() method which calls wrap_app() to add an extra runtime
-# wrapper to store local (temporary) environment reference in $self->{ env }.
-#-----------------------------------------------------------------------------
-
-sub NOT_to_app {
-    my $self = shift;
-    return $self->wrap_app(
-        $self->SUPER::to_app(@_)
+sub add_middleware {
+    my $self  = shift;
+    my $wares = $self->middleware(@_);
+    return $wares->wrap(
+        $self->to_app
     );
 }
 
-sub wrap_app {
-    my $self = shift;
-    my $app  = shift;
-    return sub {
-        local $self->{ env } = $_[0];
-        $app->(@_);
-    };
+sub middleware {
+    shift->workspace->middleware(@_);
 }
-
-
-#-----------------------------------------------------------------------------
-# Within the Plack environment we store a 'context' hash reference containing
-# all the application-specific data we need to keep in context.
-#-----------------------------------------------------------------------------
-
-sub context {
-    my $self    = shift;
-    my $cname   = $self->CONTEXT_NAME;
-    my $context = $self->env->{ $cname } ||= { };
-
-    return $self->get_or_set(
-        $context, @_
-    );
-}
-
-#-----------------------------------------------------------------------
-# Access to the context.data hash, optionally getting or setting an item
-#-----------------------------------------------------------------------
-
-sub data {
-    my $self    = shift;
-    my $context = $self->context;
-    my $data    = $context->{ data } ||= { };
-    return $self->get_or_set(
-        $data, @_
-    );
-}
-
-#-----------------------------------------------------------------------------
-# Delete an item from context.data
-#-----------------------------------------------------------------------------
-
-sub delete {
-    my ($self, $name) = @_;
-    return CORE::delete $self->data->{ $name };
-}
-
-
-#-----------------------------------------------------------------------------
-# Generic method for getting or setting an item in a hash reference, depending
-# on the number of additional arguments.  One extra argument to get, two or
-# more arguments to set an item or items.  No extra arguments returns the 
-# hash reference itself.
-#-----------------------------------------------------------------------------
-
-sub get_or_set {
-    my $self = shift;
-    my $hash = shift;
-
-    if (@_ == 0) {
-        return $hash;
-    }
-    elsif (@_ == 1 && ! ref $_[0]) {
-        return $hash->{ $_[0] };
-    }
-    else {
-        my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
-        while (my ($key, $value) = each %$args) {
-            $hash->{ $key } = $value;
-        }
-        return $hash;
-    }
-}
-
 
 
 1;

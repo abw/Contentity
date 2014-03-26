@@ -1,14 +1,14 @@
 package Contentity::Plack::Base;
 
 use Contentity::Plack::Handlers;
-use Contentity::Plack::Middlewares;
+#use Contentity::Plack::Middlewares;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Base',
     constant  => {
         HANDLERS    => 'Contentity::Plack::Handlers',
-        MIDDLEWARES => 'Contentity::Plack::Middlewares',
+#       MIDDLEWARES => 'Contentity::Plack::Middlewares',
     };
 
 
@@ -16,9 +16,9 @@ sub handler {
     shift->HANDLERS->handler(@_);
 }
 
-sub middleware {
-    shift->MIDDLEWARES->middleware(@_);
-}
+#sub middleware {
+#    shift->MIDDLEWARES->middleware(@_);
+#}
 
 1;
 
