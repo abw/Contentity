@@ -168,10 +168,10 @@ sub present_file {
 sub present_dir {
     my ($self, $uri, $dir) = @_;
 
-    $self->debug_data( $uri => $dir ) if DEBUG or 1;
-    $self->debug_data( VFS => $dir->filesystem ) if DEBUG or 1;
+    $self->debug_data( $uri => $dir ) if DEBUG;
+    $self->debug_data( VFS => $dir->filesystem ) if DEBUG;
     my $kids = $dir->children;
-    $self->debug_data( kids => $kids ) if DEBUG or 1;
+    $self->debug_data( kids => $kids ) if DEBUG;
 
     # TODO: fix up the mess of file paths vs VFS paths vs resource URLS
     my $base = $self->script_name;
