@@ -1,11 +1,12 @@
 package Contentity::Component;
 
 use Contentity::Class
-    version     => 0.01,
-    debug       => 0,
-    base        => 'Contentity::Base',
-    accessors   => 'workspace component urn schema singleton',
-    constant    => {
+    version   => 0.01,
+    debug     => 0,
+    base      => 'Contentity::Base',
+    accessors => 'workspace component urn schema singleton',
+    utils     => 'refid',
+    constant  => {
         SINGLETON => undef,
     };
 
@@ -95,12 +96,26 @@ sub ancestral_dirs {
 # Cleanup methods
 #-----------------------------------------------------------------------------
 
+sub detach_workspace {
+    my $self  = shift;
+    my $space = shift || $self->{ workspace };
+
+    if ($space && refid $space == refid $self->{ workspace }) {
+        $self->debug("detaching $self->{ component } component from workspace $space") if DEBUG or 1;
+        $self->destroy;
+    }
+    else {
+        $self->debug("NOT detaching $self->{ component } from workspace $space (attached to $self->{ workspace })") if DEBUG or 1;
+    }
+}
+
+
 sub destroy {
     my $self = shift;
     delete $self->{ workspace };
     delete $self->{ config    };
     delete $self->{ schema    };
-    $self->debug("$self: $self->{ component } [$self->{ urn }] component is destroyed") if DEBUG;
+    $self->debug("$self: $self->{ component } [$self->{ urn }] component is destroyed") if DEBUG or 1;
 }
 
 

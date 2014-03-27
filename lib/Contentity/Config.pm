@@ -128,6 +128,8 @@ sub head {
     my ($self, $name) = @_;
     my $data = $self->{ data };
 
+    $self->debug_data("head($name) in ", $data) if DEBUG;
+
     # may be a cached result, including undef
     return $data->{ $name }
         if exists $data->{ $name };
@@ -147,7 +149,6 @@ sub head {
 
 sub tail {
     my ($self, $name, $data, $schema) = @_;
-
 
     $schema ||= $self->schema($name);
 
@@ -412,6 +413,8 @@ sub lookup_item {
         $self->debug("trying $name") if DEBUG;
         $schema = $schemas->{ $name };
     }
+
+    $self->debug("lookup_item for $name returning $schema") if DEBUG;
     return $schema;
 }
 

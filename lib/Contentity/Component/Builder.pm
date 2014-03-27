@@ -17,7 +17,7 @@ sub init_component {
     my ($self, $config) = @_;
 
     $self->debug_data(
-        "Builder component init_component(): ", 
+        "Builder component init_component(): ",
         $config
     ) if DEBUG;
 
@@ -41,7 +41,7 @@ sub init_renderer {
 sub init_filter {
     my ($self, $config) = @_;
 
-    # the templates/static section (loaded by C::Component::Templates and 
+    # the templates/static section (loaded by C::Component::Templates and
     # passed to C::Component::Renderer) can also contain include/exclude rules
     # that we can use
     my $rconfig = $self->renderer->config;
@@ -122,8 +122,8 @@ sub process_templates {
 
     $self->debug(
         sprintf(
-            "%s templates found in %s", 
-            scalar(@$files), 
+            "%s templates found in %s",
+            scalar(@$files),
             $self->dump_data($self->source_dirs)
         )
     ) if DEBUG;
@@ -137,7 +137,7 @@ sub process_templates {
         my $path = $file->absolute;
         $path =~ s[^/][];
 
-        # process($src_file, $data, $out_file) - we read files from one places 
+        # process($src_file, $data, $out_file) - we read files from one places
         # (sources_dirs) and write them to a file of the same name in another
         # place (output_dir).  So in this case, $src_file and $out_file are the
         # same $path reference
@@ -172,16 +172,16 @@ sub template_data {
     my $uctype = ucfirst $space->type;
 
     # We add in references to the master "Project" and the current "Workspace"
-    # (aka "Space" and "Site") with capitalised names to denote their 
-    # importance.  Note that when we're scaffolding the top-level project, 
+    # (aka "Space" and "Site") with capitalised names to denote their
+    # importance.  Note that when we're scaffolding the top-level project,
     # these will all reference the same project workspace.
 
     # "Workspace" and "Space" are defined for completeness, but in most cases
-    # the scaffolding templates will reference Site.something because it's 
+    # the scaffolding templates will reference Site.something because it's
     # more intuitively obvious (particularly for the casual reader) as to what
-    # it signifies.  However, we also create a capitalised reference to the 
-    # workspace type.  In the case of "site" workspaces, we end up with a 
-    # reference to "Site" which we've already got.  But in the case of a 
+    # it signifies.  However, we also create a capitalised reference to the
+    # workspace type.  In the case of "site" workspaces, we end up with a
+    # reference to "Site" which we've already got.  But in the case of a
     # portfolio for example, it means there will be a "Portfolio" reference
     # as well.
 #    $data = { %$data };

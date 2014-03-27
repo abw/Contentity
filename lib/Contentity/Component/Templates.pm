@@ -65,9 +65,9 @@ sub renderer_config {
     my $self    = shift;
     my $name    = shift || return $self->no_renderer;
 
-    # Prepared renderer configurations are stored in $self->{ configs }.  We 
-    # can return any cached values therein without further ado, otherwise we 
-    # need to go and prepare it.  Note that this can silently return an 
+    # Prepared renderer configurations are stored in $self->{ configs }.  We
+    # can return any cached values therein without further ado, otherwise we
+    # need to go and prepare it.  Note that this can silently return an
     # undefined value if there is no configuration for the named renderer.
 
     return  $self->{ configs }->{ $name }
@@ -87,10 +87,10 @@ sub prepare_renderer_config {
     # (note singular) hash array.  There may also be a 'base' configuration
     # specific which we should merge in.
 
-    # To detect infinite loops between base definitions, we use a temporary 
+    # To detect infinite loops between base definitions, we use a temporary
     # $self->{ PREPARING } hash array in which each call to this method (up
     # through a potentially long base..base..base... chain) marks the fact
-    # that it's being prepared.  If a method is invoked twice for the same 
+    # that it's being prepared.  If a method is invoked twice for the same
     # renderer config then we have an inifinite loop.
     return $self->error_msg( infinite_loop => $name )
         if $self->{ PREPARING }->{ $name };
@@ -98,7 +98,7 @@ sub prepare_renderer_config {
 
     if ($base) {
         # Go fetch the configuration for the base, throwing an error if there
-        # isn't a definition for it.  
+        # isn't a definition for it.
         $base_config = $self->renderer_config($base)
             || return $self->bad_base_renderer($base);
 
@@ -111,8 +111,8 @@ sub prepare_renderer_config {
         $self->debug_data("merged config for $base + $name: ", $config) if DEBUG;
     }
     else {
-        # No base, in which case we just clone the master config to avoid 
-        # polluting it with any changes we might make 
+        # No base, in which case we just clone the master config to avoid
+        # polluting it with any changes we might make
         $config = { %$config };
     }
 
@@ -127,7 +127,7 @@ sub prepare_path {
     my $up    = $config->{ "${path}_up"   };              # e.g. source_up,  library_up
     my $space = $self->workspace;
 
-    # An ugly, temporary hack to allow the scaffold components to load sources 
+    # An ugly, temporary hack to allow the scaffold components to load sources
     # templates from a scaffolding directory of the same name as the workspace
     # type, e.g. scaffold/project, scaffold/site.  This sucks big donkey dick.
     if ($pdir eq '<workspace_type>') {
@@ -177,21 +177,25 @@ sub bad_base_renderer {
 
 
 #-----------------------------------------------------------------------------
-# Cleanup methods.  We aggressively cache template renderers and they 
-# aggressively cache compiled templates for the sake of efficiency.  
+# Cleanup methods.  We aggressively cache template renderers and they
+# aggressively cache compiled templates for the sake of efficiency.
 # We may also have circular references between the templates component,
-# the template engines, the current workspace and parent project (both of 
-# which are provides as variable references to the templates).  For this 
+# the template engines, the current workspace and parent project (both of
+# which are provides as variable references to the templates).  For this
 # reason, we explicitly call the destroy() method on each template renderer
 # when the component is destroyed.
+#
+# Oh bollocks!  We can't do this because renderers (and more generally, all
+# components, can be shared across workspaces)
 #-----------------------------------------------------------------------------
 
 sub destroy_renderers {
     my $self      = shift;
     my $renderers = delete $self->{ renderers };
-    foreach my $renderer (values %$renderers) {
-        $renderer->destroy if $renderer;
-    }
+    # No, components can be shared
+    #foreach my $renderer (values %$renderers) {
+    #    $renderer->destroy if $renderer;
+    #}
     %$renderers = ( );
 }
 
@@ -209,7 +213,7 @@ __END__
 
 sub init_renderer {
     my ($self, $config) = @_;
-    my $renderer = $config->{ renderer } 
+    my $renderer = $config->{ renderer }
         || $self->RENDERER;
 
     class($renderer)->load;

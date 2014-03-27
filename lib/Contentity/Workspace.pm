@@ -230,7 +230,13 @@ sub clear_component_cache {
 
     while (my ($key, $value) = each %$cache) {
         $self->debug("clearing component cache of $key => $value") if DEBUG;
-        $value->destroy if $value;
+        # We can't assume we're the workspace that this component is primarily
+        # attached to.  A child workspace can automatically fetch and cache
+        # a component from a parent workspace.  So we pass the workspace
+        # reference to the component and let it decide if we're the master
+        # workspace.  If we are then it calls its own destroy() method to
+        # clean itself up.
+        $value->detach_workspace($self) if $value;
     }
 }
 
@@ -390,8 +396,8 @@ sub get {
     my $schema = $self->item_schema($name);
 
     if (DEBUG) {
-        $self->debug("Workspace got config: ", $self->dump_data($data));
-        $self->debug("Workspace got schema: ", $self->dump_data($schema));
+        $self->debug_data("Workspace get($name) config: ", $data);
+        $self->debug_data("Workspace get($name) schema: ", $schema);
     }
 
     my $type = $schema->{ type } || BLANK;
@@ -406,7 +412,15 @@ sub get {
 }
 
 sub item_schema {
-    shift->config->item(shift);
+    my $self   = shift;
+    my $schema = $self->config->schema(@_) || return;
+
+    # Badger::Config's simple lookup table for 'items' can have '1' as an
+    # entry to indicate that it's a valid item.
+    $schema = { }
+        if $schema && $schema eq '1';
+
+    return $schema;
 }
 
 

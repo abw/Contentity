@@ -13,6 +13,7 @@ use Contentity::Class
     messages    => {
         engine_init   => 'Failed to initialise %s template engine: %s',
         engine_render => 'Failed to render %s: %s',
+        no_workspace  => 'Cannot provide template_data - renderer has become detached from the workspace',
     };
 
 sub init_component {
@@ -196,7 +197,9 @@ sub process {
 
 sub template_data {
     my $self  = shift;
-    my $space = $self->workspace;
+    my $space = $self->workspace
+        || return $self->error_msg('no_workspace');
+
     return extend(
         {
             Project   => $space->project || undef,
