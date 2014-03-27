@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base',
     accessors => 'workspace component urn schema singleton',
-    utils     => 'refid',
+    utils     => 'refaddr',
     constant  => {
         SINGLETON => undef,
     };
@@ -98,15 +98,22 @@ sub ancestral_dirs {
 
 sub detach_workspace {
     my $self  = shift;
-    my $space = shift || $self->{ workspace };
+    my $from  = shift;
+    my $space = $self->{ workspace };
 
-    if ($space && refid $space == refid $self->{ workspace }) {
-        $self->debug("detaching $self->{ component } component from workspace $space") if DEBUG or 1;
-        $self->destroy;
+    if (! $space) {
+        # If we don't have a workspace then we've already been cleaned up
+        $self->debug("NOT detaching $self->{ component } from workspace $from (not attached to any space)") if DEBUG;
+        return;
     }
-    else {
-        $self->debug("NOT detaching $self->{ component } from workspace $space (attached to $self->{ workspace })") if DEBUG or 1;
+
+    # if a $from workspace is specified then it must match our workspace
+    if ($from && refaddr($from) != refaddr($space)) {
+        $self->debug("NOT detaching $self->{ component } from workspace $from (attached to $space)") if DEBUG;
+        return;
     }
+    $self->debug("detaching $self->{ component } component from workspace $space") if DEBUG;
+    $self->destroy;
 }
 
 
@@ -115,7 +122,7 @@ sub destroy {
     delete $self->{ workspace };
     delete $self->{ config    };
     delete $self->{ schema    };
-    $self->debug("$self: $self->{ component } [$self->{ urn }] component is destroyed") if DEBUG or 1;
+    $self->debug("$self: $self->{ component } [$self->{ urn }] component is destroyed") if DEBUG;
 }
 
 
