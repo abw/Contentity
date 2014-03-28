@@ -12,6 +12,9 @@ use Contentity::Class
     constant    => {
         # caching options
         CACHE_MANAGER => 'Contentity::Cache',
+    },
+    messages  => {
+        no_config_file => "Ignored missing configuration file for %s workspace: %s",
     };
 
 
@@ -111,6 +114,11 @@ sub import_data_file_if_exists {
     my $data = $self->get($file) || return;
     $self->debug_data("imported data from $file: ", $data) if DEBUG;
     merge($self->{ data }, $data);
+}
+
+sub no_config_file {
+    my $self = shift;
+    $self->warn_msg( no_config_file => $self->uri, @_ );
 }
 
 # TODO: init_schema() init_schemas() and other configure_XXX() methods in
