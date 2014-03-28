@@ -2,15 +2,14 @@ package Contentity::Component::Page;
 
 use Contentity::Class
     version => 0.01,
-    debug   => 0,
+    debug   => 1,
     base    => 'Contentity::Component::Flyweight',
-    utils   => 'resolve_uri';
+    utils   => 'resolve_uri is_object';
 
 
 
 sub uri {
     my $self = shift;
-    $self->debug_data("fetch uri: ", $self->{ data }) if DEBUG;
     return @_
         ? resolve_uri($self->{ data }->{ uri }, @_)
         : $self->{ data }->{ uri };
@@ -52,6 +51,44 @@ sub menu {
 
     return $self->sitemap->menu($menu);
 }
+
+sub under {
+  # this doesn't work very well.
+    my ($self, $path) = @_;
+    my $result;
+
+    return 0 unless $path;
+    $path = $path->uri if is_object(ref $self, $path);
+
+    my $uri = $self->uri;
+
+    $self->debug("Is $uri under $path?") if DEBUG;
+
+    if ($uri eq $path) {
+        $self->debug("Exact match!") if DEBUG;
+        # exact match
+        return 1;
+    }
+    elsif (defined ($result = $self->{ data }->{ under }->{ $path })) {
+        $self->debugf("explicit rule says page %s under $path", $result ? 'is under' : 'is NOT under') if DEBUG;
+        # explicit rule in the sitemap
+        return $result;
+    }
+    #elsif ($path =~ s/\/index\.html$//) {
+    #    $self->debug("special case for index.html => $path vs $uri") if DEBUG;
+    #    # special case to match /foo under /foo/index.html
+    #    return $uri eq $path;
+    #}
+    else {
+        # Otherwise make sure we add a '/' to the end of the uri so that we only
+        # match at directory boundaries.  So a page at /food/berries, for example,
+        # should match under /food (/food/) but not /foo (/foo/)
+        $path .= '/' unless $path =~ m{/$};
+        $self->debug("MATCHING $uri against qr[^$path]") if DEBUG;
+        return $uri =~ /^$path/;
+    }
+}
+
 
 1;
 
