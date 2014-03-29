@@ -2,7 +2,7 @@ package Contentity::Component::Page;
 
 use Contentity::Class
     version => 0.01,
-    debug   => 1,
+    debug   => 0,
     base    => 'Contentity::Component::Flyweight',
     utils   => 'resolve_uri is_object';
 

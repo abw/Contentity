@@ -391,7 +391,7 @@ sub prepare_colours {
         }
         else {
             # otherwise we assume they're new colour definitions
-            $self->debug("colour val $key => $value") if DEBUG or 1;
+            $self->debug("colour val $key => $value") if DEBUG;
             $col = Colour->try->new($value)
                 || return $self->error_msg( bad_col_val => $key => $value );
         }
