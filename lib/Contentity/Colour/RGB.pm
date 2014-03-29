@@ -6,7 +6,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Colour',
     constants => 'ARRAY HASH :colour_slots',
-    utils     => 'is_object floor',
+    utils     => 'is_object integer',
     as_text   => 'HTML',
     is_true   => 1,
     throws    => 'Colour.RGB';
@@ -38,7 +38,7 @@ sub copy {
 sub rgb {
     my $self = shift;
     my $col;
-    
+
     if (@_ == 1) {
         # single argument is a list or hash ref, or RGB value
         $col = shift;
@@ -52,21 +52,21 @@ sub rgb {
         $col = { @_ };
     }
     elsif (@_) {
-        # any other number of arguments is an error 
+        # any other number of arguments is an error
         return $self->error_msg( bad_param => rgb => join(', ', @_) );
     }
     else {
         # return $self when called with no arguments
         return $self;
     }
-    
+
     # at this point $col is a reference to a list or hash, or a rgb value
 
     if (UNIVERSAL::isa($col, HASH)) {
         # convert hash ref to list
         $col = [  map {
-            defined $col->{ $_ } 
-            ? $col->{ $_ } 
+            defined $col->{ $_ }
+            ? $col->{ $_ }
             : return $self->error_msg( no_param => rgb => $_ );
         } qw( red green blue ) ];
     }
@@ -78,7 +78,7 @@ sub rgb {
         return $self->error_msg( bad_param => rgb => $col );
     }
     else {
-        $self->hex($col);
+        $self->parse($col);
         return $self;
     }
 
@@ -94,33 +94,71 @@ sub rgb {
     return $self;
 }
 
+sub parse {
+    my ($self, $string) = @_;
+
+    $self->debug("parsing: [$string]") if DEBUG;
+    if ($string =~ /
+            ^
+            \#?            # short form of hex triplet: #abc
+            ([0-9a-f])     # red
+            ([0-9a-f])     # green
+            ([0-9a-f])     # blue
+            $
+          /ix) {
+        @$self = map { CORE::hex } ("$1$1", "$2$2", "$3$3");
+    }
+    elsif ($string =~ /
+            ^
+            \#?            # long form of hex triple: #aabbcc
+            ([0-9a-f]{2})  # red
+            ([0-9a-f]{2})  # green
+            ([0-9a-f]{2})  # blue
+            $
+          /ix) {
+        @$self = map { CORE::hex } ($1, $2, $3);
+    }
+    elsif ($string =~ /
+            ^
+            rgb\(
+              (\d+%?),\s*  # red
+              (\d+%?),\s*  # green
+              (\d+%?) \s*  # blue
+            \)
+            $
+          /ix) {
+        @$self = map { $self->parse_value($_) } ($1, $2, $3);
+        $self->debug("found $string => rgb($self->[0], $self->[1], $self->[2])") if DEBUG;
+    }
+    elsif ($string =~ /
+            ^
+            rgba\(
+              (\d+%?),\s*   # red
+              (\d+%?),\s*   # green
+              (\d+%?),\s*   # blue
+              ([\d\.]+)\s*  # alpha
+            \)
+            $
+          /ix) {
+        @$self = map { $self->parse_value($_) } ($1, $2, $3);
+        $self->[ALPHA_SLOT] = $4;
+        $self->debug("found $string => rgba($self->[0], $self->[1], $self->[2], $self->[3])") if DEBUG;
+    }
+    else {
+        return $self->error_msg(
+            invalid => colour => $string
+        );
+    }
+
+    return $self;
+}
+
 sub hex {
     my $self = shift;
 
     if (@_) {
-        my $hex = shift;
-        $hex = '' unless defined $hex;
-        if ($hex =~ / ^ 
-           \#?            # short form of hex triplet: #abc
-           ([0-9a-f])     # red 
-           ([0-9a-f])     # green
-           ([0-9a-f])     # blue
-           $
-           /ix) {
-            @$self = map { hex } ("$1$1", "$2$2", "$3$3");
-        }
-        elsif ($hex =~ / ^ 
-           \#?            # long form of hex triple: #aabbcc
-           ([0-9a-f]{2})  # red 
-           ([0-9a-f]{2})  # green
-           ([0-9a-f]{2})  # blue
-           $
-           /ix) {
-            @$self = map { hex } ($1, $2, $3);
-        }
-        else {
-            return $self->error_msg( bad_param => hex => $hex );
-        }
+        return $self->parse(@_)
+            || $self->error_msg( bad_param => hex => $_[0] );
     }
     return sprintf("%02x%02x%02x", @$self);
 }
@@ -128,6 +166,20 @@ sub hex {
 sub HEX {
     my $self = shift;
     return uc $self->hex(@_);
+}
+
+sub parse_value {
+    my $self  = shift;
+    my $value = shift; # || 0;
+
+    if ($value =~ /^(\d+)%/) {
+        $self->debug("percentage: $1") if DEBUG;
+        return integer(255 * $1 / 100);
+    }
+    else {
+        $self->debug("value: $value") if DEBUG;
+        return $value;
+    }
 }
 
 sub html {
@@ -143,7 +195,7 @@ sub HTML {
 sub css_rgb {
     my $self = shift;
     return sprintf(
-        "rgb(%i,%i,%i)", 
+        "rgb(%i,%i,%i)",
         $self->[RED_SLOT],
         $self->[GREEN_SLOT],
         $self->[BLUE_SLOT],
@@ -154,7 +206,7 @@ sub css_rgba {
     my $self  = shift;
     my $alpha = shift;
     return sprintf(
-        "rgba(%i,%i,%i,%f)", 
+        "rgba(%i,%i,%i,%f)",
         $self->[RED_SLOT],
         $self->[GREEN_SLOT],
         $self->[BLUE_SLOT],
@@ -162,7 +214,7 @@ sub css_rgba {
     );
 }
 
-sub red { 
+sub red {
     my $self = shift;
     if (@_) {
         $self->[RED_SLOT]  = shift;
@@ -173,7 +225,7 @@ sub red {
     $self->[RED_SLOT];
 }
 
-sub green { 
+sub green {
     my $self = shift;
     if (@_) {
         $self->[GREEN_SLOT]  = shift;
@@ -184,7 +236,7 @@ sub green {
     $self->[GREEN_SLOT];
 }
 
-sub blue { 
+sub blue {
     my $self = shift;
     if (@_) {
         $self->[BLUE_SLOT]  = shift;
@@ -195,7 +247,18 @@ sub blue {
     $self->[BLUE_SLOT];
 }
 
-sub grey  { 
+sub alpha {
+    my $self = shift;
+    if (@_) {
+        $self->[ALPHA_SLOT]  = shift;
+        $self->[ALPHA_SLOT]  = 0 if $self->[ALPHA_SLOT] < 0;
+        $self->[ALPHA_SLOT]  = 1 if $self->[ALPHA_SLOT] > 1;
+        delete $self->[SCHEME_SLOT];
+    }
+    $self->[ALPHA_SLOT];
+}
+
+sub grey  {
     my $self = shift;
 
     if (@_) {
@@ -203,9 +266,9 @@ sub grey  {
         return ($self->[RED_SLOT] = $self->[GREEN_SLOT] = $self->[BLUE_SLOT] = shift);
     }
     else {
-        return floor( $self->[RED_SLOT]  * 0.222 
-                    + $self->[GREEN_SLOT]* 0.707 
-                    + $self->[BLUE_SLOT] * 0.071 
+        return integer( $self->[RED_SLOT]  * 0.222
+                    + $self->[GREEN_SLOT]* 0.707
+                    + $self->[BLUE_SLOT] * 0.071
                     + 0.5 );
     }
 }
@@ -264,7 +327,7 @@ sub range {
     my $dgreen = ($target->[GREEN_SLOT] - $self->[GREEN_SLOT]) / $steps;
     my $dblue  = ($target->[BLUE_SLOT]  - $self->[BLUE_SLOT])  / $steps;
     my ($n, @range);
-    
+
     for ($n = 0; $n <= $steps; $n++) {
         push(@range, $self->copy->adjust({
             red   => $dred   * $n,
@@ -293,23 +356,23 @@ sub hsv {
         my $min   = $self->min($r, $g, $b);
         my $max   = $self->max($r, $g, $b);
         my $delta = $max - $min;
-        $v = $max;                              
+        $v = $max;
 
         if($delta){
             $s = $delta / $max;
             if ($r == $max) {
-                $h = 60 * ($g - $b) / $delta; 
+                $h = 60 * ($g - $b) / $delta;
             }
             elsif ($g == $max) {
-                $h = 120 + (60 * ($b - $r) / $delta); 
+                $h = 120 + (60 * ($b - $r) / $delta);
             }
-            else { # if $b == $max 
+            else { # if $b == $max
                 $h = 240 + (60 * ($r - $g) / $delta);
             }
-            
+
             $h += 360 if $h < 0;  # hue is in the range 0-360
-            $h = floor($h + 0.5); # smooth out rounding errors
-            $s = floor($s * 255);   # expand saturation to 0-255
+            $h = integer($h + 0.5); # smooth out rounding errors
+            $s = integer($s * 255);   # expand saturation to 0-255
         }
         else {
             $h = $s = 0;
@@ -360,4 +423,3 @@ L<Contentity::Colour>, L<Contentity::Colour::HSV>
 # End:
 #
 # vim: expandtab shiftwidth=4:
-

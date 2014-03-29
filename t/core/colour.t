@@ -14,7 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 72,
+    tests => 85,
     debug => 'Contentity::Colour',
     args  => \@ARGV;
 
@@ -120,6 +120,31 @@ ok( $orange, 'got colour via Colour() function');
 
 $orange = Color('#ff7f00');
 ok( $orange, 'got colour via Color() function');
+
+
+#-----------------------------------------------------------------------------
+# test ability to parse rgb() and rgba() formats
+#-----------------------------------------------------------------------------
+
+
+$orange = Color('rgb(255,127,0)');
+ok( $orange, 'got colour via Color(rgb(255,127,0)) function');
+is( $orange->red, 255, 'rgb() red is 255' );
+is( $orange->green, 127, 'rgb() green is 127' );
+is( $orange->blue, 0, 'rgb() blue is 0' );
+
+$orange = Color('rgb(100%,50%,0)');
+ok( $orange, 'got colour via Color(rgb(100%,50%,0)) function');
+is( $orange->red, 255, 'rgb(%) red is 255' );
+is( $orange->green, 127, 'rgb(%) green is 127' );
+is( $orange->blue, 0, 'rgb(%) blue is 0' );
+
+$orange = Color('rgba(100%,50%,0,0.25)');
+ok( $orange, 'got colour via Color(rgba(100%,50%,0,0.5)) function');
+is( $orange->red, 255, 'rgba() red is 255' );
+is( $orange->green, 127, 'rgba() green is 127' );
+is( $orange->blue, 0, 'rgba() blue is 0' );
+is( $orange->alpha, 0.25, 'rgba() alpha is 0.25' );
 
 
 #-----------------------------------------------------------------------

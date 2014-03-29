@@ -21,8 +21,8 @@ use Contentity::Colour::RGB;
 use Contentity::Colour::HSV;
 
 our $VERSION = 0.06;
-our @SCHEME  = qw( 
-    black darkest darker dark darkish mid lightish light lighter lightest white 
+our @SCHEME  = qw(
+    black darkest darker dark darkish mid lightish light lighter lightest white
     pale wash dull bold bright
 );
 our $SPACES  = {
@@ -56,21 +56,21 @@ sub new {
 
     if (@_ == 1) {
         # single argument is either an existing colour object which we copy...
-        return $_[0]->copy() 
+        return $_[0]->copy()
             if is_object(class, $_[0]);
 
         # ... or a hash ref of named parameters...
         #   e.g { rgb => '#rrggbb' }, { rgb => [r, g, b] },  hsv => [h, s, v] }
         # ... or a single RGB argument
-        #   e.g. [r, g, b], '#rrggbb'
+        #   e.g. [r, g, b], '#rrggbb', 'rgb(r,g,b)'
         $config = ref $_[0] eq HASH ? shift : { rgb => shift };
     }
     elsif (@_ == 2) {
-        # two arguments are (colour-space => $value), 
+        # two arguments are (colour-space => $value),
         #   e.g. (rgb => '#rrggbb'), (rgb => [r, g, b]), (hsv => [h, s, v])
         $config = { @_ };
     }
-    elsif (@_ == 3) {                      
+    elsif (@_ == 3) {
         # three arguments are (r, g, b)
         $config->{ rgb } = [ @_ ];
     }
@@ -82,7 +82,7 @@ sub new {
         # How much more black can this be?  The answer is none.  None more black.
         $config = { rgb => [0, 0, 0] };
     }
-    
+
     if ($space = $config->{ rgb } || $config->{ RGB }) {
         # explicit RGB specification (rgb => ...)
         return $class->RGB($space);
@@ -92,11 +92,11 @@ sub new {
         return $class->HSV($space);
     }
     elsif (exists $config->{ hue }) {
-        # implicit HSV specification (hue => $h, ...) 
+        # implicit HSV specification (hue => $h, ...)
         return $class->HSV($config);
     }
     else {
-        # if we don't get an explicit RGB or HSV colour space then we 
+        # if we don't get an explicit RGB or HSV colour space then we
         # default to RGB to handle the (red => $r, green => $g, blue => $b) case
         return $class->RGB($config);
     }
@@ -171,13 +171,13 @@ sub scheme {
     # remove the base colour and white from washes
     shift(@$washes);
     pop(@$washes);
-    
+
     # remove base colour from shades to avoid duplication with same in tints
     shift(@$shades);
 
-    @$scheme{ @SCHEME } = ( 
+    @$scheme{ @SCHEME } = (
         # black, darkest, darker, dark, darkish
-        reverse(@$shades), 
+        reverse(@$shades),
         # mid lightish, light lighter lightest white
         @$tints,
         # pale, wash
@@ -208,7 +208,7 @@ sub mix {
     my $weight = shift || 0.5;
     my $rgb1   = $self->rgb;
     my $rgb2   = $col2->rgb;
-    my $w1     = ($weight =~ s/^([\d\.]+)%$/$1/) 
+    my $w1     = ($weight =~ s/^([\d\.]+)%$/$1/)
                ? $weight / 100        # 0-100% -> 0-1
                : $weight;
     my $w2     = 1 - $w1;
@@ -225,33 +225,33 @@ sub mix {
 
 #------------------------------------------------------------------------
 # min($r, $g, $b)
-# 
+#
 # Returns minimum value from arguments, used for colour space conversion.
 #------------------------------------------------------------------------
 
-sub min { 
+sub min {
     my $self = shift;
-    my $min  = shift; 
+    my $min  = shift;
     foreach my $v (@_) {
         $min = $v if $v < $min;
     }
-    return $min; 
+    return $min;
 }
 
 
 #------------------------------------------------------------------------
 # max($r, $g, $b)
-# 
+#
 # Returns maximum value from arguments, used for colour space conversion.
 #------------------------------------------------------------------------
 
-sub max { 
+sub max {
     my $self = shift;
-    my $max  = shift; 
+    my $max  = shift;
     foreach my $v (@_) {
         $max = $v if $v > $max;
     }
-    return $max; 
+    return $max;
 }
 
 
@@ -266,7 +266,7 @@ Contentity::Colour - module for colour manipulation
 =head1 SYNOPSIS
 
     use Contentity::Colour;
-    
+
     # various ways to define a Red/Green/Blue (RGB) colour
     $orange = Contentity::Colour->new('#ff7f00');
     $orange = Contentity::Colour->new( rgb => '#ff7f00' );
@@ -274,21 +274,21 @@ Contentity::Colour - module for colour manipulation
     $orange = Contentity::Colour->new( rgb => [255, 127, 0] );
     $orange = Contentity::Colour->new({ rgb => [255, 127, 0] });
     $orange = Contentity::Colour->new({
-        red   => 255, 
+        red   => 255,
         green => 127,
         blue  => 0,
     });
-    
+
     # or go direct to the RGB method
     $orange = Contentity::Colour->RGB('#ff7f00');
     $orange = Contentity::Colour->RGB(255, 127, 0);
     # ...etc...
-    
+
     # methods to fetch/modify the red, green and blue components
     print $orange->red();     # 255
     print $orange->green();   # 127
     print $orange->blue();    # 0
-    
+
     # various ways to define a Hue/Saturation/Value (HSV) colour
     $orange = Contentity::Colour->new( hsv => [25, 255, 255] );
     $orange = Contentity::Colour->new({ hsv => [25, 255, 255] });
@@ -302,13 +302,13 @@ Contentity::Colour - module for colour manipulation
         sat => 255,    # because life is too short for
         val => 255,    # typing long parameter names
     });
-    
+
     print $orange->hue();        # 25
     print $orange->saturation(); # 255
     print $orange->sat();        # 255
     print $orange->value();      # 255
     print $orange->val();        # 255
-    
+
     # convert freely between colour spaces
     $orange = $orange->rgb();    # $orange is now RGB
     $orange = $orange->hsv();    # $orange is now HSV
@@ -327,7 +327,7 @@ This set of modules started life a long time ago as L<Template::Plugin::Colour>.
 
 =head2 new(@args)
 
-Creates a new colour object by delegation to either of the L<RGB()> 
+Creates a new colour object by delegation to either of the L<RGB()>
 or L<HSV()> methods, depending on the arguments passed.
 
 See the L<SYNOPSIS> above for examples of use.
@@ -362,7 +362,7 @@ started with.
 Everyone needs to know what colour orange is in RGB and HSV.
 
 I find the easiest way to remember is that its Hue is 30 degrees,
-with full Saturation and Value.  
+with full Saturation and Value.
 
     use Contentity::Colour;
     my $orange = Contentity::Colour( hsv => [30, 255, 255] );
@@ -394,11 +394,11 @@ the saturation, and a darker version (more black) by reducing the value.
 Now you can convert them to RGB for display in your HTML page.
 
     [% orange.html  %]  => #ff7f00
-    [% lighter.html %]  => #ffbf80 
+    [% lighter.html %]  => #ffbf80
     [% darker.html  %]  => #7f3f00
 
 If you want a strongly contrasting colour, then shift the hue 180 degrees
-around the colour wheel.  In this case, going from 30 to 210 to give a 
+around the colour wheel.  In this case, going from 30 to 210 to give a
 nice shade of blue.
 
     [% contrast = orange.copy( hue = 210 ).html %]  => #007fff
@@ -428,7 +428,7 @@ modify it under the same terms as Perl itself.
 
 =head1 ACKNOWLEDGEMENTS
 
-Written using algorithms from "Computer Graphics -- Principles and Practice", 
+Written using algorithms from "Computer Graphics -- Principles and Practice",
 Foley et al, 1996, p. 592-593.
 
 =head1 SEE ALSO
@@ -444,4 +444,3 @@ L<Contentity::Colour::RGB>, L<Contentity::Colour::HSV>
 # End:
 #
 # vim: expandtab shiftwidth=4:
-
