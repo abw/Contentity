@@ -169,16 +169,16 @@ is( $range->[7]->HTML, '#8811EE', 'range 7' );
 $orange = Col->RGB('#ff8800');
 my $scheme = $orange->scheme();
 is( $scheme->{ black    }, '#000000', 'black is black'  );
-is( $scheme->{ darkest  }, '#331B00', 'darkest orange'  );
+is( $scheme->{ darkest  }, '#331b00', 'darkest orange'  );
 is( $scheme->{ darker   }, '#663600', 'darker orange'   );
 is( $scheme->{ dark     }, '#995100', 'dark orange'     );
-is( $scheme->{ darkish  }, '#CC6C00', 'darkish orange'  );
+is( $scheme->{ darkish  }, '#cc6c00', 'darkish orange'  );
 is( $scheme->{ mid      }, $orange, 'mid is orange'     );
-is( $scheme->{ lightish }, '#FF9F33', 'lightish orange' );
-is( $scheme->{ light    }, '#FFB766', 'light orange'    );
-is( $scheme->{ lighter  }, '#FFCF99', 'lighter orange'  );
-is( $scheme->{ lightest }, '#FFE7CC', 'lightest orange' );
-is( $scheme->{ white    }, '#FFFFFF', 'white is white'  );
+is( $scheme->{ lightish }, '#ff9f33', 'lightish orange' );
+is( $scheme->{ light    }, '#ffb766', 'light orange'    );
+is( $scheme->{ lighter  }, '#ffcf99', 'lighter orange'  );
+is( $scheme->{ lightest }, '#ffe7cc', 'lightest orange' );
+is( $scheme->{ white    }, '#ffffff', 'white is white'  );
 
 
 #-----------------------------------------------------------------------------
@@ -189,10 +189,10 @@ my $white = Colour('#fff');
 my $black = Colour('#000');
 my $grey  = $white->mix($black);
 ok( $grey, "mixed white with black to get grey" );
-is( $grey, '#7F7F7F', "grey is $grey" );
+is( $grey, '#7f7f7f', "grey is $grey" );
 
 $grey  = $white->mix($black, 0.25);
-is( $grey, '#3F3F3F', "grey at 0.25 is $grey" );
+is( $grey, '#3f3f3f', "grey at 0.25 is $grey" );
 
 $grey  = $white->mix($black, '75%');
-is( $grey, '#BFBFBF', "grey at 75% is $grey" );
+is( $grey, '#bfbfbf', "grey at 75% is $grey" );

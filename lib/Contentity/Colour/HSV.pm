@@ -6,7 +6,7 @@ use Contentity::Class
     base      => 'Contentity::Colour',
     constants => 'ARRAY HASH :colour_slots',
     utils     => 'is_object floor',
-    as_text   => 'HTML',
+    as_text   => 'html',
     is_true   => 1,
     throws    => 'Colour.HSV',
     methods   => {
@@ -34,15 +34,15 @@ sub copy {
     my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
 
     # default HSV to $self values.  Note that we use the longer
-    # form of 'saturation' and 'value', allowing the user to 
-    # specify the shorter form of 'sat' or 'val' which gets 
-    # detected before the longer 'saturation' and 'value' in 
+    # form of 'saturation' and 'value', allowing the user to
+    # specify the shorter form of 'sat' or 'val' which gets
+    # detected before the longer 'saturation' and 'value' in
     # the hsv() method below
-    $args->{ hue } = $self->[HUE_SLOT] 
+    $args->{ hue } = $self->[HUE_SLOT]
         unless defined $args->{ hue };
-    $args->{ saturation } = $self->[SAT_SLOT] 
+    $args->{ saturation } = $self->[SAT_SLOT]
         unless defined $args->{ saturation };
-    $args->{ value } = $self->[VAL_SLOT] 
+    $args->{ value } = $self->[VAL_SLOT]
         unless defined $args->{ value };
 
     $self->new($args);
@@ -65,7 +65,7 @@ sub hsv {
         $hsv = { @_ };
     }
     elsif (@_) {
-        # any other number of arguments is an error 
+        # any other number of arguments is an error
         return $self->error_msg( bad_param => hsv => join(', ', @_) );
     }
     else {
@@ -80,8 +80,8 @@ sub hsv {
         $hsv->{ sat } = $hsv->{ saturation } unless exists $hsv->{ sat };
         $hsv->{ val } = $hsv->{ value      } unless exists $hsv->{ val };
         $hsv = [  map {
-            defined $hsv->{ $_ } 
-            ? $hsv->{ $_ } 
+            defined $hsv->{ $_ }
+            ? $hsv->{ $_ }
             : return $self->error_msg( no_param => hsv => $_ );
         } qw( hue sat val ) ];
     }
@@ -100,7 +100,7 @@ sub hsv {
     return $self;
 }
 
-sub hue { 
+sub hue {
     my $self = shift;
     if (@_) {
         my $hue = shift;
@@ -110,7 +110,7 @@ sub hue {
     return $self->[HUE_SLOT];
 }
 
-sub saturation { 
+sub saturation {
     my $self = shift;
     if (@_) {
         my $sat = shift;
@@ -122,7 +122,7 @@ sub saturation {
     return $self->[SAT_SLOT];
 }
 
-sub value { 
+sub value {
     my $self = shift;
     if (@_) {
         my $val = shift;
@@ -138,16 +138,16 @@ sub update {
     my $self = shift;
     my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
     my $value;
-    
+
     $args->{ sat } = $args->{ saturation } unless exists $args->{ sat };
     $args->{ val } = $args->{ value      } unless exists $args->{ val };
-    
+
     $self->hue($value)
         if defined ($value = $args->{ hue });
 
     $self->saturation($value)
         if defined ($value = $args->{ sat });
-    
+
     $self->value($value)
         if defined ($value = $args->{ val });
 
@@ -159,24 +159,24 @@ sub adjust {
     my $self = shift;
     my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
     my $delta;
-    
+
     $args->{ sat }  = $args->{ saturation } unless exists $args->{ sat };
     $args->{ val }  = $args->{ value      } unless exists $args->{ val };
-    
+
     if ($delta = $args->{ hue }) {
-        $delta = floor($delta * 3.59 + 0.5) 
+        $delta = floor($delta * 3.59 + 0.5)
             if $delta =~ s/(\d+)%$/$1/;   # 0-100% -> 0-359
         $self->hue($self->[HUE_SLOT] + $delta)
     }
 
     if ($delta = $args->{ sat }) {
-        $delta = floor($delta * 2.55 + 0.5) 
+        $delta = floor($delta * 2.55 + 0.5)
             if $delta =~ s/(\d+)%$/$1/;   # 0-100% -> 0-255
         $self->sat($self->[SAT_SLOT] + $delta);
     }
-    
+
     if ($delta = $args->{ val }) {
-        $delta = floor($delta * 2.55 + 0.5) 
+        $delta = floor($delta * 2.55 + 0.5)
             if $delta =~ s/(\d+)%$/$1/;   # 0-100% -> 0-255
         $self->val($self->[VAL_SLOT] + $delta);
     }
@@ -261,7 +261,7 @@ sub range {
     my $dsat   = ($target->[SAT_SLOT] - $self->[SAT_SLOT]) / $steps;
     my $dval   = ($target->[VAL_SLOT] - $self->[VAL_SLOT]) / $steps;
     my ($n, @range);
-    
+
     for ($n = 0; $n <= $steps; $n++) {
         push(@range, $self->copy->adjust({
             hue => $dhue * $n,
@@ -313,5 +313,3 @@ modify it under the same terms as Perl itself.
 =head1 SEE ALSO
 
 L<Contentity::Colour>, L<Contentity::Colour::RGB>
-
-

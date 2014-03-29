@@ -369,7 +369,7 @@ sub prepare_colours {
             # colours can have nested hash arrays, e.g. col.button.error
             $col = $self->prepare_colours($value);
         }
-        elsif ($value =~ /^(\w+)(?:\.(.*))?/) {
+        elsif ($value =~ /^(\w+)(?:\.(.*))?$/) {
             # colours can have names that refer to RGB entries, they may also
             # have a dotted part after the name, e.g. red.lighter
             $self->debug("colour ref: [$1] [$2]") if DEBUG;
@@ -391,7 +391,7 @@ sub prepare_colours {
         }
         else {
             # otherwise we assume they're new colour definitions
-            $self->debug("colour val: $value") if DEBUG;
+            $self->debug("colour val $key => $value") if DEBUG or 1;
             $col = Colour->try->new($value)
                 || return $self->error_msg( bad_col_val => $key => $value );
         }

@@ -7,7 +7,7 @@ use Contentity::Class
     base      => 'Contentity::Colour',
     constants => 'ARRAY HASH :colour_slots',
     utils     => 'is_object integer',
-    as_text   => 'HTML',
+    as_text   => 'html',
     is_true   => 1,
     throws    => 'Colour.RGB';
 
@@ -78,6 +78,7 @@ sub rgb {
         return $self->error_msg( bad_param => rgb => $col );
     }
     else {
+        $self->debug("parsing [$col]") if DEBUG;
         $self->parse($col);
         return $self;
     }
@@ -184,12 +185,12 @@ sub parse_value {
 
 sub html {
     my $self = shift;
+    return $self->css_rgba if defined $self->[ALPHA_SLOT];
     return '#' . $self->hex();
 }
 
 sub HTML {
-    my $self = shift;
-    return '#' . uc $self->hex();
+    return uc shift->html;
 }
 
 sub css_rgb {
@@ -204,7 +205,7 @@ sub css_rgb {
 
 sub css_rgba {
     my $self  = shift;
-    my $alpha = shift;
+    my $alpha = @_ ? shift : $self->[ALPHA_SLOT];
     return sprintf(
         "rgba(%i,%i,%i,%f)",
         $self->[RED_SLOT],
