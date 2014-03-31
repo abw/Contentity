@@ -46,7 +46,7 @@ sub page {
 
     $self->debug_data("page paths for $uri", \@paths) if DEBUG;
 
-    # look for the longest parent URL of this page 
+    # look for the longest parent URL of this page
     while (@paths) {
         $path = shift @paths;
 
@@ -72,7 +72,7 @@ sub page {
 
     # merge data allowing page to inherit certain items
     $self->debug(
-        "page inherits from ", 
+        "page inherits from ",
         scalar(@parents), " parents"
     ) if DEBUG;
 
@@ -116,7 +116,7 @@ sub merge_page_metadata {
     my $inherit = $self->config->{ inherit };
 
     $self->debug(
-        "sitemap inherits: ", 
+        "sitemap inherits: ",
         $self->dump_data($inherit)
     ) if DEBUG;
 
@@ -154,9 +154,9 @@ sub load_menus {
 sub menu {
     my ($self, $name, $uris) = @_;
 
-    # if $uris isn't specified then $name must be the name of a menu 
+    # if $uris isn't specified then $name must be the name of a menu
     # defined in the menus.yaml or menus/*.yaml metadata tree
-    $uris 
+    $uris
         ||= $self->menus->{ $name }
         ||  return $self->error_msg( invalid => "menu" => $name );
 
@@ -170,13 +170,8 @@ sub menu {
 
 sub menu_pages {
     my ($self, $name, $uris) = @_;
-    return [
-        map { 
-            $self->try->page($_) 
-                || return $self->error_msg( invalid => "page in $name menu" => $_ )
-        }
-        @$uris
-    ];
+    return $self->try->fetch_pages($uris)
+        || $self->error_msg( invalid => "menu '$name'" => $self->reason );
 }
 
 
@@ -190,7 +185,7 @@ sub uri_walk_up {
     my $path  = $uri;
     my @paths;
 
-    $path = '/' . $uri 
+    $path = '/' . $uri
         unless $path =~ m{^/};
 
     while (length $path) {
@@ -198,7 +193,7 @@ sub uri_walk_up {
 
         # Remove a filename extension (e.g. /foo.html -> /foo),
         # a trailing slash (e.g. /foo/ -> /foo) or a trailing word
-        # (e.g. /foo/bar -> /foo/). Keep doing it until there's 
+        # (e.g. /foo/bar -> /foo/). Keep doing it until there's
         # nothing left to take away
         last unless (
                 $path =~ s{ \.\w+ $ }{}x
@@ -211,6 +206,16 @@ sub uri_walk_up {
         ?  @paths
         : \@paths;
 }
+
+sub fetch_pages {
+    my ($self, $uris) = @_;
+    $self->debug_data( fetch_pages => $uris ) if DEBUG;
+    return [
+        map { $self->page($_) }
+        @$uris
+    ];
+}
+
 
 1;
 

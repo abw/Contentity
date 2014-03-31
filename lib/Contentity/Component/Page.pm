@@ -1,10 +1,14 @@
 package Contentity::Component::Page;
 
 use Contentity::Class
-    version => 0.01,
-    debug   => 0,
-    base    => 'Contentity::Component::Flyweight',
-    utils   => 'resolve_uri is_object';
+    version   => 0.01,
+    debug     => 0,
+    base      => 'Contentity::Component::Flyweight',
+    utils     => 'resolve_uri is_object',
+    constants => 'SLASH BLANK',
+    messages  => {
+        bad_trail => "Unabled to fetch breadcrumb trail metadata: %s",
+    };
 
 
 
@@ -19,13 +23,6 @@ sub title {
     my $self = shift;
     return $self->{ data }->{ title }
       //   $self->{ data }->{ name  };
-}
-
-sub trail {
-    my $self = shift;
-    return [
-        { name => 'trail test' }
-    ];
 }
 
 sub sitemap {
@@ -88,6 +85,44 @@ sub under {
         return $uri =~ /^$path/;
     }
 }
+
+
+# fetch all the pages on the breadcrumb trail from root to the current page
+
+sub trail {
+    my $self  = shift;
+    delete $self->{ trail } if @_;
+    return $self->{ trail }
+        ||= $self->make_trail(@_);
+}
+
+sub make_trail {
+    my $self = shift;
+    my $uri  = $self->uri;
+
+    $uri =~ s[^/][];
+    $uri =~ s[\/index.html][];
+
+    my @path  = split(/\/+/, $uri);
+    my @trail = map {
+        SLASH
+      . join(SLASH, @path[0..$_])
+      . ($path[$_] =~ /\.\w+$/ ? BLANK : SLASH)
+    } 0..$#path;
+
+    $self->debug("TRAIL: ", join(', ', @trail), "\n");
+
+    my $sitemap = $self->sitemap;
+    my $pages   = $sitemap->try->fetch_pages(\@trail)
+        || return $self->error_msg( bad_trail => $sitemap->reason );
+
+    return [
+        # TODO: move this into sitemap and/or candidate pages
+        grep { ! $_->{ data }->{ skip_trail } }
+        @$pages
+    ];
+}
+
 
 
 1;
