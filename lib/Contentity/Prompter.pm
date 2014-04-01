@@ -99,7 +99,7 @@ sub prompt {
     my $options = $params->{ options };
     my $answer  = '';
 
-    if ($self->yes) {
+    if ($self->yes || $params->{ yes }) {
         unless ($self->quiet) {
             $self->prompt_prompt($message);
             $self->prompt_accept_default($default);

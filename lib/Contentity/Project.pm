@@ -66,6 +66,12 @@ sub workspace_configs {
         ||= $self->load_workspace_configs;
 }
 
+sub reload_workspace_configs {
+    my $self = shift;
+    return $self->{ all_workspace_configs }
+        =  $self->load_workspace_configs;
+}
+
 sub load_workspace_configs {
     my $self    = shift;
     my $configs = $self->config(WORKSPACES) || { };
@@ -80,6 +86,8 @@ sub load_workspace_configs {
         ?   $configs
         :   $self->decline_msg('no_workspaces');
 }
+
+
 
 sub workspace_config {
     my $self    = shift;

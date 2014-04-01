@@ -135,13 +135,25 @@ sub renderer {
 
 
 #-----------------------------------------------------------------------------
+# creator component creates the initial workspace
+#-----------------------------------------------------------------------------
+
+sub creator {
+    shift->component(CREATOR, @_);
+}
+
+sub create {
+    shift->creator(@_)->build;
+}
+
+
+#-----------------------------------------------------------------------------
 # scaffold component generates configuration files, etc.
 #-----------------------------------------------------------------------------
 
 sub scaffold {
     shift->component(SCAFFOLD, @_);
 }
-
 
 #-----------------------------------------------------------------------------
 # builder component pre-renders static content for a production run
