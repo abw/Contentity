@@ -1,18 +1,19 @@
 package Contentity::Prompter;
 
 use Contentity::Class
-    version      => 0.01,
-    debug        => 0,
-    base         => 'Contentity::Base',
-    import       => 'class',
-    config       => 'verbose=0 quiet=0 nothing=0 yes=0 colour|color=1',
-    utils        => 'params extend xprintf split_to_list trim numlike floor
-                     red green blue cyan magenta yellow black white bold dark',
-    mutators     => 'verbose quiet nothing yes colour',
-    alias        => {
-        color    => 'colour',
+    version   => 0.01,
+    debug     => 0,
+    base      => 'Contentity::Base',
+    import    => 'class',
+    config    => 'verbose=0 quiet=0 nothing=0 yes=0 colour|color=1',
+    utils     => 'params extend xprintf split_to_list trim numlike floor
+                  red green blue cyan magenta yellow black white bold dark',
+    mutators  => 'verbose quiet nothing yes colour',
+    constants => 'CODE',
+    alias     => {
+        color => 'colour',
     },
-    messages     => {
+    messages  => {
         mandatory_option => "You must enter a value for this configuration option.",
         invalid_option   => "That is not a valid value for this configuration option.",
         quitting         => "Exiting program at user request.",
@@ -52,6 +53,9 @@ our $COLOURS = {
     cmd_prompt => sub { bold blue @_ },
 };
 
+our $CHECKERS = {
+};
+
 
 #-----------------------------------------------------------------------
 # init methods
@@ -75,8 +79,12 @@ sub init_prompter {
     my ($self, $config) = @_;
     my $class = $self->class;
 
-    my $colours = $self->{ colours } = $class->hash_vars(
+    $self->{ colours } = $class->hash_vars(
         COLOURS => $config->{ colours }
+    );
+
+    $self->{ checkers } = $class->hash_vars(
+        CHECKERS => $config->{ checkers }
     );
 
     return $self;
@@ -97,7 +105,7 @@ sub prompt {
             $self->prompt_accept_default($default);
         }
         $answer = $default;
-        return $answer 
+        return $answer
             if $self->prompt_check($answer, $params);
     }
 
@@ -142,8 +150,8 @@ sub prompt {
         last if $self->prompt_check($answer, $params);
     }
 
-    return length($answer) 
-        ? $answer 
+    return length($answer)
+        ? $answer
         : $default;
 }
 
@@ -157,7 +165,7 @@ sub prompt_check {
     my $opthash = $options ? { map { $_ => 1 } @$options } : { };
 
     if ($mandate && ! $answer) {
-        my $message = numlike($mandate) 
+        my $message = numlike($mandate)
             ? $self->message('mandatory_option')
             : $mandate;
 
@@ -177,12 +185,19 @@ sub prompt_check {
         }
     }
     elsif ($checker) {
-        return $checker->($answer, $self, $params);
+        return $self->checker($checker)->($answer, $self, $params);
     }
 
     return 1;
 }
 
+sub checker {
+    my ($self, $name) = @_;
+    return $name if ref $name eq CODE;
+    my $checkers = $self->{ checkers } || { };
+    return $checkers->{ $name }
+        || return $self->error_msg( invalid => checker => $name );
+}
 
 sub col {
     my $self = shift;
@@ -254,7 +269,7 @@ sub prompt_options {
 
     $options = split_to_list($options);
 
-    print $self->col( comment => 'Valid options are: '), 
+    print $self->col( comment => 'Valid options are: '),
         join(', ', map { $self->col( option => $_) } @$options),
         "\n";
 }
@@ -274,7 +289,7 @@ sub prompt_cmd {
 sub default_prompt {
     my ($self, $default) = @_;
     if (defined $default and length $default) {
-        return  $self->col( bracket => "[" ) 
+        return  $self->col( bracket => "[" )
             .   $self->col( default => $default )
             .   $self->col( bracket => "]" );
     }
@@ -389,18 +404,18 @@ sub prompt_instructions {
 our $INSULTS = [
     # insults get progressively more insulting with increased failures
     [
-        'Please try again.', 
-        'Oops, you made a mistake!', 
+        'Please try again.',
+        'Oops, you made a mistake!',
         "Oh dear, I'm afraid that's not good enough."
     ],
     [
         'You muppet!',
-        'Are you on drugs?', 
-        'Do you have trouble typing or did someone cut your fingers off?', 
+        'Are you on drugs?',
+        'Do you have trouble typing or did someone cut your fingers off?',
     ],
     [
-        'Are you taking the piss?', 
-        "I'm getting rather annoyed with you.", 
+        'Are you taking the piss?',
+        "I'm getting rather annoyed with you.",
         "I'm tutting quietly under my breath."
     ],
     [
@@ -444,4 +459,4 @@ sub random_insult_error {
 
 __END__
 
-=head1 NAME 
+=head1 NAME
