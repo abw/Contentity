@@ -24,6 +24,7 @@ use Contentity::Class
 
         # empty workspace space - for subclasses to redefine
         WORKSPACE_TYPE    => '',
+        WORKSPACE_FILE    => '',
     },
     messages => {
         no_module        => 'No %s module defined.',
@@ -100,12 +101,12 @@ sub post_init_workspace {
 
 sub init_data_files {
     my ($self, $config) = shift;
-    my $type = $self->type;
+    my $file = $self->WORKSPACE_FILE || $self->type;
 
     # import any data file corresponding to the workspace type, e.g. project,
     # site, portfolio, etc.
-    $self->config->import_data_file_if_exists($type)
-        if $type;
+    $self->config->import_data_file_if_exists($file)
+        if $file;
 
     # TODO: load any other data files, like deployment, local, etc
 }
