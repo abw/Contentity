@@ -39,7 +39,7 @@ sub init {
     my ($self, $config) = @_;
 
     # Note that the $config is a bit of a mess with everything thrown
-    # into one hash and passed around the various delegate constructors, 
+    # into one hash and passed around the various delegate constructors,
     # leading to possible parameter collision
 
     $self->init_config($config);
@@ -77,7 +77,7 @@ sub init_config {
     $self->load_data_file;
 
     $self->debug(
-        "extended config: ", 
+        "extended config: ",
         $self->dump_data($config)
     ) if DEBUG;
 }
@@ -99,8 +99,8 @@ sub init_app {
 
 #-----------------------------------------------------------------------------
 # config() method provides access to the central configuration hash $config,
-# as passed to the init() method.  This is where we store the runtime 
-# configuration options for the object.  Additional data (including the 
+# as passed to the init() method.  This is where we store the runtime
+# configuration options for the object.  Additional data (including the
 # questions we might want to ask the user, and the answers they provide are
 # store in separate configuration files and/or data hashes)
 #-----------------------------------------------------------------------------
@@ -123,7 +123,7 @@ sub config {
 #-----------------------------------------------------------------------------
 
 class->methods(
-    map { 
+    map {
         my $name = $_;
         $name => sub {
             shift->config->{ $name };
@@ -155,7 +155,7 @@ sub config_filespec {
 }
 
 #-----------------------------------------------------------------------------
-# The script is a configuration file containing all the questions that need 
+# The script is a configuration file containing all the questions that need
 # answering.  The file also defines those values that can be set via command
 # line arguments.
 #-----------------------------------------------------------------------------
@@ -180,8 +180,8 @@ sub load_script {
 
 
 #-----------------------------------------------------------------------------
-# The data_file is where we store the answers that the user gives to the 
-# questions asked.  This is loaded (if it exists) at the start and saved at 
+# The data_file is where we store the answers that the user gives to the
+# questions asked.  This is loaded (if it exists) at the start and saved at
 # the end of the configuration process
 #-----------------------------------------------------------------------------
 
@@ -334,7 +334,7 @@ sub script_appconfig_args {
 #-----------------------------------------------------------------------------
 # Prompting the user to answer questions is handled by a separate prompter
 # object.  We autogenerate various prompt_XXX() methods which delegate to it.
-# e.g. 
+# e.g.
 #   sub prompt_about {
 #       shift->prompter->prompt_about(@_);
 #   }
@@ -342,22 +342,22 @@ sub script_appconfig_args {
 
 sub prompter {
     my $self = shift;
-    return  $self->{ prompter } 
-        ||=($self->config->{ prompter } 
+    return  $self->{ prompter }
+        ||=($self->config->{ prompter }
         ||  $self->PROMPTER->new(
                 $self->config
             ));
 }
 
 class->methods(
-    map { 
+    map {
         my $name = $_;
         $name => sub {
             shift->prompter->$name(@_);
         }
     }
     qw(
-        prompt prompt_expr prompt_newline prompt_error
+        prompt prompt_list prompt_expr prompt_newline prompt_error
         prompt_title prompt_about prompt_action prompt_comment prompt_entry
     )
 );
@@ -382,7 +382,9 @@ sub option_prompt {
     my $title   = $option->{ title     } || '';
     my $path    = $option->{ path      };
     my $default = $option->{ default   };
+    my $list    = $option->{ list      };
     my $value   = $self->get($path); # || $option->{ default };
+    my $result;
 
     if (DEBUG) {
         $self->debug_data( path => $path );
@@ -390,11 +392,17 @@ sub option_prompt {
     }
 
     local $option->{ value } = $value || $default;
-  
-    my $result  = $self->prompt($title, $option->{ value }, $option);
+
+    if ($list) {
+        $self->debug_data("found a list for $name" => $option ) if DEBUG;
+        $result = $self->prompt_list($list, $option->{ value }, $option);
+    }
+    else {
+        $result = $self->prompt($title, $option->{ value }, $option);
+    }
 
     $self->debug_data("got [$result] for ", $path) if DEBUG;
-  
+
     $self->set($path, $result);
 }
 
@@ -415,9 +423,9 @@ sub init_workspace {
     my $self   = shift;
     my $config = $self->config;
 
-    # NOTE: 'root' is defined in a saved config file, or via command line 
+    # NOTE: 'root' is defined in a saved config file, or via command line
     # options.  'directory' is typically defined as a config option passed
-    # by the calling script as the default.  If none are defined then we 
+    # by the calling script as the default.  If none are defined then we
     # assume it's the current working directory.
     $self->debug("[ROOT:$config->{root}] [DIR:$config->{directory}") if DEBUG;
 
@@ -487,7 +495,7 @@ sub help {
         $self->help_title
     );
 
-    $self->prompt_about( 
+    $self->prompt_about(
         $self->help_about
     );
 
@@ -495,7 +503,7 @@ sub help {
         $self->help_instructions
     );
 
-    $self->prompt_entry( 
+    $self->prompt_entry(
         $self->help_options
     );
 
@@ -571,7 +579,7 @@ sub prompt_help_option {
     my @bits;
 
     push(
-        @bits, 
+        @bits,
         $prompt->col_expr([
             [cmd_dash => '-'],
             [cmd_arg  => $short],
@@ -580,7 +588,7 @@ sub prompt_help_option {
     ) if $short;
 
     push(
-        @bits, 
+        @bits,
         $prompt->col_expr([
             [cmd_dash => '--'],
             [cmd_arg  => $long]
@@ -642,9 +650,9 @@ __END__
     # remembered the next time I run the bin/configure script.  In this case,
     # it's just a matter of semantics because both names resolve to the same
     # place.  But if the root was defined as somewhere else (perfectly legal
-    # if inadvisable) then it does matter.  
+    # if inadvisable) then it does matter.
     #
-    # The preferences are loaded and saved by the workspace configuration 
+    # The preferences are loaded and saved by the workspace configuration
     # manager, but the workspace needs to be defined with a root directory.
     # Furthermore, a command line argument should over-ride any value saved
     # in the configuration file, implying that the args should be processed
@@ -702,7 +710,3 @@ sub stripped_data {
     }
     return $data;
 }
-
-
-
-

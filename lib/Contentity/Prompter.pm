@@ -155,6 +155,45 @@ sub prompt {
         : $default;
 }
 
+sub prompt_list {
+    my $self    = shift;
+    my $type    = shift;
+    my $list    = shift;
+    my $params  = params(@_);
+    my $about   = $params->{ about   };
+    my $comment = $params->{ comment };
+    my $an      = ($type =~ /^[aeiou]/) ? 'an' : 'a';
+    my (@items, $item);
+
+    $self->prompt_about($about) if $about;
+    $self->prompt_comment($comment) if $comment;
+    $self->prompt_comment($comment) if $comment;
+
+    if ($list) {
+        foreach $item (@$list) {
+            if ($self->confirm("Keep existing $type '$item'? ", 'y')) {
+                push(@items, $item);
+            }
+            $an = 'another';
+        }
+    }
+
+    return \@items
+        if $self->yes;
+
+    $self->prompt_list_instructions($type);
+
+    while ($item = $self->prompt("Enter $an $type")) {
+        push(@items, $item);
+        $an = 'another';
+    }
+
+    $self->prompt_newline;
+
+    return \@items;
+}
+
+
 sub prompt_check {
     my $self    = shift;
     my $answer  = shift // '';
@@ -190,6 +229,7 @@ sub prompt_check {
 
     return 1;
 }
+
 
 sub checker {
     my ($self, $name) = @_;
@@ -312,39 +352,6 @@ sub prompt_dry_run_cmd {
 }
 
 
-sub prompt_list {
-    my $self    = shift;
-    my $type    = shift;
-    my $list    = shift;
-    my $params  = params(@_);
-    my $comment = $params->{ comment };
-    my $an      = ($type =~ /^[aeiou]/) ? 'an' : 'a';
-    my (@items, $item);
-
-    if ($comment) {
-        $self->prompt_comment($comment);
-    }
-
-    if ($list) {
-        foreach $item (@$list) {
-            if ($self->confirm("Keep existing $type '$item'? ", 'y')) {
-                push(@items, $item);
-            }
-            $an = 'another';
-        }
-    }
-
-    return \@items
-        if $self->yes;
-
-    while ($item = $self->prompt("Enter $an $type")) {
-        push(@items, $item);
-        $an = 'another';
-    }
-
-    return \@items;
-}
-
 sub prompt_title {
     my $self  = shift;
     my $title = join(' ', @_);
@@ -397,6 +404,22 @@ sub prompt_instructions {
         [entry   => 'help'],
         [quotes  => '"'],
         [action  => " for these instructions.\n\n"],
+    ]);
+}
+
+sub prompt_list_instructions {
+    my $self = shift;
+    my $type = shift || 'item';
+
+    $self->prompt_about(@_)
+        if @_;
+
+    $self->prompt_expr([
+        [action  => "\nEnter a new $type and press "],
+        [entry   => 'RETURN'],
+        [action  => ".  Leave it blank and press "],
+        [entry   => 'RETURN'],
+        [action  => " when you're done adding them.\n\n"],
     ]);
 }
 

@@ -110,7 +110,7 @@ sub make_trail {
       . ($path[$_] =~ /\.\w+$/ ? BLANK : SLASH)
     } 0..$#path;
 
-    $self->debug("TRAIL: ", join(', ', @trail), "\n");
+    $self->debug("TRAIL: ", join(', ', @trail), "\n") if DEBUG;
 
     my $sitemap = $self->sitemap;
     my $pages   = $sitemap->try->fetch_pages(\@trail)
