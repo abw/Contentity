@@ -8,7 +8,7 @@ use Contentity::Class
     base      => 'Badger::Config::Filesystem Contentity::Base',
     utils     => 'truelike falselike extend merge split_to_list blessed Filter',
     accessors => 'parent',
-    constants => 'HASH ARRAY',
+    constants => 'HASH ARRAY TRUE FALSE',
     constant    => {
         # caching options
         CACHE_MANAGER => 'Contentity::Cache',
@@ -138,6 +138,11 @@ sub head {
 
     $self->debug_data("head($name) in ", $data) if DEBUG;
 
+    if (exists $data->{ $name }) {
+        $self->debug_data("$name found in $self->{ uri } local data" => $data->{ $name }) if DEBUG;
+        return $data->{ $name };
+    }
+
     # may be a cached result, including undef
     return $data->{ $name }
         if exists $data->{ $name };
@@ -198,6 +203,12 @@ sub tail_cache {
         $self->debug("found cache duration option: $duration") if DEBUG;
         $self->cache_store($name, $data, $duration, $schema);
     }
+
+    if (truelike $schema->{ copy }) {
+        $self->debug_data("copying $name data into $self->{ uri } local data", $data) if DEBUG;
+        $self->set($name, $data);
+    }
+
     return $data;
 }
 
@@ -260,8 +271,10 @@ sub cache_store {
 
 sub parent_fetch {
     my ($self, $name) = @_;
-    #$self->debug("parent_fetch($name)  parent:$self->{parent}");
     my $parent = $self->{ parent  }   || return;
+    $self->debug_data("parent fetch $name", $self->schema($name)) if DEBUG;
+    return undef
+        unless $self->inheritable_item($name);
     my $data   = $parent->head($name) // return;
 
     $self->debug(
@@ -276,6 +289,20 @@ sub parent_head {
     my ($self, $name) = @_;
     my $parent = $self->{ parent  }   || return;
     return $parent->head($name);
+}
+
+sub inheritable_item {
+    my ($self, $name) = @_;
+    my $default = TRUE;    # TODO: configurable default
+    my $schema  = $self->schema($name) || return $default;
+
+    if (exists $schema->{ inherit }) {
+        $self->debug_data("explicit inherit rule for $name: " => $schema->{ inherit } ) if DEBUG;
+        return truelike $schema->{ inherit };
+    }
+    else {
+        return $default
+    }
 }
 
 
