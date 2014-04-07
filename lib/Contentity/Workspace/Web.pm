@@ -4,13 +4,8 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Workspace',
-    utils     => 'join_uri resolve_uri split_to_list Colour',
-    constants => ':components :deployment SLASH HASH STATIC DYNAMIC VHOST_FILE',
-    messages => {
-        bad_col_rgb => 'Invalid RGB colour name specified for %s: %s',
-        bad_col_dot => 'Invalid colour method for %s: .%s',
-        bad_col_val => 'Invalid colour value for %s: %s',
-    };
+    utils     => 'join_uri resolve_uri split_to_list',
+    constants => ':components :deployment SLASH HASH STATIC DYNAMIC VHOST_FILE';
 
 
 #------------------------------------------------------------------------
@@ -333,86 +328,25 @@ sub resource_sort_sig {
 
 
 #-----------------------------------------------------------------------------
-# RGB colours
-# TODO: make this a component
+# A skin is comprised of a set of RGB colours (e.g. red => #f00), mappings
+# from UI components to colours (e.g. button.backgroud => red) and other
+# style parameters.
 #-----------------------------------------------------------------------------
 
-sub rgb {
-    my $self = shift;
-    return  $self->{ rgb }
-        //= $self->load_rgb;
+sub skin {
+    shift->component(SKIN);
 }
 
-sub load_rgb {
-    my $self = shift;
-    my $rgb  = $self->config(RGB) || return;
-    foreach my $key (keys %$rgb) {
-        $rgb->{ $key } = Colour($rgb->{ $key });
-    }
-    return $rgb;
+sub rgb {
+    shift->skin->rgb;
 }
 
 sub colours {
-    my $self = shift;
-    return  $self->{ colours }
-        //= $self->load_colours;
+    shift->skin->colours;
 }
 
-sub load_colours {
-    my $self = shift;
-    my $cols = $self->config(COLOURS) || return;
-    my $rgb  = $self->rgb;
-    return $self->prepare_colours($cols, $rgb);
-}
-
-sub prepare_colours {
-    my $self = shift;
-    my $cols = shift || $self->config(COLOURS) || return;
-    my $rgb  = shift || $self->rgb;
-    my ($key, $value, $name, $ref, $dots, $col, $bit, @bits);
-
-    foreach $key (keys %$cols) {
-        $value = $cols->{ $key };
-        $ref   = ref $value;
-
-        $self->debug("$key => $value") if DEBUG;
-
-        if ($ref && $ref eq HASH) {
-            # colours can have nested hash arrays, e.g. col.button.error
-            $col = $self->prepare_colours($value);
-        }
-        elsif ($value =~ /^(\w+)(?:\.(.*))?$/) {
-            # colours can have names that refer to RGB entries, they may also
-            # have a dotted part after the name, e.g. red.lighter
-            $self->debug("colour ref: [$1] [$2]") if DEBUG;
-            $name = $1;
-            $dots = $2;
-            $col  = $rgb->{ $name }
-                || return $self->error_msg( bad_col_rgb => $key => $name  );
-
-            if (length $dots) {
-                @bits = split(/\./, $dots);
-                $self->debug("dots: [$dots] => [", join('] [', @bits), ']') if DEBUG;
-                while (@bits) {
-                    $bit = shift (@bits);
-                    $col = $col->try->$bit
-                        || return $self->error_msg( bad_col_dot => $key => $name => $bit );
-                    $self->debug(".$bit => $col") if DEBUG;
-                }
-            }
-        }
-        else {
-            # otherwise we assume they're new colour definitions
-            $self->debug("colour val $key => $value") if DEBUG;
-            $col = Colour->try->new($value)
-                || return $self->error_msg( bad_col_val => $key => $value );
-        }
-
-        $self->debug(" => $col") if DEBUG;
-        $cols->{ $key } = $col;
-    }
-
-    return $cols;
+sub styles {
+    shift->skin->styles;
 }
 
 
