@@ -157,6 +157,7 @@ sub send_text {
 
 sub send_html {
     shift->response(
+        type    => 'text/html',
         content => join(BLANK, @_)
     );
 }
