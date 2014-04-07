@@ -21,6 +21,7 @@ use Contentity::Class
             module_name
             integer random
             uri_safe id_safe
+            snake_up snake_down
             self_key self_keys
             H html_elem html_attrs data_attrs
             datestamp today format_date
@@ -342,6 +343,17 @@ sub trim {
     return $text;
 }
 
+sub snake_up {
+    my $text = shift;
+    $text =~ s/_+/-/g;
+    return lc $text;
+}
+
+sub snake_down {
+    my $text = shift;
+    $text =~ s/-+/_/g;
+    return lc $text;
+}
 
 
 #-----------------------------------------------------------------------------

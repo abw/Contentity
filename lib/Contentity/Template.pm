@@ -8,6 +8,7 @@ use Contentity::Class
     utils     => 'self_params params
                   commas falselike floor id_safe inflect integer
                   plural plurality random truelike uri_safe
+                  snake_up snake_down
                   H data_attrs',
     codecs    => 'html json',
     constants => 'ARRAY';
@@ -28,6 +29,8 @@ our $ITEM_VMETHODS = {
     plural        => \&plural,
     plurality     => \&plurality,
     random        => \&random,
+    snake_up      => \&snake_up,
+    snake_down    => \&snake_down,
     true          => \&truelike,
     uc            => \&CORE::uc,
     upper         => \&CORE::uc,
@@ -71,6 +74,8 @@ sub init_vmethods {
     my ($self, $config) = @_;
     my $class = $self->class;
 
+    $self->debug("looking for vmethods in $class") if DEBUG;
+
     $self->define_vmethods(
         item => $class->hash_vars(
             ITEM_VMETHODS => $config->{ item_vmethods }
@@ -94,7 +99,7 @@ sub define_vmethods {
 
     while (my ($k, $v) = each %$methods) {
         $self->debug("adding $type virtal method: $k") if DEBUG;
-        $context->define_vmethod( item => $k => $v );
+        $context->define_vmethod( $type => $k => $v );
     }
 }
 
