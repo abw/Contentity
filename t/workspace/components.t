@@ -9,7 +9,7 @@
 #========================================================================
 
 use Badger
-    lib        => 'lib ../../lib /Users/abw/projects/badger/lib',
+    lib        => 'lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
@@ -25,7 +25,7 @@ use Contentity::Project;
 #-----------------------------------------------------------------------------
 
 my $root    = Bin->dir( test_files => projects => 'alpha' );
-my $project = Contentity::Project->new( 
+my $project = Contentity::Project->new(
     root            => $root,
     component_path  => 'Wibble::Component',
 );
@@ -69,10 +69,10 @@ my $db1 = $project->component('database');
 my $db2 = $project->component('database');
 
 # This one should be a new instance because of the custom arguments
-my $db3 = $project->component( 
-    database => { 
-#        wibble => 'another pouch' 
-    } 
+my $db3 = $project->component(
+    database => {
+#        wibble => 'another pouch'
+    }
 );
 
 ok( $db1, 'got database component' );
@@ -90,12 +90,11 @@ my $pouch1 = $project->component('frusset');
 ok( $pouch1, 'got a frusset pouch' );
 is( $pouch1->greeting, 'nod at', 'frusset pouch has default greeting from config file' );
 
-my $pouch2 = $project->component( 
-    frusset => { 
-        greeting => 'triple greet' 
+my $pouch2 = $project->component(
+    frusset => {
+        greeting => 'triple greet'
     }
 );
 
 ok( $pouch2, 'got another frusset pouch' );
 is( $pouch2->greeting, 'triple greet', 'frusset pouch has custom greeting from config parameters' );
-
