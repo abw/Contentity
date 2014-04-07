@@ -1,5 +1,6 @@
 package Contentity::Component::Renderer;
 
+use utf8;
 use Contentity::Class
     version     => 0.01,
     debug       => 0,
@@ -142,7 +143,8 @@ sub engine_config {
             if $config->{ $_ };
     }
 
-    $ttcfg->{ ENCODING     } = $config->{ encoding };
+    $self->debug("ENCODING: $config->{ encoding }") if DEBUG;
+    $ttcfg->{ ENCODING     } = $config->{ encoding } || 'utf8';
     $ttcfg->{ WRAPPER      } = $config->{ wrapper  };
     $ttcfg->{ PRE_PROCESS  } = \@pre  if @pre;
     $ttcfg->{ POST_PROCESS } = \@post if @post;
@@ -182,6 +184,8 @@ sub render {
 
     $engine->process($name, $params, \$output)
         || return $self->error_msg( engine_render => $name, $engine->error );
+
+    $self->debug("rendered: $name: $output") if DEBUG && $name =~ /.html/;
 
     return $output;
 }

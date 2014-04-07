@@ -50,7 +50,7 @@ sub init_context {
     $self->{ options      } = { };
     $self->{ headers      } = { };
     $self->{ content      } = [ ];
-    $self->{ content_type } = 'text/plain';
+    $self->{ content_type } = 'text/html; charset="utf-8"';
     $self->{ status       } = 200;
 
 #   $self->{ apache  } = $config->{ apache };       # not sure if we need this

@@ -157,7 +157,7 @@ sub send_text {
 
 sub send_html {
     shift->response(
-        type    => 'text/html',
+        type    => 'text/html; charset=utf-8',
         content => join(BLANK, @_)
     );
 }
