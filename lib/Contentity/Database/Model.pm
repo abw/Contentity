@@ -6,7 +6,7 @@ use Contentity::Class
     base      => 'Badger::Database::Model Contentity::Database::Component',
     utils     => 'join_uri',
     accessors => 'ident',
-    constants => 'PKG',
+    constants => 'PKG DOT',
     import    => 'class',
     constant  => {
         TABLE_BASE => 'Contentity::Database::Table',
@@ -56,17 +56,20 @@ sub load_table {
     my ($self, $name) = @_;
     my $config = $self->table_config($name);
     my $module = $config->{ table_module };
+    my $throws = $self->table_throws($name);
 
     if ($module) {
         # if we've got the name of a module then we just need to load it
         $self->debug("Loading $name table module: $module") if DEBUG;
-        class($module)->load;
+        class($module)->load->throws($throws);
     }
     else {
         # otherwise we create a subclass of the table_base class
         $module = $self->table_subclass($name);
         $self->debug("Creating table subclass for $name: $module") if DEBUG;
-        class($module)->base( $self->table_base );
+        class($module)
+            ->base( $self->table_base )
+            ->throws($throws);
     }
 
     local $config->{ engine } = $self->engine;
@@ -103,6 +106,11 @@ sub table_base {
         || $self->TABLE_BASE;
 }
 
+sub table_throws {
+    my $self = shift;
+    return join( DOT, $self->ident, @_ );
+}
+
 sub table_subclass {
     my ($self, $name) = @_;
 
@@ -122,7 +130,7 @@ sub table_subclass {
 sub has_table {
     my ($self, $name) = @_;
     return $self->{ table }->{ $name }
-        || $self->workspace->config( $self->table_path($name) );
+        || $self->try( table => $name );
 }
 
 

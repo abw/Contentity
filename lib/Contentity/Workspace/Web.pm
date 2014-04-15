@@ -87,7 +87,20 @@ sub databases {
 }
 
 sub database {
-    shift->databases->database(@_);
+    my $self = shift;
+    my $name = shift
+        || $self->config->database
+        || return $self->error_msg( missing => 'database' );
+    $self->debug_data( database => $name ) if DEBUG;
+    $self->databases->database($name);
+}
+
+sub model {
+    shift->database->model;
+}
+
+sub table {
+    shift->database->model->table(@_);
 }
 
 
