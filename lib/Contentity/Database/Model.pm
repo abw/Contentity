@@ -74,6 +74,7 @@ sub load_table {
 
     local $config->{ engine } = $self->engine;
     local $config->{ model  } = $self;
+    local $config->{ name } ||= $name;
 
     $self->debug_data("creating $module with config: ", $config) if DEBUG;
 
@@ -130,7 +131,8 @@ sub table_subclass {
 sub has_table {
     my ($self, $name) = @_;
     return $self->{ table }->{ $name }
-        || $self->try( table => $name );
+        ||($self->workspace->config->dir( $self->table_path )->files
+        && $self->table($name));
 }
 
 

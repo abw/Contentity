@@ -1,10 +1,13 @@
 package Contentity::Database::Table;
 
+use Contentity::Utils;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Badger::Database::Table Contentity::Database::Component',
-    accessors => 'columns',
+    import    => 'class',
+    accessors => 'columns singular plural',
+    constants => 'DOT',
     constant  => {
         RECORD  => 'Contentity::Database::Record',
     };
@@ -21,12 +24,23 @@ sub init {
     $self->{ columns  } = $config->{ columns  };
     $self->{ messages } = $config->{ messages };
 
+    $self->{ singular } = $config->{ singular }
+       || $config->{ name  }
+       || $config->{ table };
+
+    $self->{ plural } = $config->{ plural }
+       || Contentity::Utils::plural($self->{ singular });
+
     # Variant of Badger::Database::Table init() method
     #$self->init_database($config);
     $self->init_schema($config);
     $self->init_queries($config);
     $self->init_table($config);
 
+    # set the THROWS to a sensible name for the record class
+    class($self->{ record })->throws(
+        $self->model->table_throws( $self->{ singular } )
+    );
 
     return $self;
 }
@@ -34,6 +48,11 @@ sub init {
 
 sub init_table {
     # stub for subclasses
+}
+
+sub record_throws {
+    my $self = shift;
+    return join( DOT, $self->model->ident, @_ );
 }
 
 #sub model {
