@@ -130,6 +130,28 @@ sub id_safe {
 # Parameter handling functions
 #-----------------------------------------------------------------------------
 
+sub key_args {
+    my $self = shift;
+    my $key  = shift;
+    my $args;
+
+    if (@_ == 1) {
+        # single argument can be the $key named or a reference to a hash
+        # of named parameters
+        $args = ref $_[0] eq HASH
+            ? shift
+            : { $key => shift };
+    }
+    else {
+        # multiple arguments are named parameters
+        $args = { @_ };
+    }
+
+    return defined $args->{ $key }
+        ? $args
+        : $self->error_msg( missing => $key );
+}
+
 sub self_key {
     my $key  = shift;
     my $self = shift;
