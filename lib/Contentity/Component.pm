@@ -32,7 +32,7 @@ sub init {
                  // $schema->{ singleton }
                  // $self->SINGLETON;
 
-    $self->{ urn       } = $config->{ urn    };
+    $self->{ urn       } = $config->{ urn };
     $self->{ workspace } = $workspace;
     $self->{ component } = $component;
     $self->{ schema    } = $schema;

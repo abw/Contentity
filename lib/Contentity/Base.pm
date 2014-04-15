@@ -14,7 +14,7 @@ use Contentity::Class
         invalid_in_item => "Invalid %s specified: '%s' in %s: %s",
     };
 
-our $DEBUG_FORMAT = 
+our $DEBUG_FORMAT =
     cyan('[').
     bold(yellow('<where> ')).
     bold(cyan('line <line>')).
@@ -23,7 +23,7 @@ our $DEBUG_FORMAT =
 
 sub debug_magic {
     # called by Badger::Base to allow debugging messages to be customised
-    return { 
+    return {
         format => $DEBUG_FORMAT,
     };
 }
@@ -53,13 +53,13 @@ sub debug_data {
         s/([{}]+)/green($1)/ge;
     }
     $self->debug(
-        bold(cyan($msg)), 
+        bold(cyan($msg)),
         ': ',
         $dump
     );
 }
 
-# Darn, the debug() method is inserted into each class by Badger::Class 
+# Darn, the debug() method is inserted into each class by Badger::Class
 # (via the "debug => 0" hook so we can't redefine the debug() method and
 # expect subclasses to find it.
 
@@ -69,6 +69,7 @@ sub dbg {
     local $Badger::Debug::CALLER_AT = $self->debug_magic;
     $self->debug(@_);
 }
+
 
 
 1;
@@ -82,7 +83,7 @@ Contentity::Base - base class module for all other Contentity modules
 
 This module implement a common base class from which most, if not all other
 modules are subclassed from.  It is implemented as a subclass of
-L<Badger::Base>.  
+L<Badger::Base>.
 
 =head1 METHODS
 
@@ -125,4 +126,3 @@ Andy Wardley E<lt>abw@wardley.orgE<gt>.
 Copyright (C) 2008-2014 Andy Wardley.  All Rights Reserved.
 
 =cut
-

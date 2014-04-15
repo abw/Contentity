@@ -102,9 +102,12 @@ sub fetch_asset {
 
 sub asset_config {
     my ($self, $name) = @_;
-
-    return $self->workspace->asset_config(
-        $self->{ assets } => $name
+    return extend(
+        { },
+        $self->{ config }->{ $name },
+        $self->workspace->asset_config(
+            $self->{ assets } => $name
+        ),
     );
 }
 

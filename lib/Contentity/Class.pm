@@ -41,7 +41,7 @@ sub constructor {
 sub component {
     my ($self, $name) = @_;
 
-    # If a module declares itself to be a component then we make it a subclass 
+    # If a module declares itself to be a component then we make it a subclass
     # of Contentity::Component, e.g. , e.g. C<component => "resource"> creates
     # a base class of Contentity::Component::Resource
     $self->base(
@@ -70,7 +70,7 @@ sub assets {
 #-----------------------------------------------------------------------------
 # autolook()
 #
-# Given a list of methods it will call each in turn to see if they can 
+# Given a list of methods it will call each in turn to see if they can
 # return a defined value.
 #-----------------------------------------------------------------------------
 
@@ -91,8 +91,9 @@ sub autolook {
 
             return if $name eq 'DESTROY';
 
-            confess "AUTOLOAD $name() called on unblessed value '$this'"
-                unless blessed $this;
+            # Hmmm - we want to be able to call class methods, e.g. Cog->database
+            #confess "AUTOLOAD $name() called on unblessed value '$this'"
+            #    unless blessed $this;
 
             foreach my $method (@$methods) {
                 $value = $this->$method($name, @args);
@@ -100,9 +101,9 @@ sub autolook {
                 return $value if defined $value;
             }
             my @caller = caller($CALLUP);
-            return $this->error_msg( 
-                bad_method => $name, ref($this) || $this, 
-                (@caller)[1,2] 
+            return $this->error_msg(
+                bad_method => $name, ref($this) || $this,
+                (@caller)[1,2]
             );
         }
     );

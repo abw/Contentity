@@ -6,7 +6,8 @@ BEGIN {
     # all these upper case words are defined as constants for their lower
     # case eqivalent, e.g. ACTIVE => 'active'
     @components = qw(
-        APPS ASSETS BUILDER COLOURS CONTEXT CONTENT_TYPES CREATOR DOMAINS
+        APPS ASSETS BUILDER COLOURS CONTEXT CONTENT_TYPES CREATOR
+        DATABASES DOMAINS
         FONTS FORMS MIDDLEWARES PLACK RGB ROUTES REQUEST RESPONSE RESOURCES
         SCAFFOLD SITEMAP SKIN STYLES TEMPLATES URLS
     );
