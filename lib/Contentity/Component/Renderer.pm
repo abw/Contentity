@@ -175,8 +175,8 @@ sub data {
 sub render {
     my $self   = shift;
     my $name   = shift;
-    my $params = $self->template_data(@_);
     my $engine = $self->engine;
+    my $params = $self->template_data(@_);
     my $output;
 
     # remove leading slash - TT thinks you're trying to access an absolute path
@@ -206,6 +206,7 @@ sub template_data {
 
     return extend(
         {
+            Renderer  => $self,
             Project   => $space->project || undef,
             Workspace => $space,
             Space     => $space,
