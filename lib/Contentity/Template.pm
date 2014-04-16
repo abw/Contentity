@@ -24,6 +24,7 @@ our $ITEM_VMETHODS = {
     inflect       => \&inflect,
     integer       => \&integer,
     lc            => sub { lc(shift) },
+    lines         => sub { [ split(/\n/, shift) ] },
     lower         => sub { lc(shift) },
     lcfirst       => sub { lcfirst(shift) },
     plural        => \&plural,
