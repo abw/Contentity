@@ -21,9 +21,14 @@ sub init {
     $self->{ model } = $config->{ model }
         || return $self->error_msg( missing => 'model' );
 
-    $self->{ columns  } = $config->{ columns  };
-    $self->{ messages } = $config->{ messages };
+    my $cols = $self->{ columns  } = $config->{ columns  };
 
+    if ($cols && ! $config->{ fields }) {
+        # fields defaults to everything specified in columns
+        $config->{ fields } = [ keys %$cols ];
+    }
+
+    $self->{ messages } = $config->{ messages };
     $self->{ singular } = $config->{ singular }
        || $config->{ record }      # See note below
        || $config->{ name   }
@@ -31,6 +36,7 @@ sub init {
 
     $self->{ plural } = $config->{ plural }
        || Contentity::Utils::plural($self->{ singular });
+
 
     # In the contentity config, we're using table/record to denote the
     # plural/singular forms, e.g. users/user, and the more explicit

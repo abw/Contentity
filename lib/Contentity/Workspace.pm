@@ -111,7 +111,7 @@ sub init_data_files {
 
     # TODO: load any other data files, like deployment, local, etc
     my $files = $self->config('config_files') || $self->CONFIG_FILES;
-    $self->debug_data( files => $files ) if DEBUG or 1;
+    $self->debug_data( files => $files ) if DEBUG;
     $self->config->import_data_files($files);
 }
 

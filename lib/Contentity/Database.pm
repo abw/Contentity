@@ -22,9 +22,13 @@ sub init_component {
     # We prefer to use the workspace URN rather than the database name itself
     # because it's conceivable that we could have several database interfaces
     # defined in the workspace that use the same underlying database.
+    #
+    # Also note that the cog_test database defines ident to be 'cog' so that
+    # it uses the same schema definition as cog but a different database
+    # connection.  I think there should be a better name than 'ident'.
     $self->{ ident } = $config->{ ident } ||= $config->{ urn } || $config->{ database };
 
-    $self->debug_data( $self->ident . ' database' => $config ) if DEBUG or 1;
+    $self->debug_data( $self->ident . ' database' => $config ) if DEBUG;
 
     # Badger::Database supports the specification of a hub (Badger::Hub) to
     # enable it to connect to other components in the application framework.

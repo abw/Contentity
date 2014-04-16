@@ -130,9 +130,14 @@ sub table_subclass {
 
 sub has_table {
     my ($self, $name) = @_;
-    return $self->{ table }->{ $name }
-        ||($self->workspace->config->dir( $self->table_path )->files
-        && $self->table($name));
+    my $table = $self->{ table }->{ $name };
+    return $table if $table;
+    # Bah! All this to avoid the error thrown by the table() method. We could
+    # call it as $self->try->table($name) but then it discards any errors thrown
+    # by syntax errors, etc., in the code.
+    if ($self->workspace->config($self->table_path($name))) {
+        return $self->table($name);
+    }
 }
 
 
