@@ -25,6 +25,7 @@ use Contentity::Class
         # empty workspace space - for subclasses to redefine
         WORKSPACE_TYPE    => '',
         WORKSPACE_FILE    => '',
+        CONFIG_FILES      => '',
     },
     messages => {
         no_module        => 'No %s module defined.',
@@ -109,6 +110,9 @@ sub init_data_files {
         if $file;
 
     # TODO: load any other data files, like deployment, local, etc
+    my $files = $self->config('config_files') || $self->CONFIG_FILES;
+    $self->debug_data( files => $files ) if DEBUG or 1;
+    $self->config->import_data_files($files);
 }
 
 

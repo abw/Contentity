@@ -25,11 +25,18 @@ sub init {
     $self->{ messages } = $config->{ messages };
 
     $self->{ singular } = $config->{ singular }
-       || $config->{ name  }
-       || $config->{ table };
+       || $config->{ record }      # See note below
+       || $config->{ name   }
+       || $config->{ table  };
 
     $self->{ plural } = $config->{ plural }
        || Contentity::Utils::plural($self->{ singular });
+
+    # In the contentity config, we're using table/record to denote the
+    # plural/singular forms, e.g. users/user, and the more explicit
+    # table_module and record_module to indicate the relevant module classes.
+    # So we temporarily blank any 'record' entry defined in here
+    local $config->{ record } = undef;
 
     # Variant of Badger::Database::Table init() method
     #$self->init_database($config);

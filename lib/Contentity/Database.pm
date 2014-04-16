@@ -24,7 +24,7 @@ sub init_component {
     # defined in the workspace that use the same underlying database.
     $self->{ ident } = $config->{ ident } ||= $config->{ urn } || $config->{ database };
 
-    $self->debug_data( $self->ident . ' database' => $config ) if DEBUG;
+    $self->debug_data( $self->ident . ' database' => $config ) if DEBUG or 1;
 
     # Badger::Database supports the specification of a hub (Badger::Hub) to
     # enable it to connect to other components in the application framework.
