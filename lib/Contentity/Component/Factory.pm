@@ -1,6 +1,6 @@
 package Contentity::Component::Factory;
 
-use Badger::Factory;
+use Contentity::Factory;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
@@ -14,7 +14,7 @@ use Contentity::Class
         FACTORY_ITEM   => undef,
         FACTORY_PATH   => undef,
         FACTORY_MODULE => undef,
-        BASE_FACTORY   => 'Badger::Factory',
+        BASE_FACTORY   => 'Contentity::Factory',
         SINGLETONS     => 0,
     };
 
