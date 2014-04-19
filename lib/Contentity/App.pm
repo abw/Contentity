@@ -113,9 +113,19 @@ sub render {
         $self->context->data,
         @_
     );
-    $self->debug_data( "rendering $name with" => $data ) if DEBUG or 1;
+    $self->debug_data( "rendering $name with" => $data ) if DEBUG;
 
     return $self->renderer->render($name, $data);
+}
+
+
+sub present {
+    my ($self, $name, $params) = @_;
+
+    # TODO: not always HTML
+    return $self->send_html(
+        $self->render($name, $params)
+    );
 }
 
 
@@ -188,6 +198,16 @@ sub send_redirect {
         redirect => join(BLANK, @_)
     );
 }
+
+
+#-----------------------------------------------------------------------------
+# Misc methods
+#-----------------------------------------------------------------------------
+
+sub version {
+    shift->VERSION;
+}
+
 
 
 1;
