@@ -7,12 +7,12 @@ use Contentity::Class
     constants   => 'ARRAY HASH',
     accessors   => 'routes',
     constant    => {
-        MATCH_MINUS => qr/^(\-)$/,
-        MATCH_PLUS  => qr/^(\+)$/,
-        MATCH_STAR  => qr/^(\*)$/,
-        MATCH_FIXED => qr/^([\w\-\.]+)$/,
-        MATCH_PLACE => qr/^(:\w+)$/,
-        MATCH_ANGLE => qr/^<(.*)>$/,
+        MATCH_MINUS  => qr/^(\-)$/,
+        MATCH_PLUS   => qr/^(\+)$/,
+        MATCH_STAR   => qr/^(\*)$/,
+        MATCH_STATIC => qr/^([\w\-\.]+)$/,
+        MATCH_PLACE  => qr/^(:\w+)$/,
+        MATCH_ANGLE  => qr/^<(.*)>$/,
     },
     messages => {
         invalid_route    => 'Invalid route specified: %s',
@@ -46,16 +46,36 @@ sub init_router {
         $self->dump_data($config)
     ) if DEBUG;
 
-    # Fixed routes are static text, e.g. in '/user/list' both 'user' and 'list'
-    # are fixed route components.  Matched route components like ':id' 
-    # are matched in sequence through the list in $routes->{ dynamic }.  
-    # See below for what that contains.  We also maintain an index of matched
-    # components so that we can reuse the same intermediate dynamic component 
-    # for, e.g. the ':id' matching routeset in both '/user/:id/info' and 
-    # '/user/:id/contact'
-    $self->{ fixed    } = { };
-    $self->{ matched  } = [ ];
-    $self->{ matchndx } = { };
+    # Routes are split into individual slash-delimited components:
+    #   /user/list      => user, list
+    #   /user/add       => user, add
+    #   /user/:id/info  => user, :id, info
+    #   /user/:id/edit  => user, :id, edit
+    #
+    # A tree is constructed:
+    #   user
+    #     - list
+    #     - add
+    #     - :id
+    #         - info
+    #         - ban
+    #
+    # A router is built for each branch node of the tree (user and :id in
+    # the above example).  Each route set can contain a mixture of static and
+    # dynamic components.
+    #
+    # Static routes are fixed text components, e.g. user, list, add, info, ban.
+    # We can match those via a simple hash array lookup table (static).
+    #
+    # Dynamic route components like ':id' are stored in a list (dynamic) and
+    # matched in sequence.
+    #
+    # We also maintain an index of dynamic components so that we can reuse the
+    # same intermediate dynamic component for different routes, e.g. the ':id'
+    # matching component in both /user/:id/info and /user/:id/edit
+    $self->{ static   } = { };
+    $self->{ dynamic  } = [ ];
+    $self->{ matchers } = { };
 
     $self->add_routes($config->{ routes })
         if $config->{ routes };
@@ -84,20 +104,20 @@ sub add_routes {
         }
         if (ref $route eq HASH) {
             # The problem with hash arrays is that they're unordered.
-            # We allow a route to be prefixed with digits and whitespace
-            # for the purposes of ordering, e.g. "01 /route/one".  This 
-            # prefix is removed at the point of the route being added back 
-            # into the queue.  Note that this *ONLY* applies to entries in 
+            # We allow a route to be prestatic with digits and whitespace
+            # for the purposes of ordering, e.g. "01 /route/one".  This
+            # prefix is removed at the point of the route being added back
+            # into the queue.  Note that this *ONLY* applies to entries in
             # hash arrays.
             unshift(
-                @routes, 
-                map { 
+                @routes,
+                map {
                     $_->[1], $_->[2]
                 }
-                sort { 
-                    $a->[0] cmp $b->[0] 
+                sort {
+                    $a->[0] cmp $b->[0]
                 }
-                map  { 
+                map  {
                     my $key  = $_;
                     my $val  = $route->{ $key };
                     my $sort = $key;
@@ -127,12 +147,12 @@ sub add_route {
     my ($params)   = ($route =~ s/\?(.*)$//) ? $1 : '';
 
     $self->add_route_parts(
-        $route, 
+        $route,
         [
-            grep { defined && length } 
+            grep { defined && length }
             split(qr{/}, $route)
         ],
-        $endpoint, 
+        $endpoint,
     );
 }
 
@@ -154,7 +174,7 @@ sub add_route_parts {
     $self->debug("Route [$route] building matcher for [$head]") if DEBUG;
 
     if ($head =~ MATCH_MINUS) {
-        $self->debug("matched minus: $1 in $head") if DEBUG;
+        $self->debug("dynamic minus: $1 in $head") if DEBUG;
 
         # A final element of '-' is an explicit way to set some endpoint data
         return @$parts
@@ -162,7 +182,7 @@ sub add_route_parts {
             : $self->add_midpoint($endpoint);
     }
     elsif ($head =~ MATCH_PLUS) {
-        $self->debug("matched plus: $1 in $head") if DEBUG;
+        $self->debug("dynamic plus: $1 in $head") if DEBUG;
 
         # A final element of '+' is a midpoint, applying to all paths that
         # have further items following
@@ -171,7 +191,7 @@ sub add_route_parts {
             : $self->add_midpoint($endpoint);
     }
     elsif ($head =~ MATCH_STAR) {
-        $self->debug("matched star: $1 in $head") if DEBUG;
+        $self->debug("dynamic star: $1 in $head") if DEBUG;
 
         # A final element of '*' is both a midpoint and an endpoint, applying
         # to both URLs with and without further path elements
@@ -180,33 +200,33 @@ sub add_route_parts {
             : $self->add_midpoint($endpoint)
                    ->add_endpoint($endpoint);
     }
-    elsif ($head =~ MATCH_FIXED) {
-        # A fixed route element
-        $self->debug("matched fixed route part: $1 in $head") if DEBUG;
+    elsif ($head =~ MATCH_STATIC) {
+        # A static route element
+        $self->debug("dynamic static route part: $1 in $head") if DEBUG;
 
-        return $self->add_fixed_route(
-            $route, 
-            $1, $parts, 
+        return $self->add_static_route(
+            $route,
+            $1, $parts,
             $endpoint
         );
     }
     elsif ($head =~ MATCH_PLACE) {
         # A standard :name placeholder
-        $self->debug("matched placeholder: $1 in $head") if DEBUG;
+        $self->debug("dynamic placeholder: $1 in $head") if DEBUG;
 
-        return $self->add_matched_route(
-            $route, 
+        return $self->add_dynamic_route(
+            $route,
             $1, $parts,
             $endpoint
         );
     }
     elsif ($head =~ MATCH_ANGLE) {
         # An extended <type:name> placeholder
-        $self->debug("matched angled placeholder: $1 | $head") if DEBUG;
+        $self->debug("dynamic angled placeholder: $1 | $head") if DEBUG;
 
-        return $self->add_matched_route(
-            $route, 
-            $1, $parts, 
+        return $self->add_dynamic_route(
+            $route,
+            $1, $parts,
             $endpoint
         );
     }
@@ -214,21 +234,21 @@ sub add_route_parts {
     return $self->error_msg( invalid_fragment => $head, $route );
 }
 
-sub add_fixed_route {
+sub add_static_route {
     my ($self, $route, $head, $tail, $endpoint) = @_;
-    my $subset = $self->{ fixed }->{ $head } ||= $self->new_route_set;
+    my $subset = $self->{ static }->{ $head } ||= $self->new_route_set;
 
     if (@$tail) {
-        $self->debug("adding fixed intermediary for [$head]") if DEBUG;
+        $self->debug("adding static intermediary for [$head]") if DEBUG;
         return $subset->add_route_parts($route, $tail, $endpoint);
     }
     else {
-        $self->debug("adding fixed endpoint for [$head]") if DEBUG;
+        $self->debug("adding static endpoint for [$head]") if DEBUG;
         return $subset->add_endpoint($endpoint);
     }
 }
 
-sub add_matched_route {
+sub add_dynamic_route {
     my ($self, $route, $head, $tail, $endpoint) = @_;
 
     # $head can be 'foo' or ':foo', both of which are implicitly text types
@@ -242,33 +262,33 @@ sub add_matched_route {
         || return $self->error_msg( invalid => type => $type );
 
     # We want to share intermediate component.  For example, with two routes
-    # /user/:id/foo and /user/:id/bar we want to use the same dynamic rule 
+    # /user/:id/info and /user/:id/edit we want to use the same dynamic rule
     # matching component for the middle :id part.  We create a canonical
     # type:name identifier for it to accommodate differences in syntax, e.g.
-    # /user/:id/foo, /user/text:id/bar and /user/<text:id>/baz will all use
+    # /user/:id/info, /user/text:id/edit and /user/<text:id>/ban will all use
     # the same intermediate text:id component.
     my $canon   = "$type:$name";
-    my $subset  = $self->{ matchndx }->{ $canon };
+    my $subset  = $self->{ matchers }->{ $canon };
 
     # We don't already have a route set for this component so create one
     if (! $subset) {
         $self->debug("creating new subset router for [$head]") if DEBUG;
-        $subset = $self->{ matchndx }->{ $canon } = $self->new_route_set;
+        $subset = $self->{ matchers }->{ $canon } = $self->new_route_set;
         push(
-            @{ $self->{ match } }, 
+            @{ $self->{ dynamic } },
             [ $type, $name, $matcher, $subset ]
         );
     }
 
-    # If there's any more of the route left to resolve then hand it over 
+    # If there's any more of the route left to resolve then hand it over
     # to the new nested routeset for further processing.  Otherwise we set
     # the endpoint data in the current route set and return.
     if (@$tail) {
-        $self->debug("adding matched intermediary for [$head]") if DEBUG;
+        $self->debug("adding dynamic intermediary for [$head]") if DEBUG;
         return $subset->add_route_parts($route, $tail, $endpoint);
     }
     else {
-        $self->debug("adding matched endpoint for [$head]") if DEBUG;
+        $self->debug("adding dynamic endpoint for [$head]") if DEBUG;
         return $subset->add_endpoint($endpoint);
     }
 }
@@ -315,13 +335,13 @@ sub match {
     my ($part, $route, $type, $name, $match, $matcher, $subset);
 
     $self->debug(
-        "matching path: $path => ", 
+        "matching path: $path => ",
         $self->dump_data_inline(\@parts),
         " [$params] [$fragment]"
     ) if DEBUG;
 
-    # $path may be empty, e.g. for the / URL but we still want to match 
-    # endpoint data defined as /* or /- 
+    # $path may be empty, e.g. for the / URL but we still want to match
+    # endpoint data defined as /* or /-
     # The continue { } block doesn't get trigged if @parts is empty so we
     # special-case it by copying any endpoint data into $params
     if (! @parts && $self->{ endpoint }) {
@@ -331,9 +351,9 @@ sub match {
     PART: while (@parts) {
         $part = $parts[0];
 
-        if ($subset = $self->{ fixed }->{ $part }) {
+        if ($subset = $self->{ static }->{ $part }) {
             $self->debug(
-                "matched fixed part [$part]\n",
+                "dynamic static part [$part]\n",
                 "selected route subset: ",
                 $self->dump_data($subset)
             ) if DEBUG;
@@ -342,11 +362,11 @@ sub match {
             next PART;
         }
 
-        foreach $match (@{ $self->{ match } }) {
+        foreach $match (@{ $self->{ dynamic } }) {
             ($type, $name, $matcher, $subset) = @$match;
             if ($self->$matcher($name, \@parts, $params)) {
                 $self->debug(
-                    "matched dynamic part ($route) [$part]\n",
+                    "dynamic dynamic part ($route) [$part]\n",
                     "selected route subset: ", $self->dump_data($subset)
                 ) if DEBUG;
                 $self = $subset;
@@ -356,7 +376,7 @@ sub match {
         return $self->error("Invalid path: $path");
     }
     continue {
-        $self->debug("CONTINUE: [", join(', ', @parts), "]");
+        $self->debug("CONTINUE: [", join(', ', @parts), "]") if DEBUG;
         # look at endpoint if @parts is empty and midpoint if there's more to come
         my $collect  = @parts
             ? $self->{ midpoint }
@@ -408,6 +428,18 @@ sub match_path {
 }
 
 
+#-----------------------------------------------------------------------------
+# Debugging
+#-----------------------------------------------------------------------------
+
+sub debug_routes {
+    my $self = shift;
+    $self->debug("Routes:");
+    $self->debug_data( static => $self->{ static } );
+    $self->debug_data( dynamic => $self->{ dynamic } );
+
+}
+
 
 1;
 
@@ -418,10 +450,10 @@ Contentity::Router - an advanced URL routing object
 =head1 SYNOPSIS
 
     use Contentity::Router;
-    
+
     my $router = Contentity::Router->new(
         routes => [
-            # routes with fixed URLs
+            # routes with static URLs
             '/user'                     => { ... },
             '/user/search'              => { ... },
 
@@ -449,10 +481,10 @@ Contentity::Router - an advanced URL routing object
 
 =head1 DESCRIPTION
 
-This module implements a router for mapping URLs to actions, handlers, 
-metadata, or anything else you want to map URLs to. 
+This module implements a router for mapping URLs to actions, handlers,
+metadata, or anything else you want to map URLs to.
 
-Routes can be specified as fixed URLs, e.g.
+Routes can be specified as static URLs, e.g.
 
     /search
     /user/home
@@ -490,7 +522,7 @@ TODO: Typed placeholders have a default parameter of "length" (where appropriate
     /country/<text(3):iso3>             # e.g. /country/gbr
 
 Intermediate routes can be specified that match all routes under that
-prefix.  This can be used to define metadata for a section that is 
+prefix.  This can be used to define metadata for a section that is
 effectively inherited by all routes beneath that URLs.
 
     /user/+                             # e.g. /user/foo, /user/bar
@@ -526,19 +558,19 @@ or C<undef> if none of the pre-defined routes match.
 
     print $data->{ your_data };     # goes here
 
-Be aware that the router is deliberately ambivalent about leading and trailing 
-slashes and effectively ignores them.  A route can be defined as C<foo>, 
-C</foo> or C</foo/> and it will successfully match any of the URLs C<foo>, 
-C</foo> or C</foo/> (for the technically minded: the router treats slashes as 
+Be aware that the router is deliberately ambivalent about leading and trailing
+slashes and effectively ignores them.  A route can be defined as C<foo>,
+C</foo> or C</foo/> and it will successfully match any of the URLs C<foo>,
+C</foo> or C</foo/> (for the technically minded: the router treats slashes as
 nothing more than delimiters and discards any empty path segments at the start,
 middle or end of the route or URL).
 
-If a route contains a placeholder then a copy of the matched URL part will
+If a route contains a placeholder then a copy of the dynamic URL part will
 be added to the data returned by L<match()>.
 
     $router->add_route(
-        '/hello/:name' => { 
-            msg => 'hello' 
+        '/hello/:name' => {
+            msg => 'hello'
         }
     );
 
@@ -547,15 +579,15 @@ be added to the data returned by L<match()>.
     print $data->{ name };       # world
 
 The C<*> operator can be specified as the final part of a route.  Any endpoint
-data associated with the route will be added to all URLs that match the route 
+data associated with the route will be added to all URLs that match the route
 (without the C</*>) or any URL under that base part.
 
 For example, a route of C</hello/*> can define data that will be added in to
 matches for C</hello>, C</hello/> and any other URLs starting C</hello/>.
 
     $router->add_route(
-        '/hello/* => { 
-            msg => 'hello' 
+        '/hello/* => {
+            msg => 'hello'
         }
     );
 
@@ -567,12 +599,12 @@ matches for C</hello>, C</hello/> and any other URLs starting C</hello/>.
 The C<+> can be used in a similar way, except that it only matches URLs with
 some additional component.
 
-For example, a route of C</hello/+> with match any URLs starting C</hello/> 
+For example, a route of C</hello/+> with match any URLs starting C</hello/>
 but will not match the C</hello> or C</hello/> URLs.
 
-Endpoint data defined in this way is returned in addition to any other data 
-that may be defined for a particular endpoint or any other intermediate 
-midpoints.  The router will aggregate all applicable data into a single hash 
+Endpoint data defined in this way is returned in addition to any other data
+that may be defined for a particular endpoint or any other intermediate
+midpoints.  The router will aggregate all applicable data into a single hash
 array.
 
 =head1 METHODS
@@ -582,10 +614,10 @@ array.
 This is the constructor method to create a new C<Contentity::Router> object.
 
     use Contentity::Router;
-    
+
     my $router = Contentity::Router->new(
         routes => [
-            # routes with fixed URLs
+            # routes with static URLs
             '/user'                     => { ... },
             '/user/search'              => { ... },
 
@@ -610,8 +642,8 @@ Docs TODO
 
 =head2 match($url)
 
-Method to match a URL against the routes defined.  If the route matches, 
-the method returns an aggregate hash array of the endpoint data defined 
+Method to match a URL against the routes defined.  If the route matches,
+the method returns an aggregate hash array of the endpoint data defined
 for the matching route and any other intermediate matching routes.
 
 =head1 INTERNAL METHODS
@@ -624,9 +656,9 @@ for the matching route and any other intermediate matching routes.
 
 =head2 add_route_parts($route, $parts, $endpoint)
 
-=head2 add_fixed_route($route, $head, $tail, $endpoint)
+=head2 add_static_route($route, $head, $tail, $endpoint)
 
-=head2 add_matched_route($route, $head, $tail, $type, $name, $endpoint)
+=head2 add_dynamic_route($route, $head, $tail, $type, $name, $endpoint)
 
 =head2 add_midpoint(\%data)
 

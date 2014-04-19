@@ -1,0 +1,7 @@
+version: 1
+
+schemas:
+  routes:
+    tree_type:      uri
+    merge:          true
+    singleton:      true

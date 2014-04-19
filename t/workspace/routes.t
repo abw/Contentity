@@ -1,11 +1,11 @@
 #============================================================= -*-perl-*-
 #
-# t/routes.t
+# t/workspace/routes.t
 #
-# Tests for Contentity::Component::Routes which constructs a 
+# Tests for Contentity::Component::Routes which constructs a
 # Contentity::Router object to match URLs against a set of routes.
 #
-# Written by Andy Wardley, May 2013
+# Written by Andy Wardley, May 2013, updated April 2014
 #
 #========================================================================
 
@@ -15,24 +15,23 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    skip  => 'Not currently working',
-    tests => 7,
-    debug => 'Contentity::Component::Routes',
+    tests => 9,
+    debug => 'Contentity::Component::Routes Contentity::Router',
     args  => \@ARGV;
 
 use Badger::Exception trace => 1;
 use Contentity::Project;
-use Contentity::Site;
+use Contentity::Utils 'refaddr';
 
 
 #-----------------------------------------------------------------------------
 # Instantiate master project object
 #-----------------------------------------------------------------------------
 
-my $root = Bin->parent->dir( 
-    t => projects => 'golf' 
+my $root = Bin->dir(
+    test_files => projects => 'golf'
 );
-my $site = Contentity::Site->new( 
+my $site = Contentity::Project->new(
     root => $root,
 );
 
@@ -40,6 +39,10 @@ ok( $site, "created contentity project: $site" );
 
 my $routes = $site->routes;
 ok( $routes, "Got project routes: $routes" );
+
+my $routes2 = $site->routes;
+ok( $routes2, "Got project routes again: $routes2" );
+is( refaddr($routes), refaddr($routes2), 'same reference' );
 
 my $match = $site->match_route('foo');
 ok( $match, 'matched foo' );

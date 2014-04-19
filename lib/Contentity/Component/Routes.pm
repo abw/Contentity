@@ -8,7 +8,7 @@ use Contentity::Class
     accessors => 'router',
     auto_can  => 'auto_can',
     constant  => {
-        ROUTER => 'Contentity::Router'
+        ROUTER => 'Contentity::Router',
     };
 
 
@@ -48,4 +48,3 @@ sub auto_can {
 
 
 1;
-
