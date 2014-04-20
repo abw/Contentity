@@ -16,7 +16,7 @@ use Contentity::Class
     codecs    => 'html',
     exports   => {
         any => q{
-            Colour
+            Colour Path
             debug_caller strip_hash strip_hash_undef
             module_name
             integer random
@@ -31,6 +31,7 @@ use Contentity::Class
         }
     };
 use Contentity::Colour  'Colour';
+use Contentity::Path    'Path';
 
 
 #-----------------------------------------------------------------------------

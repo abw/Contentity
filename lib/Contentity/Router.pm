@@ -1,12 +1,13 @@
 package Contentity::Router;
 
 use Contentity::Class
-    version     => 0.01,
-    debug       => 0,
-    base        => 'Contentity::Base',
-    constants   => 'ARRAY HASH',
-    accessors   => 'routes',
-    constant    => {
+    version   => 0.01,
+    debug     => 0,
+    base      => 'Contentity::Base',
+    constants => 'ARRAY HASH SLASH',
+    accessors => 'routes midpoint endpoint',
+    utils     => 'Path join_uri extend',
+    constant  => {
         MATCH_MINUS  => qr/^(\-)$/,
         MATCH_PLUS   => qr/^(\+)$/,
         MATCH_STAR   => qr/^(\*)$/,
@@ -21,10 +22,10 @@ use Contentity::Class
     };
 
 our $TYPES = {
-    int  => \&match_int,
-    word => \&match_word,
-    text => \&match_text,
-    path => \&match_path,
+    int  => \&matcher_int,
+    word => \&matcher_word,
+    text => \&matcher_text,
+    path => \&matcher_path,
 };
 our $DEFAULT_TYPE = 'text';
 our $INDENT_WIDTH = 2;
@@ -104,7 +105,7 @@ sub add_routes {
         }
         if (ref $route eq HASH) {
             # The problem with hash arrays is that they're unordered.
-            # We allow a route to be prestatic with digits and whitespace
+            # We allow a route to be prefixed with digits and whitespace
             # for the purposes of ordering, e.g. "01 /route/one".  This
             # prefix is removed at the point of the route being added back
             # into the queue.  Note that this *ONLY* applies to entries in
@@ -121,7 +122,8 @@ sub add_routes {
                     my $key  = $_;
                     my $val  = $route->{ $key };
                     my $sort = $key;
-                    $key =~ s/^\d+\s+//g;
+                    $val->{_route_} = $key;
+                    $key =~ s/^(\d+)\s+//g;
                     [$sort, $key, $val]
                 }
                 keys %$route
@@ -321,35 +323,44 @@ sub add_midpoint {
     return $self;
 }
 
+sub point_data {
+    my $self = shift;
+    return extend({ }, $self->midpoint, $self->endpoint, @_);
+}
+
 
 #-----------------------------------------------------------------------------
 # matcher
 #-----------------------------------------------------------------------------
 
 sub match {
-    my ($self, $path) = @_;
-    my ($fragment) = ($path =~ s/\#(.*)$//) ? $1 : '';
-    my ($reqparms) = ($path =~ s/\?(.*)$//) ? $1 : '';
-    my @parts      = grep { defined && length } split(qr{/}, $path);
-    my $params     = { };
-    my ($part, $route, $type, $name, $match, $matcher, $subset);
+    my ($self, $url) = @_;
+    my ($fragment) = ($url =~ s/\#(.*)$//) ? $1 : '';
+    my ($reqparms) = ($url =~ s/\?(.*)$//) ? $1 : '';
+    my $path       = Path($url);
+    my $todo       = $path->todo;
+    my $data       = { };
+    my (@matched, $part, $route, $type, $name, $dynamic, $matcher, $subset);
 
     $self->debug(
-        "matching path: $path => ",
-        $self->dump_data_inline(\@parts),
-        " [$params] [$fragment]"
+        "matching path: $url => ",
+        $self->dump_data_inline(\@$todo),
+        " [$data] [$fragment]"
     ) if DEBUG;
 
     # $path may be empty, e.g. for the / URL but we still want to match
     # endpoint data defined as /* or /-
     # The continue { } block doesn't get trigged if @parts is empty so we
     # special-case it by copying any endpoint data into $params
-    if (! @parts && $self->{ endpoint }) {
-        $params = { %{ $self->{ endpoint } } };
+    if (! $path->more && $self->{ endpoint }) {
+        extend($data, $self->{ endpoint })
     }
 
-    PART: while (@parts) {
-        $part = $parts[0];
+    PART: while ($path->more) {
+        $part = $path->next;
+
+        # TODO: if it's zero-length and the last item then it indicates a
+        # trailing slash?
 
         if ($subset = $self->{ static }->{ $part }) {
             $self->debug(
@@ -358,13 +369,14 @@ sub match {
                 $self->dump_data($subset)
             ) if DEBUG;
             $self = $subset;
-            shift @parts;
+            $path->take_next;
             next PART;
         }
 
-        foreach $match (@{ $self->{ dynamic } }) {
-            ($type, $name, $matcher, $subset) = @$match;
-            if ($self->$matcher($name, \@parts, $params)) {
+        foreach $dynamic (@{ $self->{ dynamic } }) {
+            ($type, $name, $matcher, $subset) = @$dynamic;
+
+            if ($self->$matcher($name, $path, $data)) {
                 $self->debug(
                     "dynamic dynamic part ($route) [$part]\n",
                     "selected route subset: ", $self->dump_data($subset)
@@ -373,20 +385,66 @@ sub match {
                 next PART;
             }
         }
-        return $self->error("Invalid path: $path");
+        last;
     }
     continue {
-        $self->debug("CONTINUE: [", join(', ', @parts), "]") if DEBUG;
+        $self->debug("CONTINUE: [", $path->todo, "]") if DEBUG;
         # look at endpoint if @parts is empty and midpoint if there's more to come
-        my $collect  = @parts
+        my $collect  = $path->more
             ? $self->{ midpoint }
             : $self->{ endpoint };
         if ($collect) {
-            @$params{ keys %$collect } = values %$collect;
+            extend($data, $collect);
         }
     }
 
-    return $params;
+    return {
+        path => $path,
+        data => $data,
+    };
+}
+
+sub match_all {
+    my $self   = shift;
+    my $result = $self->match(@_);
+    my $path   = $result->{ path };
+    if ($path->more) {
+        # not a complete path match
+        return $self->decline_msg( invalid => path => $path->path_todo );
+    }
+    return $result;
+}
+
+sub match_data {
+    shift->match(@_)->{ data };
+}
+
+sub match_all_data {
+    shift->match_all(@_)->{ data };
+}
+
+
+#-----------------------------------------------------------------------------
+# Expansion
+#-----------------------------------------------------------------------------
+
+sub static_route_prefixes {
+    my $self   = shift;
+    my $static = $self->{ static };
+    my $routes = { };
+
+    foreach my $key (keys %$static) {
+        my $route = $static->{ $key };
+        my $data  = $self->point_data($route->point_data);
+        $routes->{ $key } = $data;
+
+        my $kids = $route->static_route_prefixes;
+        while (my ($k, $v) = each %$kids) {
+            $routes->{ join_uri($key, $k) } = $self->point_data($v);
+        }
+    }
+
+    return $routes;
 }
 
 
@@ -394,36 +452,36 @@ sub match {
 # Part matchers
 #-----------------------------------------------------------------------------
 
-sub match_int {
+sub matcher_int {
     my ($self, $name, $path, $params) = @_;
 
-    if ($path->[0] =~ /^\d+$/) {
-        $params->{ $name } = shift @$path;
+    if ($path->next =~ /^\d+$/) {
+        $params->{ $name } = $path->take_next;
         return $params;
     }
 }
 
-sub match_word {
+sub matcher_word {
     my ($self, $name, $path, $params) = @_;
 
-    if ($path->[0] =~ /^\w+$/) {
-        $params->{ $name } = shift @$path;
+    if ($path->next =~ /^\w+$/) {
+        $params->{ $name } = $path->take_next;
         return $params;
     }
 }
 
-sub match_text {
+sub matcher_text {
     my ($self, $name, $path, $params) = @_;
 
-    if ($path->[0] =~ /^[^\/]+$/) {
-        $params->{ $name } = shift @$path;
+    if ($path->next =~ /^[^\/]+$/) {
+        $params->{ $name } = $path->take_next;
         return $params;
     }
 }
 
-sub match_path {
+sub matcher_path {
     my ($self, $name, $path, $params) = @_;
-    $params->{ $name } = join('/', splice @$path);
+    $params->{ $name } = $path->take_all;
     return $params;
 }
 
