@@ -1,27 +1,22 @@
 package Contentity::Component::Context;
 
-use Badger::URL;
-#use Badger::Web::Path;
 use Badger::Debug 'debug_callers';
-
-use Plack::Request;
+use Plack::Request;    # TODO: Contentity::Request
 use Contentity::Class
     version     => 0.1,
     debug       => 0,
     import      => 'class',
     base        => 'Contentity::Component',
-    accessors   => 'request path url status headers',
+    accessors   => 'request base path url status headers',
     mutators    => 'content_type',
-    utils       => 'is_object weaken extend Path',
+    utils       => 'is_object weaken extend Path URL',
     constants   => 'HASH ARRAY :http_accept',
     alias       => {
         output  => \&content,
     },
     constant    => {
         REQUEST_MODULE => 'Plack::Request',
-        WEB_PATH        => 'Badger::Web::Path',
-        WEB_URL         => 'Badger::URL',
-        SINGLETON       => 0,
+        SINGLETON      => 0,
     };
 
 sub init_component {
@@ -36,13 +31,24 @@ sub init_context {
     my $space   = $self->workspace;
     my $env     = $config->{ env } || return $self->error_msg( missing => 'env' );
     my $request = $self->new_request($env);
+    my $base    = $request->script_name;
     my $path    = Path($request->path_info);
+    #my $uri     = $request->request_uri;
+
+    # Our path knows the different between what's been done and what's left todo
+    # We just need to prime it so that the Location part (which Plack puts in
+    # SCRIPT_NAME, apparently) is put into the part that's already been done.
+    $path->relative_to($base);
+
+    $self->debug_data( env => $env ) if DEBUG or 1;
+
+    #$self->debug("uri: $uri") if DEBUG or 1;
 
     $self->{ env } = $env;
     weaken $self->{ env };
 
-    #$self->{ url          } = $self->WEB_URL->new($request->uri);
-    #$self->{ path         } = $self->WEB_PATH->new($path);
+    $self->{ base         } = $base;
+    $self->{ url          } = URL($base);
     $self->{ path         } = $path;
     $self->{ request      } = $request;
     $self->{ data         } = $config->{ data } || { };
@@ -50,6 +56,7 @@ sub init_context {
     $self->{ options      } = { };
     $self->{ headers      } = { };
     $self->{ content      } = [ ];
+    # TODO: just set type?
     $self->{ content_type } = 'text/html; charset="utf-8"';
     $self->{ status       } = 200;
 
@@ -82,6 +89,8 @@ sub response {
         }
         if ($value = delete $params->{ type }) {
             # TODO: allow simple type (e.g. json) mapping to content_type
+            # NOTE: handled at a higher level (App) but this might be the
+            # better place for it?
             $response->content_type($value);
         }
         if (%$params) {

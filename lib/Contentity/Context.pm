@@ -1,7 +1,7 @@
 package Contentity::Context;
 
 # DEPRECATED
-# TODO - move to Contentity::Web::Context
+# TODO - move to Contentity::Component::Context
 
 
 use Badger::URL;

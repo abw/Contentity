@@ -56,6 +56,7 @@ sub call_app {
 
     $self->debug("calling app: $app") if DEBUG or 1;
 
+    # TODO: this isn't right - it assume a Plack app
     return $app->(
         $self->context->env
     );
@@ -70,9 +71,67 @@ sub request {
     shift->context->request;
 }
 
+sub uri {
+    my $self = shift;
+    my $base = $self->context->base;
+    return @_
+      ? resolve_uri($base, @_)
+      : $base;
+}
+
+sub url {
+    # TODO: more robust
+    shift->context->url;
+}
+
+sub script_name {
+    my $self = shift;
+    my $base = $self->request->script_name;
+    return @_
+        ? join_uri($base, @_)
+        : $base;
+}
+
+
+#-----------------------------------------------------------------------
+# Path
+#-----------------------------------------------------------------------
+
 sub path {
     shift->context->path;
 }
+
+sub path_done {
+    shift->path->path_done;
+}
+
+sub path_todo {
+    shift->path->path_todo;
+}
+
+sub path_next {
+    shift->path->next;
+}
+
+sub path_take_next {
+    shift->path->take_next;
+}
+
+sub XXclear_path_done {
+    my $done = shift->path_done;
+    @$done = ();
+}
+
+sub XXshift_path_todo {
+    my $self = shift;
+    my $todo = $self->path->todo;
+    return shift @$todo;
+}
+
+
+#-----------------------------------------------------------------------------
+# Params
+#-----------------------------------------------------------------------------
 
 sub params {
     shift->request->parameters;
@@ -84,14 +143,6 @@ sub param {
 
 sub param_list {
     shift->params->get_all(@_);
-}
-
-sub script_name {
-    my $self = shift;
-    my $base = $self->request->script_name;
-    return @_
-        ? join_uri($base, @_)
-        : $base;
 }
 
 

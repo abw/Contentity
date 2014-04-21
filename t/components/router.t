@@ -14,7 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 31,
+    tests => 39,
     debug => 'Contentity::Router',
     args  => \@ARGV;
 
@@ -199,8 +199,8 @@ ok( ! $router->match_data('/user/help')->{ title },
 # test router with very simple routes
 #-----------------------------------------------------------------------------
 
-
 $router = ROUTER->new(
+    implicit_star => 1,
     routes => {
         '/blurb' => {
             app => 'content',
@@ -211,9 +211,28 @@ ok( $router, 'created /blurb router' );
 ok( $router->match('/blurb/yada/blah/'), 'matched longer /blurb' );
 ok( ! $router->match_all('/blurb/yada/blah/'), 'did not match all of longer /blurb' );
 is( $router->reason, 'Invalid path specified: yada/blah/', 'gave a good reason' );
+
+
+#-----------------------------------------------------------------------------
+# Check that router will use an existing path
+#-----------------------------------------------------------------------------
+
+use Contentity::Utils 'Path';
+
+my $path = Path('/foo/bar/blurb/yada');
+ok( $path, 'created path' );
+is( $path->take_next(2), 'foo/bar', 'took foo/bar from path' );
+is( $path->done, 'foo/bar', 'foo/bar is done' );
+is( $path->todo, 'blurb/yada', 'blurb/yada is todo' );
+
+my $match = $router->match($path);
+ok( $match, 'router matched path' );
+is( $path->done, 'foo/bar/blurb', 'foo/bar/blurb is done' );
+is( $path->todo, 'yada', 'yada is todo' );
+is( $match->{ data }->{ app }, 'content', 'matched content app' );
+#$router->debug_data( match => $match );
+
 #print $router->reason, "\n";
-
-
 #Contentity->debug_data( data =>)
 
 __END__
