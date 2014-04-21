@@ -3,11 +3,12 @@ use ExtUtils::MakeMaker;
 my %opts = (
     NAME         => 'Contentity',
     VERSION      => 0.01,
-    PMLIBDIRS    => [ 'lib' ], 
+    PMLIBDIRS    => [ 'lib' ],
     PREREQ_PM    => {
         Badger   => 0.092,
-        'JSON'   => 2.59,
-        'YAML'   => 0.84,
+        'JSON'     => 2.59,
+        'YAML'     => 0.84,
+      # 'IPC::Run' => 0,
     },
     dist         => {
         COMPRESS => 'gzip',
@@ -24,4 +25,3 @@ if ($ExtUtils::MakeMaker::VERSION >= 5.43) {
 }
 
 WriteMakefile( %opts );
-

@@ -28,6 +28,7 @@ use Contentity::Class
             ordinal ordinate commas trim
             find_program prompt confirm floor
             red green blue cyan magenta yellow black white grey dark bold
+            cmd
         }
     };
 use Contentity::Colour  'Colour';
@@ -462,6 +463,34 @@ sub confirm {
     return $reply =~ /^y(es)?$/i;
 }
 
+
+sub cmd {
+    my $err = system(@_);
+
+    if ($err != 0) {
+        # more robust analysis of failures, as and when we want it.
+        if ($? == -1) {
+            die "Failed to execute command '$_[0]': $!\n";
+        }
+        elsif ($? & 127) {
+            die "Command '$_[0]' died with signal ", ($? & 127), " : $!\n";
+        }
+        else {
+            die "Command '$_[0]' exited with value: ", $? >> 8, "\n";
+        }
+    };
+
+    return 1;
+}
+
+#use IPC::Run 'run';
+#sub filter_cmd {
+#    my ($input, @cmd) = @_;
+#    my ($output, $error);
+#    run(\@cmd, \$input, \$output, \$error);
+#    die $error if $error;
+#    return $output;
+#}
 
 
 #-----------------------------------------------------------------------------

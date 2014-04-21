@@ -13,7 +13,7 @@ use Badger
     Debug => [import => ':all'];
 
 use Badger::Test
-    tests => 25,
+    tests => 34,
     debug => 'Contentity::Path',
     args  => \@ARGV;
 

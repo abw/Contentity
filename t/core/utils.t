@@ -27,7 +27,7 @@ use Contentity::Utils 'list_each hash_each H Timestamp';
 my $list = [ 'zero', 'one', 'two' ];
 
 list_each(
-    $list, 
+    $list,
     sub {
         my ($list, $key, $value) = @_;
         $list->[$key] = "#$key:$value";
@@ -43,16 +43,16 @@ is( join(',', @$list), '#0:zero,#1:one,#2:two', 'list_each()' );
 my $hash = { a => 'alpha', b => 'bravo', c => 'charlie' };
 
 hash_each(
-    $hash, 
+    $hash,
     sub {
         my ($hash, $key, $value) = @_;
         $hash->{$key} = "#$key:$value";
     }
 );
 
-is( 
-    join(',', map { $hash->{$_} } sort keys %$hash), 
-    '#a:alpha,#b:bravo,#c:charlie', 'hash_each()' 
+is(
+    join(',', map { $hash->{$_} } sort keys %$hash),
+    '#a:alpha,#b:bravo,#c:charlie', 'hash_each()'
 );
 
 #-----------------------------------------------------------------------------
@@ -78,10 +78,10 @@ $html = H(
     [ li => 'Two' ],
     [ li => 'Three' ],
 );
-is( 
-    $html, 
-    q{<ul class="menu"><li>One</li><li>Two</li><li>Three</li></ul>}, 
-    'html menu generation' 
+is(
+    $html,
+    q{<ul class="menu"><li>One</li><li>Two</li><li>Three</li></ul>},
+    'html menu generation'
 );
 
 is (
@@ -99,3 +99,34 @@ use Contentity::Utils 'Colour';
 
 my $orange = Colour('#ff7f00');
 ok( $orange, "got orange: $orange" );
+
+
+
+__END__
+#-----------------------------------------------------------------------------
+# cmd()
+#-----------------------------------------------------------------------------
+
+use Contentity::Utils 'cmd filter_cmd';
+
+cmd( echo => 'hello world' );
+my $output = filter_cmd(
+    "some text\nmore text\nblah de blah", wc => '-l' );
+print "output: $output\n";
+
+my $input = <<EOF;
+<html>
+  <head>
+    <title>Example</title>
+  </head>
+  <body>
+    Hello World!
+  </body>
+</html>
+EOF
+
+my $styled = filter_cmd(
+    $input, highlights => -s => 'source.html'
+);
+
+print "styled: $styled\n";

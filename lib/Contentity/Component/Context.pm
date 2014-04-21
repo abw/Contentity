@@ -12,7 +12,7 @@ use Contentity::Class
     base        => 'Contentity::Component',
     accessors   => 'request path url status headers',
     mutators    => 'content_type',
-    utils       => 'is_object weaken extend',
+    utils       => 'is_object weaken extend Path',
     constants   => 'HASH ARRAY :http_accept',
     alias       => {
         output  => \&content,
@@ -36,7 +36,7 @@ sub init_context {
     my $space   = $self->workspace;
     my $env     = $config->{ env } || return $self->error_msg( missing => 'env' );
     my $request = $self->new_request($env);
-    my $path    = $request->path_info;
+    my $path    = Path($request->path_info);
 
     $self->{ env } = $env;
     weaken $self->{ env };
@@ -321,7 +321,7 @@ sub delete_data {
 
 1;
 __END__
-
+==
 #-----------------------------------------------------------------------------
 # Runtime processing options, e.g. 'debug', 'verbose', 'json', etc.
 #-----------------------------------------------------------------------------
