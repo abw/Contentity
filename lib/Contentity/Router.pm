@@ -8,12 +8,13 @@ use Contentity::Class
     accessors => 'routes midpoint endpoint',
     utils     => 'Path join_uri extend',
     constant  => {
-        MATCH_MINUS  => qr/^(\-)$/,
-        MATCH_PLUS   => qr/^(\+)$/,
-        MATCH_STAR   => qr/^(\*)$/,
-        MATCH_STATIC => qr/^([\w\-\.]+)$/,
-        MATCH_PLACE  => qr/^(:\w+)$/,
-        MATCH_ANGLE  => qr/^<(.*)>$/,
+        IMPLICIT_STAR => 0,              # TODO: make this configurable
+        MATCH_MINUS   => qr/^(\-)$/,
+        MATCH_PLUS    => qr/^(\+)$/,
+        MATCH_STAR    => qr/^(\*)$/,
+        MATCH_STATIC  => qr/^([\w\-\.]+)$/,
+        MATCH_PLACE   => qr/^(:\w+)$/,
+        MATCH_ANGLE   => qr/^<(.*)>$/,
     },
     messages => {
         invalid_route    => 'Invalid route specified: %s',
@@ -77,6 +78,7 @@ sub init_router {
     $self->{ static   } = { };
     $self->{ dynamic  } = [ ];
     $self->{ matchers } = { };
+    $self->{ implicit } = $config->{ implicit_star } // $self->IMPLICIT_STAR;
 
     $self->add_routes($config->{ routes })
         if $config->{ routes };
@@ -245,6 +247,11 @@ sub add_static_route {
         return $subset->add_route_parts($route, $tail, $endpoint);
     }
     else {
+        if ($self->{ implicit }) {
+            # Assumes that /user is the same thing as /user/*
+            $self->debug("adding implicit * on $route => $route/*") if DEBUG;
+            $subset->add_midpoint($endpoint);
+        }
         $self->debug("adding static endpoint for [$head]") if DEBUG;
         return $subset->add_endpoint($endpoint);
     }
@@ -334,18 +341,15 @@ sub point_data {
 #-----------------------------------------------------------------------------
 
 sub match {
-    my ($self, $url) = @_;
-    my ($fragment) = ($url =~ s/\#(.*)$//) ? $1 : '';
-    my ($reqparms) = ($url =~ s/\?(.*)$//) ? $1 : '';
-    my $path       = Path($url);
-    my $todo       = $path->todo;
-    my $data       = { };
+    my $self = shift;
+    my $path = Path(@_);
+    my $todo = $path->todo;
+    my $data = { };
     my (@matched, $part, $route, $type, $name, $dynamic, $matcher, $subset);
 
     $self->debug(
-        "matching path: $url => ",
-        $self->dump_data_inline(\@$todo),
-        " [$data] [$fragment]"
+        "matching path: $path => ",
+        $self->dump_data_inline(\@$todo)
     ) if DEBUG;
 
     # $path may be empty, e.g. for the / URL but we still want to match
