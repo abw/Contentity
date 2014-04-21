@@ -1,4 +1,4 @@
-package Contentity::App::Dynamic;
+package Contentity::Web::App::Dynamic;
 
 # Oh dear, this is a mess.  The problem is that we're trying to map a URL like
 # /cog/css onto the templates/static/css directory.  Sounds easy.  The problem
@@ -40,7 +40,7 @@ package Contentity::App::Dynamic;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::App::Content',
+    base      => 'Contentity::Web::App::Content',
     accessors => 'uri_prefix uri_match source_vfs output_dir output_vfs',
     utils     => 'VFS join_uri',
     constants => 'SLASH',

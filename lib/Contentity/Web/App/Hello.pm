@@ -1,8 +1,8 @@
-package Contentity::App::Hello;
+package Contentity::Web::App::Hello;
 
 use Contentity::Class
     debug   => 0,
-    base    => 'Contentity::App';
+    base    => 'Contentity::Web::App';
 
 
 sub run {

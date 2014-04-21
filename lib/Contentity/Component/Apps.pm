@@ -8,7 +8,7 @@ use Contentity::Class
     constant  => {
         FACTORY_ITEM => 'app',
         FACTORY_TYPE => 'apps',
-        FACTORY_PATH => 'Contentity(X)::App',
+        FACTORY_PATH => 'Contentity::Web::App Contentity::App',
         # Hmmm... I don't think we should cache app instances... what if we
         # have different instances of the same app running in different
         # locations?

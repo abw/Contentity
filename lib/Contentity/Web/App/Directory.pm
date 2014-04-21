@@ -1,9 +1,9 @@
-package Contentity::App::Directory;
+package Contentity::Web::App::Directory;
 
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::App',
+    base      => 'Contentity::Web::App',
     accessors => 'root template index vfs',
     constants => ':html :http_status SLASH BLANK TRUE FALSE',
     utils     => 'extend join_uri VFS',

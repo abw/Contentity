@@ -1,9 +1,9 @@
-package Contentity::App::Content;
+package Contentity::Web::App::Content;
 
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    base      => 'Contentity::App::Directory',
+    base      => 'Contentity::Web::App::Directory',
     accessors => 'vfs',
     constants => ':html SLASH TRUE FALSE',
     constant  => {
