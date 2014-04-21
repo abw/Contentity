@@ -9,6 +9,9 @@ use Contentity::Class
     utils     => 'weaken',
     base      => 'Badger::Base',
     constants => 'SPACE',
+    constant    => {
+        IN_BASE_CLASS => 'in base class',
+    },
     messages  => {
         invalid_in      => "Invalid %s specified: '%s' in %s",
         invalid_in_item => "Invalid %s specified: '%s' in %s: %s",
@@ -70,6 +73,19 @@ sub dbg {
     $self->debug(@_);
 }
 
+
+sub not_in_base_class {
+    shift->not_implemented(IN_BASE_CLASS);
+}
+
+sub module_source_file {
+    my $self = shift;
+    my $class = ref $self || $self;
+    my $file  = $class;
+    $file =~ s/::/\//g;
+    $file .= '.pm';
+    return $INC{$file};
+}
 
 
 1;

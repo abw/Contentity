@@ -1,6 +1,7 @@
 package Contentity::Context;
 
 # DEPRECATED
+# TODO - move to Contentity::Web::Context
 
 
 use Badger::URL;
@@ -99,7 +100,7 @@ sub response {
         # update existing response with new params
         my $params = Badger::Utils::params(@_);
         my ($key, $value);
-        
+
         foreach $key (qw{ status redirect }) {
             if ($value = delete $params->{ $key }) {
                 $response->$key($value);
@@ -168,9 +169,9 @@ sub accept {
 sub accept_map {
     my $self = shift;
     return $self->{ accept_map } ||= {
-        map { 
-            my $x = $ACCEPT_TYPES->{ $_ }; 
-            $x ? ($x => $_) : () 
+        map {
+            my $x = $ACCEPT_TYPES->{ $_ };
+            $x ? ($x => $_) : ()
         }
         @{ $self->request->accept }
     }

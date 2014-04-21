@@ -6,7 +6,6 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base',
     constant  => {
-        IN_BASE_CLASS    => 'in base class',
         PROJECT_MODULE   => 'Contentity::Project',
         ROOT_CONFIG_ITEM => 'root',
         SITE_CONFIG_ITEM => 'site',
@@ -20,11 +19,11 @@ use Contentity::Class
 #-----------------------------------------------------------------------------
 
 sub handle {
-    shift->not_implemented(IN_BASE_CLASS);
+    shift->not_in_base_class;
 }
 
 sub handle_app {
-    shift->not_implemented(IN_BASE_CLASS);
+    shift->not_in_base_class;
 }
 
 
