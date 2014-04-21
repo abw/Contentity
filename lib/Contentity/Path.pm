@@ -28,6 +28,8 @@ sub new {
 
     # strip any leading and/or trailing slashes
     for ($copy) {
+        s/\#(.*)$//;    # remove any fragment
+        s/\?(.*)$//;    # remove any query params
         s[^/][] && $abs++;
         s[/$][] && $dir++;
     }
@@ -44,6 +46,17 @@ sub new {
     );
 }
 
+sub relative_to {
+    my $self = shift;
+    my $base = join(SLASH, grep { defined($_) && length($_) } @_);
+
+    # strip any leading and/or trailing slashes
+    for ($base) {
+        s[^/][];
+        s[/$][];
+    }
+    unshift(@{ $self->done }, split('/', $base));
+}
 
 sub next {
     $_[0]->{ todo }->[0];
@@ -53,18 +66,21 @@ sub more {
     scalar @{ $_[0]->{ todo } };
 }
 
-
 sub take_next {
     my $self = shift;
+    my $n    = shift || 1;
     my $done = $self->{ done };
     my $todo = $self->{ todo };
+    my (@items, $item);
 
-    if (@$todo) {
-        my $item = shift @$todo;
+    while (@$todo && $n-- > 0) {
+        $item = shift @$todo;
         push(@$done, $item);
-        return $item;
+        push(@items, $item);
     }
-    return undef;
+    return wantarray
+        ? @items
+        : join(SLASH, @items);
 }
 
 sub take_all {
@@ -78,7 +94,6 @@ sub take_all {
     $path .= SLASH if $self->dir;
     return $path;
 }
-
 
 sub path_done {
     my $self = shift;
