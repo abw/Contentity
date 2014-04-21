@@ -46,7 +46,7 @@ is( refaddr($routes), refaddr($routes2), 'same reference' );
 
 my $match = $site->match_route('foo');
 ok( $match, 'matched foo' );
-is( $match->{ title }, 'The Foo Page', 'got the foo page title' );
+is( $match->{ data }->{ title }, 'The Foo Page', 'got the foo page title' );
 
 $site->add_route(
     '/user/:id' => {
@@ -56,7 +56,7 @@ $site->add_route(
 
 $match = $site->match_route('/user/abw');
 ok( $match, 'matched /user/abw' );
-is( $match->{ uri }, 'some.user.info', 'got the /user/abw uri' );
-is( $match->{ id  }, 'abw', 'got the /user/abw user id' );
+is( $match->{ data }->{ uri }, 'some.user.info', 'got the /user/abw uri' );
+is( $match->{ data }->{ id  }, 'abw', 'got the /user/abw user id' );
 
 #print $project->router->dump;
