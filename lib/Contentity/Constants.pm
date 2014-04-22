@@ -20,6 +20,9 @@ BEGIN {
     @deployment = qw(
         DEVELOPMENT PRODUCTION
     );
+    @content_types = qw(
+        TEXT HTML CSS JS JSON XML
+    );
 }
 
 use utf8;
@@ -77,6 +80,7 @@ use Badger::Class
         @status,
         @mutate,
         @deployment,
+        @content_types,
     },
     exports  => {
         any  => 'COMPONENT MIDDLEWARE',
@@ -85,6 +89,7 @@ use Badger::Class
             components      => \@components,
             mutate          => \@mutate,
             deployment      => \@deployment,
+            content_types   => \@content_types,
             timestamp       => 'NULL_DATE NULL_TIME NULL_STAMP LAST_TIME',
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT ALPHA_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
