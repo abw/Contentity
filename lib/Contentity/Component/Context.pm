@@ -40,7 +40,7 @@ sub init_context {
     # SCRIPT_NAME, apparently) is put into the part that's already been done.
     $path->relative_to($base);
 
-    $self->debug_data( env => $env ) if DEBUG or 1;
+    $self->debug_data( env => $env ) if DEBUG;
 
     #$self->debug("uri: $uri") if DEBUG or 1;
 
@@ -65,10 +65,58 @@ sub init_context {
     return $self;
 }
 
+
+#-----------------------------------------------------------------------
+# Context data
+#-----------------------------------------------------------------------
+
+sub data {
+    my $self = shift;
+    my $data = $self->{ data };
+
+    if (@_ == 1) {
+        return $self->get(@_);
+    }
+
+    if (@_ > 1) {
+        $self->set(@_);
+    }
+
+    return $data;
+}
+
+sub get {
+    my ($self, $name) = @_;
+    return $self->{ data } ->{ $name };
+}
+
+
+sub set {
+    my $self = shift;
+    extend($self->{ data }, @_);
+    return $self;
+}
+
+sub delete_data {
+    my ($self, $name) = @_;
+    return delete $self->{ data }->{ $name };
+}
+
+
+
+#-----------------------------------------------------------------------------
+# Request
+#-----------------------------------------------------------------------------
+
 sub new_request {
     my $self = shift;
     return $self->REQUEST_MODULE->new(@_);
 }
+
+
+#-----------------------------------------------------------------------------
+# Response
+#-----------------------------------------------------------------------------
 
 sub response {
     my $self     = shift;
@@ -88,10 +136,12 @@ sub response {
             $response->body($value);
         }
         if ($value = delete $params->{ type }) {
-            # TODO: allow simple type (e.g. json) mapping to content_type
-            # NOTE: handled at a higher level (App) but this might be the
-            # better place for it?
-            $response->content_type($value);
+            # The content type can be an alias for a definition in content_types.yaml
+            my $ctype   = $self->workspace->content_type($value) || $value;
+            #    || return $self->error_msg( invalid => 'content type' => $value );
+            $self->debug("got content type: $value => $ctype") if DEBUG;
+
+            $response->content_type($ctype);
         }
         if (%$params) {
             $self->error("Invalid response parameters: ", $self->dump_data($params));
@@ -122,6 +172,23 @@ sub content {
     return $content;
 }
 
+
+#-----------------------------------------------------------------------------
+# Cookies
+#-----------------------------------------------------------------------------
+
+
+sub get_cookie {
+    my ($self, $name) = @_;
+    return $self->request->cookies->{ $name };
+}
+
+sub set_cookie {
+    my ($self, $name, $value) = @_;
+    # TODO: handle case where $value is a hash ref and has an 'expires'
+    # value like '3 hours' which we need to convert to an epoch time
+    return $self->response->cookies->{ $name } = $value;
+}
 
 
 #-----------------------------------------------------------------------------
@@ -274,12 +341,6 @@ sub parse_accept {
 }
 
 
-
-
-#-----------------------------------------------------------------------
-# Response handling
-#-----------------------------------------------------------------------
-
 #-----------------------------------------------------------------------------
 # Environment
 #-----------------------------------------------------------------------------
@@ -290,42 +351,6 @@ sub env {
         : $_[0]->{ env };
 }
 
-
-#-----------------------------------------------------------------------
-# Context data
-#-----------------------------------------------------------------------
-
-sub data {
-    my $self = shift;
-    my $data = $self->{ data };
-
-    if (@_ == 1) {
-        return $self->get(@_);
-    }
-
-    if (@_ > 1) {
-        $self->set(@_);
-    }
-
-    return $data;
-}
-
-sub get {
-    my ($self, $name) = @_;
-    return $self->{ data } ->{ $name };
-}
-
-
-sub set {
-    my $self = shift;
-    extend($self->{ data }, @_);
-    return $self;
-}
-
-sub delete_data {
-    my ($self, $name) = @_;
-    return delete $self->{ data }->{ $name };
-}
 
 
 1;

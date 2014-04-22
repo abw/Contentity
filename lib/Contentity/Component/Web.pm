@@ -4,7 +4,7 @@ use Contentity::Class
     version   => 0.02,
     debug     => 0,
     base      => 'Contentity::Component Contentity::Plack::Component',
-    constants => 'BLANK :http_status',
+    constants => 'BLANK :http_status :content_types',
     accessors => 'env context',
     utils     => 'join_uri',
     alias     => {
@@ -101,22 +101,6 @@ sub path {
     shift->context->path;
 }
 
-sub path_done {
-    shift->path->path_done;
-}
-
-sub path_todo {
-    shift->path->path_todo;
-}
-
-sub path_next {
-    shift->path->next;
-}
-
-sub path_take_next {
-    shift->path->take_next;
-}
-
 sub XXclear_path_done {
     my $done = shift->path_done;
     @$done = ();
@@ -146,86 +130,8 @@ sub param_list {
 }
 
 
-#-----------------------------------------------------------------------
-# Response
-#-----------------------------------------------------------------------
-
-sub response {
-    shift->context->response(@_);
-}
-
-sub response_type {
-    my $self    = shift;
-    my $type    = shift;
-    my $params  = _params(@_);
-    my $ctype   = $self->workspace->content_type($type)
-        || return $self->error_msg( invalid => 'content type' => $type );
-
-    $params->{ type } = $ctype;
-    $self->debug_data("$type content type: $ctype", $params) if DEBUG;
-
-    return $self->response($params);
-}
-
-sub response_type_content {
-    my $self    = shift;
-    my $type    = shift;
-    my $content = join(BLANK, @_);
-    return $self->response_type(
-        $type, content => $content
-    );
-}
-
-sub send_text {
-    shift->response_type_content( text => @_ );
-}
-
-sub send_html {
-    shift->response_type_content( html => @_ );
-}
-
-sub send_xml {
-    shift->response_type_content( xtml => @_ );
-}
-
-sub send_json {
-    shift->response_type_content( json => @_ );
-}
-
-sub send_redirect {
-    shift->response(
-        redirect => join(BLANK, @_)
-    );
-}
-
-sub send_not_found {
-    shift->response_type(
-        html => {
-            status  => NOT_FOUND,
-            content => join(BLANK, @_),
-        }
-    );
-}
-
-sub send_forbidden {
-    shift->response_type(
-        html => {
-            status  => FORBIDDEN,
-            content => join(BLANK, @_),
-        }
-    );
-}
-
-sub send_not_found_msg {
-    my $self = shift;
-    return $self->send_not_found(
-        $self->message( not_found => @_ )
-    );
-}
-
-
 #-----------------------------------------------------------------------------
-# data
+# Context data
 #-----------------------------------------------------------------------------
 
 sub get {
@@ -240,6 +146,73 @@ sub data {
     shift->context->data(@_);
 }
 
+#-----------------------------------------------------------------------------
+# Cookies
+#-----------------------------------------------------------------------------
+
+sub get_cookie {
+    shift->context->get_cookie(@_);
+}
+
+sub set_cookie {
+    shift->context->set_cookie(@_);
+}
+
+#-----------------------------------------------------------------------
+# Response
+#-----------------------------------------------------------------------
+
+sub response {
+    shift->context->response(@_);
+}
+
+sub send_not_found {
+    shift->response(
+        type    => HTML,
+        status  => NOT_FOUND,
+        content => join(BLANK, @_),
+    );
+}
+
+sub send_forbidden {
+    shift->response_type(
+        type    => HTML,
+        status  => FORBIDDEN,
+        content => join(BLANK, @_),
+    );
+}
+
+sub send_type_content {
+    my $self    = shift;
+    my $type    = shift;
+    my $content = join(BLANK, @_);
+    return $self->response(
+        type    => $type,
+        content => $content
+    );
+}
+
+sub send_text {
+    shift->send_type_content(TEXT, @_);
+}
+
+sub send_html {
+    shift->send_type_content(HTML, @_);
+}
+
+sub send_xml {
+    shift->send_type_content(XML, @_);
+}
+
+sub send_json {
+    shift->send_type_content(JSON, @_);
+}
+
+sub send_redirect {
+    shift->response(
+        redirect => join(BLANK, @_)
+    );
+}
 
 1;
 

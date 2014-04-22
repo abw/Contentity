@@ -56,7 +56,7 @@ sub type {
 sub content_type {
     my ($self, $urn) = @_;
     my $meta = $self->type($urn);
-    my $type = TEXT_HTML;
+    my $type; # = TEXT_HTML;
     my $char;
 
     if ($meta) {
