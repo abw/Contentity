@@ -7,10 +7,11 @@ use Contentity::Class
     asset     => 'field',
     utils     => 'split_to_list',
     constant  => {
-        FACTORY_ITEM => 'field',
-        FACTORY_TYPE => 'fields',
-        FACTORY_PATH => 'Contentity::Form::Field',
-        SINGLETONS   => 0,
+        FACTORY_ITEM    => 'field',
+        FACTORY_TYPE    => 'fields',
+        FACTORY_PATH    => 'Contentity::Form::Field',
+        FACTORY_DEFAULT => 'Contentity::Form::Field::Text',
+        SINGLETONS      => 0,
     };
 
 sub instance_config {

@@ -54,11 +54,13 @@ sub init_factory {
         $path = split_to_list($path);
         $path = [ map { permute_fragments($_) } @$path ];
 
+        $modules->{ default } ||= $default;
+
         $factory = $self->BASE_FACTORY->new(
             item    => $item,
             items   => $type,
             path    => $path,
-            default => $default,
+            #default => $default,
             $type   => $modules,
         );
     }
