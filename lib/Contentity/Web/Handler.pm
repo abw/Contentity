@@ -6,11 +6,12 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base',
     constant  => {
-        PROJECT_MODULE   => 'Contentity::Project',
-        ROOT_CONFIG_ITEM => 'root',
-        SITE_CONFIG_ITEM => 'site',
-        APP_CONFIG_ITEM  => 'app',
-        LOG_CONFIG_ITEM  => 'log',
+        PROJECT_MODULE    => 'Contentity::Project',
+        ROOT_CONFIG_ITEM  => 'root',
+        SITE_CONFIG_ITEM  => 'site',
+        SPACE_CONFIG_ITEM => 'workspace',
+        APP_CONFIG_ITEM   => 'app',
+        LOG_CONFIG_ITEM   => 'log',
     };
 
 
@@ -40,16 +41,16 @@ sub project {
         ||= $self->PROJECT_MODULE->new( root => $root );
 }
 
-sub site {
+sub workspace {
     my $self = shift;
-    return $self->project->site(
-        $self->site_name
+    return $self->project->workspace(
+          $self->workspace_name
     );
 }
 
 sub app {
     my $self = shift;
-    return $self->site->app(
+    return $self->workspace->app(
         $self->app_name
     );
 }
@@ -83,6 +84,11 @@ sub site_name {
     $self->config( $self->SITE_CONFIG_ITEM );
 }
 
+sub workspace_name {
+    my $self = shift;
+    $self->config( $self->SPACE_CONFIG_ITEM );
+}
+
 sub app_name {
     my $self = shift;
     $self->config( $self->APP_CONFIG_ITEM );
@@ -92,7 +98,5 @@ sub log_name {
     my $self = shift;
     $self->config( $self->LOG_CONFIG_ITEM );
 }
-
-
 
 1;

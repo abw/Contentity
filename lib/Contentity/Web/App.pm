@@ -62,7 +62,17 @@ sub init_app {
 #-----------------------------------------------------------------------------
 
 sub run {
-    shift->dispatch;
+    my $self   = shift;
+    my $result = $self->try->dispatch;
+
+    if ($result) {
+        return $result;
+    }
+    else {
+        return $self->send_html(
+            qq{<h3 class="red">ERROR:</h3><pre>$@</pre>\n}
+        );
+    }
 }
 
 sub dispatch {
@@ -179,13 +189,8 @@ sub renderer {
 sub render {
     my $self = shift;
     my $name = shift;
-    my $data = extend(
-        { App => $self },
-        $self->context->data,
-        @_
-    );
-    $self->debug_data( "rendering $name with" => $data ) if DEBUG;
-
+    my $data = $self->template_data(@_);
+    $self->debug_data( "rendering $name with" => $data ) if DEBUG or 1;
     return $self->renderer->render($name, $data);
 }
 
@@ -201,6 +206,16 @@ sub present {
         $self->render($name, $params)
     );
 }
+
+
+sub template_data {
+    my $self  = shift;
+    return $self->context->template_data(
+        { App => $self },
+        @_
+    );
+}
+
 
 
 #-----------------------------------------------------------------------------

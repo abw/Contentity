@@ -6,3 +6,4 @@ blib/
 pm_to_blib
 t/configure/config/config_save.yaml
 tmp
+.DS_Store

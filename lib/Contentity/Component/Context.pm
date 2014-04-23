@@ -9,7 +9,7 @@ use Contentity::Class
     base        => 'Contentity::Component',
     accessors   => 'request base path url status headers',
     mutators    => 'content_type',
-    utils       => 'is_object weaken extend Path URL',
+    utils       => 'self_params is_object weaken extend Path URL',
     constants   => 'HASH ARRAY :http_accept',
     alias       => {
         output  => \&content,
@@ -102,6 +102,19 @@ sub delete_data {
     return delete $self->{ data }->{ $name };
 }
 
+sub template_data {
+    my $self   = shift;
+    my $space  = $self->workspace;
+    my $uctype = ucfirst $space->type;
+    my $data   = extend({ }, $self->{ data }, @_);
+
+    $data->{ Session } = $self->session;
+    $data->{ Project } = $space->project;
+    $data->{ Site    } = $space;
+    $data->{ $uctype } = $space;
+
+    return $data;
+}
 
 
 #-----------------------------------------------------------------------------
@@ -189,6 +202,62 @@ sub set_cookie {
     # value like '3 hours' which we need to convert to an epoch time
     return $self->response->cookies->{ $name } = $value;
 }
+
+
+#-----------------------------------------------------------------------------
+# Sessions
+#-----------------------------------------------------------------------------
+
+sub session_cookie {
+    my $self    = shift;
+    return $self->workspace->config( session => 'cookie' )
+        || $self->error_msg( missing => 'session cookie' );
+}
+
+sub get_session_id {
+    my $self = shift;
+    return $self->get_cookie(
+        $self->session_cookie
+    );
+}
+
+sub set_session_id {
+    my $self = shift;
+    return $self->set_cookie(
+        $self->session_cookie,
+        @_
+    );
+}
+
+sub session {
+    my $self = shift;
+    return  $self->{ session }
+        ||= $self->load_session;
+}
+
+sub load_session {
+    my $self     = shift;
+    my $sessions = $self->model->sessions;
+    my $sid      = $self->get_session_id;
+    my $session;
+
+    # TODO: We want to create new temporary session in memcached and only commit
+    # them to the database on a return visit.  Otherwise we end up creating a
+    # session for every visit by every search bot.
+
+    if ($sid && ($session = $sessions->fetch($sid))) {
+        $self->debug("loaded existing session: $session->{ id }\n") if DEBUG or 1;
+    }
+    else {
+        $session = $sessions->insert;
+        $sid     = $session->id;
+        $self->set_session_id($sid);
+        $self->debug("created new session: $session->{ id }") if DEBUG or 1;
+    }
+
+    return $session;
+}
+
 
 
 #-----------------------------------------------------------------------------
@@ -351,6 +420,9 @@ sub env {
         : $_[0]->{ env };
 }
 
+sub model {
+    shift->workspace->model;
+}
 
 
 1;

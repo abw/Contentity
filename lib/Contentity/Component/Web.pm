@@ -9,6 +9,9 @@ use Contentity::Class
     utils     => 'join_uri',
     alias     => {
         _params => \&Contentity::Utils::params,
+    },
+    messages  => {
+        not_found => 'Resource not found: %s',
     };
 
 
@@ -158,6 +161,15 @@ sub set_cookie {
     shift->context->set_cookie(@_);
 }
 
+#-----------------------------------------------------------------------------
+# Session
+#-----------------------------------------------------------------------------
+
+sub session {
+    shift->context->session;
+}
+
+
 #-----------------------------------------------------------------------
 # Response
 #-----------------------------------------------------------------------
@@ -211,6 +223,13 @@ sub send_json {
 sub send_redirect {
     shift->response(
         redirect => join(BLANK, @_)
+    );
+}
+
+sub send_not_found_msg {
+    my $self = shift;
+    return $self->send_not_found(
+        $self->message( not_found => @_ )
     );
 }
 

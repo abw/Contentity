@@ -43,7 +43,7 @@ sub init_vfs {
     ) if DEBUG;
 }
 
-sub run {
+sub dispatch {
     my $self = shift;
     my $root = $self->root;
     my $uri  = $self->uri;
@@ -177,15 +177,13 @@ sub present_dir {
     my $base = $self->script_name;
     $base =~ s[/$][];
 
-    return $self->send_html(
-        $self->render(
-            $self->template,
-            {
-                base => $base,    # TODO: get rid
-                uri  => $uri,
-                dir  => $dir
-            }
-        )
+    return $self->present(
+        $self->template,
+        {
+            base => $base,    # TODO: get rid
+            uri  => $uri,
+            dir  => $dir
+        }
     );
 }
 
@@ -217,7 +215,7 @@ sub dir {
 }
 
 sub uri {
-    shift->context->path || SLASH;
+    shift->context->path->path_todo || SLASH;
 }
 
 sub url {

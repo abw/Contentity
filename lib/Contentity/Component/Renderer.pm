@@ -182,6 +182,8 @@ sub render {
     # remove leading slash - TT thinks you're trying to access an absolute path
     $name =~ s[^/][];
 
+    $self->debug("rendering [$name] (", ref($name), ')') if DEBUG;
+
     $engine->process($name, $params, \$output)
         || return $self->error_msg( engine_render => $name, $engine->error );
 

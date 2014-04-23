@@ -89,7 +89,7 @@ sub databases {
 sub database {
     my $self = shift;
     my $name = shift
-        || $self->config->database
+        || $self->config('database')
         || return $self->error_msg( missing => 'database' );
     $self->debug_data( database => $name ) if DEBUG;
     $self->databases->database($name);

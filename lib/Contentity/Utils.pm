@@ -7,7 +7,7 @@ use Badger::Rainbow     ANSI => 'all';
 use Carp;
 use POSIX               'floor';
 use Badger::Debug       'debug_caller';
-use Badger::Utils       'params numlike is_object plural permute_fragments xprintf TIMESTAMP split_to_list';
+use Badger::Utils       'params numlike is_object plural permute_fragments xprintf TIMESTAMP split_to_list md5_hex';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
@@ -377,6 +377,15 @@ sub snake_down {
     my $text = shift;
     $text =~ s/-+/_/g;
     return lc $text;
+}
+
+
+sub generate_id {
+    my $length = (@_ && numlike($_[0])) ? shift : 32;
+    my $text   = join('', grep { defined } @_) . time() . md5_hex(
+        time() . rand() . $$ . { }
+    );
+    return substr( md5_hex($text), 0, $length );
 }
 
 
