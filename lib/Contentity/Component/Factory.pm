@@ -10,12 +10,13 @@ use Contentity::Class
     component => 'asset',
     constants => 'SLASH',
     constant  => {
-        FACTORY_TYPE   => undef,
-        FACTORY_ITEM   => undef,
-        FACTORY_PATH   => undef,
-        FACTORY_MODULE => undef,
-        BASE_FACTORY   => 'Contentity::Factory',
-        SINGLETONS     => 0,
+        FACTORY_TYPE    => undef,
+        FACTORY_ITEM    => undef,
+        FACTORY_PATH    => undef,
+        FACTORY_MODULE  => undef,
+        FACTORY_DEFAULT => undef,
+        BASE_FACTORY    => 'Contentity::Factory',
+        SINGLETONS      => 0,
     };
 
 
@@ -29,10 +30,12 @@ sub init_asset {
 sub init_factory {
     my ($self, $config) = @_;
 
-    my $item   = $config->{ factory_item } || $self->FACTORY_ITEM;
-    my $type   = $config->{ factory_type } || $self->FACTORY_TYPE || plural($item);
-    my $path   = $config->{ factory_path } || $self->FACTORY_PATH;
-    my $module = $config->{ $type        } || $self->FACTORY_MODULE;
+    my $module  = $config->{ factory_module  } || $self->FACTORY_MODULE;
+    my $item    = $config->{ factory_item    } || $self->FACTORY_ITEM;
+    my $type    = $config->{ factory_type    } || $self->FACTORY_TYPE || plural($item);
+    my $path    = $config->{ factory_path    } || $config->{ path    } || $self->FACTORY_PATH;
+    my $default = $config->{ factory_default } || $config->{ default } || $self->FACTORY_DEFAULT;
+    my $modules = $config->{ $type           } || { };
     my $factory;
 
     if ($module) {
@@ -52,9 +55,11 @@ sub init_factory {
         $path = [ map { permute_fragments($_) } @$path ];
 
         $factory = $self->BASE_FACTORY->new(
-            item  => $item,
-            items => $type,
-            path  => $path,
+            item    => $item,
+            items   => $type,
+            path    => $path,
+            default => $default,
+            $type   => $modules,
         );
     }
 
@@ -94,7 +99,7 @@ sub instance_config {
         urn       => $data->{ urn },
         uri       => $self->{ asset }.SLASH.$data->{ urn },
         config    => $data,
-    #    schema    => $config->{ schema };
+    #   schema    => $config->{ schema };
     };
 }
 

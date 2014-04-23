@@ -160,17 +160,19 @@ sub load_component {
     my $urn    = shift; # urn is what they ask for
     my $name   = $urn;  # name is initially the same but may change
     my $config = $self->component_config($name, @_);
+    my $subcfg = $config->{ config } || { };
     my $single = truelike(
         $config->{ singleton } // $config->{ cache_object }
     );
 
     $self->debug(
         "ready to create $name component\n",
-        "+ config: ", $self->dump_data($config)
+        "+ config: ", $self->dump_data($config), "\n",
+        "+ sub-config: ", $self->dump_data($subcfg)
     ) if DEBUG;
 
     # see if a module name is specified in $args, config hash or use $pkgmod
-    my $module = $config->{ module };
+    my $module = $subcfg->{ module } || $config->{ module };
     my $object;
 
     if ($module) {
@@ -181,7 +183,7 @@ sub load_component {
     }
     else {
         # component name may have been re-mapped by config or schema
-        $name = $config->{ component } || $name;
+        $name = $subcfg->{ component } || $config->{ component }  || $name;
         $object = $self->component_factory->item( $name => $config ) || return;
     }
 

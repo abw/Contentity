@@ -141,6 +141,10 @@ sub form {
     shift->forms->form(@_);
 }
 
+sub form_fields {
+    shift->component(FORM_FIELDS, @_);
+}
+
 
 
 #-----------------------------------------------------------------------------

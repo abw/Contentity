@@ -10,7 +10,7 @@ use Contentity::Class
     accessors   => 'request base path url status headers',
     mutators    => 'content_type',
     utils       => 'self_params is_object weaken extend Path URL',
-    constants   => 'HASH ARRAY :http_accept',
+    constants   => 'HASH ARRAY BLANK :http_accept',
     alias       => {
         output  => \&content,
     },
@@ -31,7 +31,7 @@ sub init_context {
     my $space   = $self->workspace;
     my $env     = $config->{ env } || return $self->error_msg( missing => 'env' );
     my $request = $self->new_request($env);
-    my $base    = $request->script_name;
+    my $base    = $request->script_name || BLANK;
     my $path    = Path($request->path_info);
     #my $uri     = $request->request_uri;
 
@@ -47,11 +47,13 @@ sub init_context {
     $self->{ env } = $env;
     weaken $self->{ env };
 
+
     $self->{ base         } = $base;
     $self->{ url          } = URL($base);
     $self->{ path         } = $path;
     $self->{ request      } = $request;
     $self->{ data         } = $config->{ data } || { };
+
     $self->{ apps         } = [ ];
     $self->{ options      } = { };
     $self->{ headers      } = { };
