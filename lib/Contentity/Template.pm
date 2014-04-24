@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     import    => 'class',
     base      => 'Template Contentity::Base',
-    utils     => 'self_params params
+    utils     => 'self_params params extend
                   commas falselike floor id_safe inflect integer
                   plural plurality random truelike uri_safe
                   snake_up snake_down
@@ -13,6 +13,9 @@ use Contentity::Class
     codecs    => 'html json',
     constants => 'ARRAY';
 
+our $CONFIG_OPTIONS = {
+    # subclasses may add more here
+};
 our $ITEM_VMETHODS = {
     commas        => \&commas,
     false         => \&falselike,
@@ -62,6 +65,14 @@ sub new {
         "Contentity::Template engine params: ",
         $config
     ) if DEBUG;
+
+    $config = extend(
+        { },
+        class($class)->hash_vars('OPTIONS'),
+        $config
+    );
+
+    $class->debug_data( tt_config => $config ) if DEBUG or 1;
 
     my $self = $class->SUPER::new($config);
 
