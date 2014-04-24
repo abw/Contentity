@@ -72,7 +72,7 @@ sub new {
         $config
     );
 
-    $class->debug_data( tt_config => $config ) if DEBUG or 1;
+    $class->debug_data( tt_config => $config ) if DEBUG;
 
     my $self = $class->SUPER::new($config);
 
