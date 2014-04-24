@@ -27,6 +27,7 @@ sub instance_config {
     # main $data config.  Contained therein is a reference to the form that
     # these fields are being attached to.  If a field needs to access the
     # workspace then it can do so via the form reference.
+    $self->debug_data( instance_config => $data ) if DEBUG;
     return $data;
 }
 
@@ -41,6 +42,7 @@ sub field_list {
         # add 'n' as the field number
         $_->{ n } ||= $n++;
         local $_->{ form } = $self;
+        $self->debug_data( init_field => $_ ) if DEBUG;
         $self->field($_);
     } @$specs;
 

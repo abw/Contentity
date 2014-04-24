@@ -6,8 +6,8 @@ use Contentity::Class
     base      => 'Contentity::Component',
     import    => 'bclass',      # use Plan B so class() can be a CSS class
     accessors => 'fields',
-    mutators  => 'encoding charset method action name title layout class style',
-    utils     => 'self_params split_to_list',
+  #  mutators  => 'encoding charset method action name class style title layout fragment',
+    utils     => 'self_params split_to_list join_uri',
     codec     => 'html',
     config    => [
         'encoding|class:ENCODING|method:ENCODING',
@@ -18,13 +18,14 @@ use Contentity::Class
         'class|class:CLASS',
         'style|class:STYLE',
         'title|class:TITLE',
-        'layout|class:LAYOUT|form',
+        'layout|class:LAYOUT=form',
         'fragment|class:FRAGMENT',
     ],
     constant => {
-        ENCODING => 'application/x-www-form-urlencoded',
-        CHARSET  => 'utf-8',
-        METHOD   => 'POST',
+        ENCODING      => 'application/x-www-form-urlencoded',
+        CHARSET       => 'utf-8',
+        METHOD        => 'POST',
+        LAYOUT_PREFIX => 'layout/',
     },
     messages  => {
         no_name       => 'Missing name in field specification',
@@ -37,7 +38,10 @@ use Contentity::Class
 sub init_component {
     my ($self, $config) = @_;
     $self->debug_data( init_form => $config ) if DEBUG;
-    $self->configure($config);
+
+    # set all the configuration options into a style
+    my $style = $self->{ style } = { };
+    $self->configure($config, $style);
     $self->init_form($config);
     return $self;
 }
@@ -68,6 +72,7 @@ sub init_values {
     $self->set($config->{ values })
         if $config->{ values };
 }
+
 
 #-----------------------------------------------------------------------------
 # field methods
@@ -139,6 +144,62 @@ sub form_fields {
     shift->workspace->form_fields;
 }
 
+
+#-----------------------------------------------------------------------------
+# Presentation methods
+#-----------------------------------------------------------------------------
+
+sub present {
+    my ($self, $view, $args) = @_;
+#    my $with = $self->present_with($args);
+
+    # reset internal tab_index counter
+    $self->{ tab_index } = 1;
+
+    my $uri = join_uri($self->LAYOUT_PREFIX, $self->{ layout });
+
+    $self->debug("presenting form: $uri") if DEBUG;
+    $view->include(
+        join_uri($self->LAYOUT_PREFIX, $self->layout),
+        { form => $self, args => $args }
+    );
+}
+
+#sub merge_style {
+#    my $self  = shift;
+#    my $style = $self->style;
+#
+#}
+
+sub content {
+    my ($self, $view, $args) = @_;
+    my $output = '';
+    my @fields = @{ $self->{ fields } };
+
+    while (@fields) {
+        my $field = shift @fields;
+        $output .= $field->present($view, $args);
+    }
+
+    return $output;
+}
+
+
+#-----------------------------------------------------------------------------
+# Add methods to set/get the current style values
+#-----------------------------------------------------------------------------
+
+bclass->methods(
+    map {
+        my $item = $_;
+        $item => sub {
+            return @_ > 1
+                ? ($_[0]->{ style }->{ $item } = $_[1])
+                :  $_[0]->{ style }->{ $item }
+        }
+    }
+    qw( encoding charset method action name class style title layout fragment )
+);
 
 1;
 
@@ -252,35 +313,6 @@ sub invalidate_field {
 #    return ($self->{ invalid } = 1);
 }
 
-sub present {
-    my ($self, $view) = @_;
-    # reset internal tabindex counter
-    $self->{ tab_index } = 1;
-    $view->include('layout/' . $self->{ layout }, { form => $self });
-}
-
-sub content {
-    my ($self, $view) = @_;
-    my $output = '';
-    my @fields = @{ $self->{ fields } };
-    my $args   = { };
-
-    # The 'first' (and 'last') args are like TT's loop.first and loop.last and
-    # are used by form/layout/field to add the CSS classes for rounded corners
-    # in the appropriate places.  However, the first field shouldn't have rounded
-    # corners if there is a title or error message superceding it.
-    $args->{ first } = 1 unless $self->{ invalid } || $self->{ title };
-
-    # if title, error, etc.
-    # first/last/etc.
-    while (@fields) {
-        my $field = shift @fields;
-        $args->{ last } = @fields ? 0 : 1;
-        $output .= $field->present($view, $args);
-        $args->{ first } = 0;
-    }
-    return $output;
-}
 
 sub tab_index {
     my $self = shift;

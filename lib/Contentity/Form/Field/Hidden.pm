@@ -2,7 +2,7 @@ package Contentity::Form::Field::Hidden;
 
 use Contentity::Class::Form::Field
     version  => 0.03,
-    layout   => 'hidden',
+    layout   => 'none',
     constant => {
         can_focus => 0,
     };

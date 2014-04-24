@@ -20,6 +20,7 @@ use Contentity::Class
         'layout|class:LAYOUT=field!',
         'class|class:CLASS',
         'style|class:STYLE',
+        'value|class:VALUE',
         'default|class:DEFAULT',
         'strict|class:STRICT=1',
         'display|class:DISPLAY|target:type',
@@ -49,6 +50,8 @@ sub init {
     # update $config to set defaults from package vars
     $self->configure($config => $config);
 
+    $self->debug_data( config => $config ) if DEBUG;
+
     # copy everything into object
     @$self{ keys %$config } = values %$config;
 
@@ -68,6 +71,8 @@ sub init {
     # weaken any reference to a form to avoid circular references
     weaken $self->{ form }
         if $self->{ form };
+
+    $self->debug("value: $self->{ value }") if DEBUG;
 
     return $self;
 }

@@ -4,10 +4,10 @@ use Contentity::Factory;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
+    component => 'asset',
     import    => 'class',
     utils     => 'self_params plural split_to_list permute_fragments',
     accessors => 'type factory',
-    component => 'asset',
     constants => 'SLASH',
     constant  => {
         FACTORY_TYPE    => undef,

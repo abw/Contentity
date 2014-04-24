@@ -6,7 +6,7 @@ use Contentity::Class
     import    => 'CLASS',
     component => 'web',
     constants => 'BLANK :http_status',
-    utils     => 'extend join_uri Logic',
+    utils     => 'extend join_uri resolve_uri Logic',
     accessors => 'max_path_length action_format',
     config    => [
         'max_path_length|method:MAX_PATH_LENGTH',
@@ -190,7 +190,7 @@ sub render {
     my $self = shift;
     my $name = shift;
     my $data = $self->template_data(@_);
-    $self->debug_data( "rendering $name with" => $data ) if DEBUG or 1;
+    $self->debug_data( "rendering $name with" => $data ) if DEBUG;
     return $self->renderer->render($name, $data);
 }
 
@@ -216,6 +216,34 @@ sub template_data {
     );
 }
 
+
+#-----------------------------------------------------------------------------
+# Resources
+#-----------------------------------------------------------------------------
+
+sub form {
+    my $self = shift;
+    my $form = $self->workspace->form(
+        $self->form_path(@_)
+    );
+    $self->set( form => $form );
+    return $form;
+}
+
+sub form_path {
+    my $self = shift;
+    my $path = $self->config->{ form_path };
+
+    if ($path) {
+        # resolve form name to an explicit form path
+        return @_
+            ? resolve_uri($path, @_)
+            : $path;
+    }
+
+    # otherwise to the application base uri (typically its location URI)
+    return $self->uri(@_);
+}
 
 
 #-----------------------------------------------------------------------------

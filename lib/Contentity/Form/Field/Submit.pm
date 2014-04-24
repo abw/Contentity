@@ -3,7 +3,8 @@ package Contentity::Form::Field::Submit;
 use Contentity::Class::Form::Field
     version => 0.04,
     base    => 'Contentity::Form::Field::Button',
-    display => 'submit';
+    display => 'submit',
+    default => 'Submit';
 
 
 sub validate {

@@ -12,6 +12,7 @@ use Contentity::Class
         display => \&display,
         layout  => \&layout,
         label   => \&label,
+        default => \&default,
     };
 
 sub export {
@@ -42,7 +43,7 @@ class->methods(
             return $_[0];
         }
     }
-    qw( type display layout label )
+    qw( type display layout label default )
 );
 
 1;

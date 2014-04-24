@@ -6,7 +6,7 @@ use Contentity::Class
     base      => 'Contentity::Component Contentity::Plack::Component',
     constants => 'BLANK :http_status :content_types',
     accessors => 'env context',
-    utils     => 'join_uri',
+    utils     => 'join_uri resolve_uri',
     alias     => {
         _params => \&Contentity::Utils::params,
     },
