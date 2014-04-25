@@ -9,7 +9,7 @@ use Contentity::Class
     base        => 'Contentity::Component',
     accessors   => 'request base path url status headers',
     mutators    => 'content_type',
-    utils       => 'self_params is_object weaken extend Path URL',
+    utils       => 'self_params is_object weaken extend Path URL blessed',
     constants   => 'HASH ARRAY BLANK :http_accept',
     alias       => {
         output  => \&content,
@@ -216,14 +216,14 @@ sub session_cookie {
         || $self->error_msg( missing => 'session cookie' );
 }
 
-sub get_session_id {
+sub get_session_key {
     my $self = shift;
     return $self->get_cookie(
         $self->session_cookie
     );
 }
 
-sub set_session_id {
+sub set_session_key {
     my $self = shift;
     return $self->set_cookie(
         $self->session_cookie,
@@ -240,24 +240,63 @@ sub session {
 sub load_session {
     my $self     = shift;
     my $sessions = $self->model->sessions;
-    my $sid      = $self->get_session_id;
+    my $skey     = $self->get_session_key;
     my $session;
 
     # TODO: We want to create new temporary session in memcached and only commit
     # them to the database on a return visit.  Otherwise we end up creating a
     # session for every visit by every search bot.
 
-    if ($sid && ($session = $sessions->fetch($sid))) {
-        $self->debug("loaded existing session: $session->{ id }\n") if DEBUG or 1;
+    if ($skey && ($session = $sessions->fetch( cookie => $skey ))) {
+        $self->debug("loaded existing session: #$session->{ id }:$skey\n") if DEBUG or 1;
     }
     else {
-        $session = $sessions->insert;
-        $sid     = $session->id;
-        $self->set_session_id($sid);
-        $self->debug("created new session: $session->{ id }") if DEBUG or 1;
+        $session = $sessions->insert( ip_address => $self->request->address );
+        $skey    = $session->cookie;
+        $self->set_session_key($skey);
+        $self->debug("created new session: #$session->{ id }:$skey") if DEBUG or 1;
     }
 
     return $session;
+}
+
+
+#-----------------------------------------------------------------------------
+# Authentication
+#-----------------------------------------------------------------------------
+
+sub login_user {
+    my $self   = shift;
+    my $params = shift || $self->params;
+    my $user   = blessed($params)
+        ? $params           # we can acept a user object for masquerading
+        : $self->model->users->login_user($params)  || return;
+
+    my $login = $self->session->new_login($user) || return;
+
+    # if the user is pending we can activate their account
+    $user->activate
+        if $user->pending;
+
+    $self->{ user  } = $user;
+    $self->{ login } = $user;
+
+    return $user;
+}
+
+sub logout_user {
+    my $self = shift;
+
+    # Delete all the user-related data in the context
+    delete $self->{ user  };
+    delete $self->{ login };
+
+    # Delete the user_id and any identifying data from session
+    $self->session->logout;
+
+    $self->debug("deleted login credentials from session\n") if DEBUG;
+
+    return $self;
 }
 
 
