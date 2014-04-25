@@ -121,7 +121,7 @@ sub XXshift_path_todo {
 #-----------------------------------------------------------------------------
 
 sub params {
-    shift->request->parameters;
+    shift->request->parameters->as_hashref;
 }
 
 sub param {
@@ -129,7 +129,7 @@ sub param {
 }
 
 sub param_list {
-    shift->params->get_all(@_);
+    shift->request->parameters->get_all(@_);
 }
 
 
