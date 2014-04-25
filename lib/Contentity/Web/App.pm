@@ -190,8 +190,9 @@ sub render {
     my $self = shift;
     my $name = shift;
     my $data = $self->template_data(@_);
-    $self->debug_data( "rendering $name with" => $data ) if DEBUG;
-    return $self->renderer->render($name, $data);
+    my $path = $self->template_path($name);
+    $self->debug_data( "rendering $name as $path with" => $data ) if DEBUG;
+    return $self->renderer->render($path, $data);
 }
 
 
@@ -199,12 +200,16 @@ sub present {
     my ($self, $name, $params) = @_;
 
     # TODO:
-    #  - lookup filename via template_path
     #  - send appropriate content type for file extension (not always HTML)
 
     return $self->send_html(
         $self->render($name, $params)
     );
+}
+
+
+sub template_path {
+    shift->resource_path( template => @_ );
 }
 
 
@@ -231,18 +236,7 @@ sub form {
 }
 
 sub form_path {
-    my $self = shift;
-    my $path = $self->config->{ form_path };
-
-    if ($path) {
-        # resolve form name to an explicit form path
-        return @_
-            ? resolve_uri($path, @_)
-            : $path;
-    }
-
-    # otherwise to the application base uri (typically its location URI)
-    return $self->uri(@_);
+    shift->resource_path( form => @_ );
 }
 
 
@@ -252,6 +246,21 @@ sub form_path {
 
 sub version {
     shift->VERSION;
+}
+
+sub resource_path {
+    my $self = shift;
+    my $type = shift;
+    my $path = $self->config->{"${type}_path"};  # e.g. form_path, template_path
+
+    # resolve resource name to an explicit path...
+    if ($path) {
+        return @_
+            ? resolve_uri($path, @_)
+            : $path;
+    }
+    # ...or to the application base uri (typically its location URI)
+    return $self->uri(@_);
 }
 
 
