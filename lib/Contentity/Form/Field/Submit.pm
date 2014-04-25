@@ -14,6 +14,10 @@ sub validate {
 sub reset {
 }
 
+sub submit_field {
+    return $_[0];
+}
+
 
 1;
 

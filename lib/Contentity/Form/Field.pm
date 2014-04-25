@@ -10,8 +10,9 @@ use Contentity::Class
     mutators  => 'name size label layout display default class style tabindex n',
     constants => 'ARRAY HASH',
     constant  => {
-        DEFAULT   => 'text',
-        can_focus => 1,
+        DEFAULT      => 'text',
+        can_focus    => 1,
+        submit_field => undef,
     },
     config    => [
         'type|class:TYPE|method:TYPE!',
@@ -202,6 +203,7 @@ sub trim {
 sub present {
     my $self = shift;
     my $view = shift;
+    $self->debug_data( args => \@_ ) if DEBUG;
     my $args = @_ && ref $_[0] eq 'HASH' ? shift : { @_ };
 
     $args->{ field } = $self;
