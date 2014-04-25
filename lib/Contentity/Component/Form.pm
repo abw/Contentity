@@ -262,12 +262,49 @@ sub validate {
     return $nfail ? 0 : 1;
 }
 
+sub valid {
+    my $self = shift;
+    return $self->{ errors } ? 0 : 1;
+}
+
+sub invalid {
+    my $self = shift;
+
+    if (@_) {
+        my $error  = $self->{ invalid }   = join('', @_);
+        my $errors = $self->{ errors  } ||= [ ];
+        unshift(@$errors, $error);
+    }
+    return $self->{ invalid }; # || $self->{ errors };
+}
+
 sub valid_fields {
     return $_[0]->{ valid_fields };
 }
 
 sub invalid_fields {
     return $_[0]->{ invalid_fields };
+}
+
+sub errors {
+    my $self    = shift;
+    my $invalid = $self->invalid_fields || [];
+    my $errors  = [
+        map { $_->{ error } }
+        @$invalid
+    ];
+    return wantarray
+        ? @$errors
+        :  $errors;
+}
+
+sub field_errors {
+    my $self    = shift;
+    my $invalid = $self->invalid_fields || [];
+    return {
+        map { ($_->{ name }, $_->{ error }) }
+        @$invalid
+    };
 }
 
 
@@ -302,43 +339,7 @@ sub fieldset {
 }
 
 
-sub field_errors {
-    my $self    = shift;
-    my $invalid = $self->invalid_fields || [];
-    return {
-        map { ($_->{ name }, $_->{ error }) }
-        @$invalid
-    };
-}
 
-sub errors {
-    my $self    = shift;
-    my $invalid = $self->invalid_fields || [];
-    my $errors  = [
-        map { $_->{ error } }
-        @$invalid
-    ];
-    return wantarray
-        ? @$errors
-        :  $errors;
-}
-
-sub valid {
-    my $self = shift;
-    return $self->{ errors }
-        ? 0 : 1;
-}
-
-sub invalid {
-    my $self = shift;
-
-    if (@_) {
-        my $error  = $self->{ invalid }   = join('', @_);
-        my $errors = $self->{ errors  } ||= [ ];
-        unshift(@$errors, $error);
-    }
-    return $self->{ invalid }; # || $self->{ errors };
-}
 
 sub invalidate_field {
     my $self  = shift;
