@@ -5,7 +5,7 @@ use Badger::Class
     version   => 0.01,
     debug     => 0,
     uber      => 'Badger::Class',
-    hooks     => 'constructor component asset assets autolook',
+    hooks     => 'constructor component asset assets status autolook',
     utils     => 'is_object split_to_list camel_case blessed',
     constants => 'CODE',
     constant  => {
@@ -65,6 +65,53 @@ sub assets {
     $self->constant( ASSETS => $name );
     return $self;
 }
+
+#-----------------------------------------------------------------------------
+# Hook for generating status methods, e.g. active(), pending(), etc.
+#-----------------------------------------------------------------------------
+
+sub status {
+    shift->option_methods( status => @_ );
+}
+
+
+sub option_methods {
+    my ($self, $option, $values) = @_;
+
+    $values = split_to_list($values);
+
+    $self->methods(
+        # add generic method to read/compare an option,
+        # e.g. status(), progress(), etc.
+        $option    => sub {
+            my $self = shift;
+            return @_
+                ? $self->{ $option } eq $_[0]
+                : $self->{ $option };
+        },
+
+        # another method to set option and update DB record,
+        # e.g. set_status(), set_progress(), etc.
+        "set_$option" => sub {
+            my ($self, $value) = @_;
+            $self->update( $option => $value );
+        },
+
+        # and specific methods for each value specified in $values which
+        # calls the above generic method to compare
+        # e.g. sub active { shift->status('active') }
+        map {
+            my $value = $_;
+            $value => sub {
+                shift->$option($value)
+            }
+        }
+        @$values
+    );
+
+    return $self;
+}
+
 
 
 #-----------------------------------------------------------------------------
