@@ -242,7 +242,7 @@ sub load_session {
     # them to the database on a return visit.  Otherwise we end up creating a
     # session for every visit by every search bot.
 
-    if ($skey && ($session = $sessions->fetch( cookie => $skey ))) {
+    if ($skey && ($session = $sessions->session_login_user( cookie => $skey ))) {
         $self->debug("loaded existing session: #$session->{ id }:$skey\n") if DEBUG or 1;
     }
     else {
@@ -268,6 +268,7 @@ sub attempt_login {
         return $user;
     }
     else {
+        $self->debug("failed login attempt: ", $self->reason) if DEBUG or 1;
         $self->session->failed_login_attempt;
         return undef;
     }
@@ -278,7 +279,8 @@ sub login_user {
     my $params = shift || $self->params;
     my $user   = blessed($params)
         ? $params           # we can acept a user object for masquerading
-        : $self->model->users->login_user($params)  || return;
+        : $self->model->users->login_user($params)
+            || return $self->decline($self->model->users->reason);
 
     my $login = $self->session->new_login($user) || return;
 
