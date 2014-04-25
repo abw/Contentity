@@ -162,11 +162,19 @@ sub set_cookie {
 }
 
 #-----------------------------------------------------------------------------
-# Session
+# Session, Login and User
 #-----------------------------------------------------------------------------
 
 sub session {
     shift->context->session;
+}
+
+sub login {
+    shift->context->login;
+}
+
+sub user {
+    shift->context->user;
 }
 
 

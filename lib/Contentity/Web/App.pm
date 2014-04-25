@@ -216,7 +216,10 @@ sub template_path {
 sub template_data {
     my $self  = shift;
     return $self->context->template_data(
-        { App => $self },
+        { App     => $self          },
+        { Session => $self->session || undef },  # in case they return empty lists
+        { Login   => $self->login   || undef },
+        { User    => $self->user    || undef },
         @_
     );
 }

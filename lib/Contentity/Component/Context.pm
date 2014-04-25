@@ -1,7 +1,7 @@
 package Contentity::Component::Context;
 
 use Badger::Debug 'debug_callers';
-use Plack::Request;    # TODO: Contentity::Request
+use Contentity::Web::Request;
 use Contentity::Class
     version     => 0.1,
     debug       => 0,
@@ -15,7 +15,7 @@ use Contentity::Class
         output  => \&content,
     },
     constant    => {
-        REQUEST_MODULE => 'Plack::Request',
+        REQUEST_MODULE => 'Contentity::Web::Request',
         SINGLETON      => 0,
     };
 
@@ -189,7 +189,7 @@ sub content {
 
 
 #-----------------------------------------------------------------------------
-# Cookies
+# Cookies and Sessions
 #-----------------------------------------------------------------------------
 
 
@@ -204,11 +204,6 @@ sub set_cookie {
     # value like '3 hours' which we need to convert to an epoch time
     return $self->response->cookies->{ $name } = $value;
 }
-
-
-#-----------------------------------------------------------------------------
-# Sessions
-#-----------------------------------------------------------------------------
 
 sub session_cookie {
     my $self    = shift;
@@ -265,6 +260,19 @@ sub load_session {
 # Authentication
 #-----------------------------------------------------------------------------
 
+sub attempt_login {
+    my $self = shift;
+    my $user = $self->login_user(@_);
+
+    if ($user) {
+        return $user;
+    }
+    else {
+        $self->session->failed_login_attempt;
+        return undef;
+    }
+}
+
 sub login_user {
     my $self   = shift;
     my $params = shift || $self->params;
@@ -279,7 +287,7 @@ sub login_user {
         if $user->pending;
 
     $self->{ user  } = $user;
-    $self->{ login } = $user;
+    $self->{ login } = $login;
 
     return $user;
 }
@@ -298,6 +306,30 @@ sub logout_user {
 
     return $self;
 }
+
+sub login {
+    my $self = shift;
+
+    # return any cached value existing in $self, even if it's undefined
+    # (indicating that this context definitely doesn't have a login because
+    # we've looked for one before but not found one)
+
+    return $self->{ login }
+        if exists $self->{ login };
+
+    return ($self->{ login } = $self->session->login);
+}
+
+sub user {
+    my $self = shift;
+
+    # return any cached value existing in $self, as per login()
+    return $self->{ user }
+        if exists $self->{ user };
+
+    return ($self->{ user } = $self->session->user);
+}
+
 
 
 

@@ -6,7 +6,7 @@ use Badger::Rainbow
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    utils     => 'weaken',
+    utils     => 'weaken refaddr',    # refaddr for debugging, testing, etc.
     base      => 'Badger::Base',
     constants => 'SPACE',
     constant    => {
