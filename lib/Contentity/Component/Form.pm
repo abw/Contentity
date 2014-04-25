@@ -43,6 +43,8 @@ sub init_component {
     my $style = $self->{ style } = { };
     $self->configure($config, $style);
     $self->init_form($config);
+
+    $self->debug_data("form style" => $self->{ style }) if DEBUG;
     return $self;
 }
 
@@ -145,6 +147,41 @@ sub form_fields {
 }
 
 
+sub submitted {
+    my $self   = shift;
+    my $params = shift || $self->params;
+    my $field  = $self->submit_field || return undef;
+    if (DEBUG) {
+        $self->debug("checking if ", $field->name, " is defined: ", $params->{ $field->name } || '' );
+        $self->debug("params are: ", $self->dump_data($params) );
+    }
+    return $params->{ $field->name };
+}
+
+
+sub submit_field {
+    my $self = shift;
+    my ($fields, $field);
+
+    return $self->{ submit_field }
+        if exists $self->{ submit_field };
+
+    $fields = $self->{ fields };
+
+    $self->{ submit_field } = undef;
+
+    foreach $field (@$fields) {
+        $self->debug("field type: ", $field->type) if DEBUG;
+        my $submitter = $field->submit_field;
+        if ($submitter) {
+            $self->{ submit_field } = $submitter;
+            last;
+        }
+    }
+
+    return $self->{ submit_field };
+}
+
 #-----------------------------------------------------------------------------
 # Presentation methods
 #-----------------------------------------------------------------------------
@@ -156,7 +193,7 @@ sub present {
     # reset internal tab_index counter
     $self->{ tab_index } = 1;
 
-    my $uri = join_uri($self->LAYOUT_PREFIX, $self->{ layout });
+    my $uri = join_uri($self->LAYOUT_PREFIX, $self->layout);
 
     $self->debug("presenting form: $uri") if DEBUG;
     $view->include(
@@ -172,48 +209,21 @@ sub present {
 #}
 
 sub content {
-    my ($self, $view, $args) = @_;
+    my ($self, $view) = @_;
     my $output = '';
     my @fields = @{ $self->{ fields } };
 
     while (@fields) {
         my $field = shift @fields;
-        $output .= $field->present($view, $args);
+        $output .= $field->present($view);
     }
 
     return $output;
 }
 
-
 #-----------------------------------------------------------------------------
-# Add methods to set/get the current style values
+# Validation
 #-----------------------------------------------------------------------------
-
-bclass->methods(
-    map {
-        my $item = $_;
-        $item => sub {
-            return @_ > 1
-                ? ($_[0]->{ style }->{ $item } = $_[1])
-                :  $_[0]->{ style }->{ $item }
-        }
-    }
-    qw( encoding charset method action name class style title layout fragment )
-);
-
-1;
-
-__END__
-package Badger::Web::Form;
-use Badger::Class::Methods;
-use Badger::Web::Form::Fields;
-use Badger::Web::Class
-
-sub fieldset {
-    my $self = shift;
-    my $name = shift || return $self->error('no fieldset name specified');
-    return $self->pkghash( FIELDSET => $name );
-}
 
 sub validate {
     my $self   = shift;
@@ -259,6 +269,38 @@ sub valid_fields {
 sub invalid_fields {
     return $_[0]->{ invalid_fields };
 }
+
+
+#-----------------------------------------------------------------------------
+# Add methods to set/get the current style values
+#-----------------------------------------------------------------------------
+
+bclass->methods(
+    map {
+        my $item = $_;
+        $item => sub {
+            return @_ > 1
+                ? ($_[0]->{ style }->{ $item } = $_[1])
+                :  $_[0]->{ style }->{ $item }
+        }
+    }
+    qw( encoding charset method action name class style title layout fragment )
+);
+
+1;
+
+__END__
+package Badger::Web::Form;
+use Badger::Class::Methods;
+use Badger::Web::Form::Fields;
+use Badger::Web::Class
+
+sub fieldset {
+    my $self = shift;
+    my $name = shift || return $self->error('no fieldset name specified');
+    return $self->pkghash( FIELDSET => $name );
+}
+
 
 sub field_errors {
     my $self    = shift;
