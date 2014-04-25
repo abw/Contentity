@@ -2,18 +2,19 @@ package Contentity::Component::Renderer;
 
 use utf8;
 use Contentity::Class
-    version     => 0.01,
-    debug       => 0,
-    base        => 'Contentity::Component',
-    import      => 'class',
-    utils       => 'VFS Dir split_to_list extend params self_params',
-    accessors   => 'source_dirs library_dirs output_dir',
-    constant    => {
+    version   => 0.01,
+    debug     => 0,
+    base      => 'Contentity::Component',
+    import    => 'class',
+    utils     => 'VFS Dir split_to_list extend params self_params',
+    accessors => 'source_dirs library_dirs output_dir extensions',
+    constants => 'DOT',
+    constant  => {
         ENGINE  => 'Contentity::Template',
     },
-    messages    => {
+    messages  => {
         engine_init   => 'Failed to initialise %s template engine: %s',
-        engine_render => 'Failed to render %s: %s',
+        engine_render => 'Failed to render %s (%s): %s',
         no_workspace  => 'Cannot provide template_data - renderer has become detached from the workspace',
     };
 
@@ -31,15 +32,19 @@ sub init_renderer {
     # source and output directories are mandatory, library dirs are optional
     my $srcs = $config->{ source_dirs  } || return $self->error_msg( missing => 'source_dirs' );
     my $libs = $config->{ library_dirs } || '';
+    my $exts = $config->{ extensions   } || '';
     my $outd = $config->{ output_dir   };
 
     # some massaging to make them directory objects (or lists thereof)
     $self->{ source_dirs  } = $self->prepare_dirs($srcs);
     $self->{ library_dirs } = $self->prepare_dirs($libs);
+    $self->{ extensions   } = $self->prepare_exts($exts);
     $self->{ output_dir   } = Dir($outd) if $outd;
     $self->{ data         } = $config->{ data } || { };
+    $self->{ path_cache   } = { };
 
     $self->debug("renderer config: [$config] self config [$self->{ config }") if DEBUG;
+    $self->debug_data( extensions => $self->{ extensions } ) if DEBUG;
 
     return $self;
 }
@@ -57,6 +62,28 @@ sub prepare_dirs {
     return [
         map { Dir($_) }
         @$dirs
+    ];
+}
+
+sub prepare_exts {
+    my $self  = shift;
+    my $exts  = shift || return [ ];
+    my $space = $self->workspace;
+
+    $exts = split_to_list($exts);
+    $self->debug_data( extensions => $exts ) if DEBUG;
+
+    # we also upgrade each file extension to an array reference containing
+    # the extension and content type metadata, e.g. [ html, { ... } ]
+    return [
+        map {
+            [ $_ => $space->content_type($_)
+                 || return $self->error_msg(
+                        invalid => 'file extension/content type' => $_
+                    )
+            ]
+        }
+        @$exts
     ];
 }
 
@@ -81,9 +108,9 @@ sub source_files {
     return $files;
 }
 
-sub source_path {
+sub source_file {
     my $self = shift;
-    return $self->source_vfs->path(@_);
+    return $self->source_vfs->file(@_);
 }
 
 sub include_path {
@@ -95,6 +122,60 @@ sub include_path {
             @{ $self->source_dirs  },
             @{ $self->library_dirs }
         ];
+}
+
+sub template_path {
+    my $self  = shift;
+    my $name  = shift;
+    my $cache = $self->{ path_cache };
+    my $path  = $cache->{ $name };        # TODO: might be previously not found
+
+    if (DEBUG) {
+        if ($path) {
+            $self->debug("found cached location of path: $name => $path");
+        }
+        else {
+            $self->debug("no cached location of path for $name");
+        }
+    }
+
+    return $path
+        if $path;
+
+    $path = $self->source_file($name);
+
+    if (DEBUG) {
+        if ($path->exists) {
+            $self->debug("template exists as specified: $name => $path");
+        }
+        else {
+            $self->debug("template does NOT exist as specified: $name => $path");
+        }
+    }
+
+    return ($cache->{ $name } = $path)
+        if $path->exists;
+
+    if ($path->extension) {
+        # TODO: The template requested already had an extension specified so
+        # I don't *think* we should try adding any other extensions onto it.
+        # But I may want to revisit this, e.g. index.html => index.html.tt3
+        return undef;
+    }
+
+    my $exts = $self->extensions;
+    my ($pair, $ext, $type);
+
+    foreach $pair (@$exts) {
+        ($ext, $type) = @$pair;
+        $path = $self->source_file($name.DOT.$ext);
+        $self->debug("+ext:$ext looking to see if $path exists") if DEBUG;
+        if ($path->exists) {
+            # TODO: we want to pass the $type info back up somehow
+            return ($cache->{ $name } = $path);
+        }
+    }
+    return undef;
 }
 
 #-----------------------------------------------------------------------------
@@ -176,16 +257,20 @@ sub render {
     my $self   = shift;
     my $name   = shift;
     my $engine = $self->engine;
+    my $path   = $self->template_path($name) || return $self->error_msg( invalid => template => $name );
     my $params = $self->template_data(@_);
+    my $file   = $path->absolute;  # absolute relative to VFS
     my $output;
 
-    # remove leading slash - TT thinks you're trying to access an absolute path
-    $name =~ s[^/][];
+    # remove leading slash otherwise TT thinks you're trying to access an
+    # absolute filesystem path, when it's actually a virtual file system path
+    # rooted in the template source directories.
+    $file =~ s[^/][];
 
-    $self->debug("rendering [$name] (", ref($name), ')') if DEBUG;
+    $self->debug("rendering [$name] as [$path] ($file)") if DEBUG;
 
-    $engine->process($name, $params, \$output)
-        || return $self->error_msg( engine_render => $name, $engine->error );
+    $engine->process($file, $params, \$output)
+        || return $self->error_msg( engine_render => $name, $file, $engine->error );
 
     $self->debug("rendered: $name: $output") if DEBUG && $name =~ /.html/;
 
