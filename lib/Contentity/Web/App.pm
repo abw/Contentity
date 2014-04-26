@@ -2,7 +2,7 @@ package Contentity::Web::App;
 
 use Contentity::Class
     version   => 0.01,
-    debug     => 0,
+    debug     => 1,
     import    => 'CLASS',
     component => 'web',
     constants => 'BLANK :http_status',
@@ -31,13 +31,23 @@ use Contentity::Class
 sub init_component {
     my ($self, $config) = @_;
 
-    $self->debug_data( app => $config ) if DEBUG;
+    $self->debug_data( app => $config ) if DEBUG or 1;
 
     # have the auto-configuration method provide default values into $config
     $self->configure($config);
 
     # copy messages into $self so Badger::Base can find them
     $self->{ messages } = $config->{ messages };
+
+    # save any access login as a Badger::Logic object
+    if ($config->{ access }) {
+        $self->{ access } = Logic( $config->{ access } );
+        $self->{ realm  } = $self->workspace->realm;
+        $self->debug($self->uri, " APP: access: $self->{ access } in realm: $self->{ realm }") if DEBUG or 1;
+    }
+    else {
+        $self->debug("No access rules for app: ", $self->uri) if DEBUG or 1;
+    }
 
     # TODO: also access, templates, template_path, urls, etc.
 
@@ -122,56 +132,56 @@ sub action_method {
     my $method = shift || $self->can('default_action');
     my $route  = _params(@_);
 
-    $self->debug("TODO: proper action_method() (or dispatch_route()) for $uri") if DEBUG or 1;
+    if ($self->{ access }) {
+        $self->debug("access for ", $self->uri, " is: $self->{ access }") if DEBUG or 1;
+
+        my $login = $self->login;
+
+        if (! $login) {
+            $self->debug("User not logged in") if DEBUG or 1;
+            return $self->redirect_login;
+        }
+
+        my $roles = $login->realm_roles_hash(
+            $self->{ realm },# 'realm.%s'
+        );
+
+        $self->debug_data(
+            "user roles for $self->{ realm } realm: ",
+            $roles,
+        ) if DEBUG or 1;
+
+        if ($self->{ access }->evaluate($roles)) {
+            $self->debug("this user can access this page") if DEBUG or 1;
+        }
+        else {
+            $self->debug("this user CANNOT access this page") if DEBUG or 1;
+            return $self->send_denied_page;
+        }
+    }
+    else {
+        $self->debug("No access rules for app") if DEBUG or 1;
+    }
 
     return $self->$method;
+#    return $self->dispatch_method(
+#        $method, @_
+#    );
 }
 
+
+#$self->pre_action($action, @args);
+sub NOT_dispatch_method {
+    my ($self, $method, @args) = @_;
+    return $method
+        ? $self->$method(@args)
+        : $self->default_action;
+}
 
 sub default_action {
     shift->not_implemented('in base class');
 }
 
-
-
-#-----------------------------------------------------------------------------
-# Access control
-#-----------------------------------------------------------------------------
-
-sub access {
-    my $self    = shift;
-    my $action  = shift;
-    my @args    = @_;
-
-    if ($self->{ access }) {
-        $self->debug("access for $self->{ uri } is: $self->{ access }") if DEBUG;
-
-        my $user = $self->user
-           || return $self->redirect_login;
-
-        $self->debug(
-            "user roles: ", $user->role_names,
-            ' => ', $self->dump_data($user->role_hash)
-        ) if DEBUG;
-
-        if ($self->{ access }->evaluate($user->role_hash)) {
-            $self->debug("this user can access this page") if DEBUG;
-        }
-        else {
-            $self->debug("this user CANNOT access this page") if DEBUG;
-            return $self->send_denied_page;
-        }
-    }
-
-    # Not sure if this is the best thing, but I want a hook to do some
-    # extra pre-processing (e.g. restoring any pending data) before the
-    # action is invoked
-    $self->pre_action($action, @args);
-
-    return $action
-        ? $self->$action(@args)
-        : $self->default_action;
-}
 
 #-----------------------------------------------------------------------------
 # Template rendering

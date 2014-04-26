@@ -44,6 +44,10 @@ sub init_vfs {
 }
 
 sub dispatch {
+    shift->action_method( '', dispatcher => @_ );
+}
+
+sub dispatcher {
     my $self = shift;
     my $root = $self->root;
     my $uri  = $self->uri;
