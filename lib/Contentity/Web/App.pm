@@ -2,7 +2,7 @@ package Contentity::Web::App;
 
 use Contentity::Class
     version   => 0.01,
-    debug     => 1,
+    debug     => 0,
     import    => 'CLASS',
     component => 'web',
     constants => 'BLANK :http_status',
@@ -46,7 +46,7 @@ sub init_component {
         $self->debug($self->uri, " APP: access: $self->{ access } in realm: $self->{ realm }") if DEBUG or 1;
     }
     else {
-        $self->debug("No access rules for app: ", $self->uri) if DEBUG or 1;
+        $self->debug("No access rules for app: ", $self->urn) if DEBUG or 1;
     }
 
     # TODO: also access, templates, template_path, urls, etc.
@@ -120,15 +120,13 @@ sub dispatch {
         push(@$done, @copy);       # Here @copy is the list of path elements consumed by this action
     }
 
-    return $self->action_method(
-        join_uri(@copy),
+    return $self->dispatch_method(
         $action
     );
 }
 
-sub action_method {
+sub dispatch_method {
     my $self   = shift;
-    my $uri    = shift,
     my $method = shift || $self->can('default_action');
     my $route  = _params(@_);
 
@@ -164,19 +162,8 @@ sub action_method {
     }
 
     return $self->$method;
-#    return $self->dispatch_method(
-#        $method, @_
-#    );
 }
 
-
-#$self->pre_action($action, @args);
-sub NOT_dispatch_method {
-    my ($self, $method, @args) = @_;
-    return $method
-        ? $self->$method(@args)
-        : $self->default_action;
-}
 
 sub default_action {
     shift->not_implemented('in base class');
