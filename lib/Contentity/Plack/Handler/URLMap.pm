@@ -1,5 +1,8 @@
 package Contentity::Plack::Handler::URLMap;
 
+use Carp 'confess';
+confess __PACKAGE__, " is deprecated";
+
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
