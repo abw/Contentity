@@ -429,34 +429,51 @@ our $INSULTS = [
     [
         'Please try again.',
         'Oops, you made a mistake!',
-        "Oh dear, I'm afraid that's not good enough."
+        "Oh dear, I'm afraid that's not good enough.",
+        "I fear you may have erred"
     ],
     [
+        'You are clearly a fool.',
         'You muppet!',
         'Are you on drugs?',
         'Do you have trouble typing or did someone cut your fingers off?',
+        'Do you need to have a lie down for a while?'
     ],
     [
         'Are you taking the piss?',
         "I'm getting rather annoyed with you.",
-        "I'm tutting quietly under my breath."
+        "I'm tutting quietly under my breath.",
+        "Haven't you got better things to be doing with your time?",
+        "Ha ha, very funny.  Keep giving the dumb computer the wrong answer.",
     ],
     [
         "Look, I may be a dumb computer but I've got better things to be doing with my time.",
         "Now I know you're just doing this to see all the silly error messages.",
         "Your mother was a hamster and your father smelled of elderberries.",
         "I blow my nose at you and all your silly ker-nig-herts.",
+        "You are doing a good job.  Badly.",
     ],
     [
         "Stop it!",
         "Bugger off!",
+        "I pity the fool who can't answer a simple question.",
+        "Mornington Crescent!",
+        "Wanna take a bath?",
     ],
     [
         "Seriously, stop messing!",
         "Get lost!",
+        "I am calling the police right now.",
+        "This incident has been reported.",
+        "I can feel one of my turns coming on.",
     ],
     [
         "I'm not playing any more.",
+        "I'm sorry Dave, I'm afraid I can't let you do that.",
+        "Life, don't talk to me about life.",
+    ],
+    [
+        "ERROR BETWEEN KEYBOARD AND CHAIR",
     ]
 ];
 

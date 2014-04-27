@@ -88,6 +88,8 @@ sub init_args {
     my $appc = $self->appconfig;
     my $arg;
 
+    $self->debug_data("init_args()", $args) if DEBUG;
+
     $appc->args($args)
         || return $self->help;
 }

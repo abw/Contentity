@@ -7,7 +7,8 @@ use Badger::Rainbow     ANSI => 'all';
 use Carp;
 use POSIX               'floor';
 use Badger::Debug       'debug_caller';
-use Badger::Utils       'params numlike is_object plural permute_fragments xprintf TIMESTAMP split_to_list md5_hex';
+use Badger::Utils       'params numlike is_object plural permute_fragments
+                         xprintf TIMESTAMP split_to_list md5_hex';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
@@ -479,13 +480,27 @@ sub cmd {
     if ($err != 0) {
         # more robust analysis of failures, as and when we want it.
         if ($? == -1) {
-            die "Failed to execute command '$_[0]': $!\n";
+            die "\n",
+                red("Failed to execute command "),
+                cyan("'$_[0]'"),
+                red(": "),
+                yellow($!),
+                "\n";
         }
         elsif ($? & 127) {
-            die "Command '$_[0]' died with signal ", ($? & 127), " : $!\n";
+            die "\n",
+                red("Command "),
+                cyan("'$_[0]'"),
+                red(" died with signal ", ($? & 127)),
+#                yellow($!),
+                "\n";
         }
         else {
-            die "Command '$_[0]' exited with value: ", $? >> 8, "\n";
+            die "\n",
+                red("Command "),
+                cyan("'$_[0]'"),
+                red(" exited with value: ", $? >> 8),
+                "\n";
         }
     };
 
