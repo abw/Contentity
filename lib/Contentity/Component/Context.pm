@@ -10,7 +10,7 @@ use Contentity::Class
     accessors   => 'request base path url status headers',
     mutators    => 'content_type',
     utils       => 'self_params is_object weaken extend Path URL blessed',
-    constants   => 'HASH ARRAY BLANK :http_accept',
+    constants   => 'HASH ARRAY BLANK SLASH :http_accept',
     alias       => {
         output  => \&content,
     },
@@ -49,7 +49,7 @@ sub init_context {
 
 
     $self->{ base         } = $base;
-    $self->{ url          } = URL($base);
+    $self->{ url          } = URL($base);    # not sure we need this now - see C::C::Web url()
     $self->{ path         } = $path;
     $self->{ request      } = $request;
     $self->{ data         } = $config->{ data } || { };
@@ -202,7 +202,10 @@ sub set_cookie {
     my ($self, $name, $value) = @_;
     # TODO: handle case where $value is a hash ref and has an 'expires'
     # value like '3 hours' which we need to convert to an epoch time
-    return $self->response->cookies->{ $name } = $value;
+    return $self->response->cookies->{ $name } = {
+        value => $value,
+        path  => SLASH,
+    };
 }
 
 sub session_cookie {
