@@ -14,11 +14,14 @@ use Contentity::Class
 sub init_vfs {
     my ($self, $config) = @_;
     $self->{ vfs } = $self->renderer->source_vfs;
+    $self->debug_data(
+        "adopted renderer VFS with roots => ", $self->{ vfs }->roots
+    ) if DEBUG;
 }
 
 sub present_file {
     my ($self, $uri, $file) = @_;
-    my $data = $self->context->data;
+    my $data = $self->template_data;
     $self->debug_data(
         "about to render [uri:$uri] from [file:$file] with",
         $data

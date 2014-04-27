@@ -3,7 +3,7 @@ package Contentity::Web::App;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
-    import    => 'CLASS',
+    import    => 'class',
     component => 'web',
     constants => 'BLANK :http_status',
     utils     => 'extend join_uri resolve_uri Logic',
@@ -24,14 +24,18 @@ use Contentity::Class
     };
 
 
+#our @HASH_ARGS = qw( options filters templates webapps forms urls );
+our @HASH_ARGS = qw( templates forms urls );
+
 #-----------------------------------------------------------------------------
 # initialisation methods
 #-----------------------------------------------------------------------------
 
 sub init_component {
     my ($self, $config) = @_;
+    my $class = $self->class;
 
-    $self->debug_data( app => $config ) if DEBUG or 1;
+    $self->debug_data( app => $config ) if DEBUG;
 
     # have the auto-configuration method provide default values into $config
     $self->configure($config);
@@ -39,14 +43,22 @@ sub init_component {
     # copy messages into $self so Badger::Base can find them
     $self->{ messages } = $config->{ messages };
 
+    # merge all templates forms, url, etc., in config and package vars
+    foreach my $arg (@HASH_ARGS) {
+        $self->{ $arg } = $class->hash_vars( uc $arg, $config->{ $arg } );
+        $self->debug("merged $arg: ", $self->dump_data($self->{ $arg })) if DEBUG;
+    }
+
     # save any access login as a Badger::Logic object
+    # TODO: should also look for any site access (although that would prevent
+    # logging in via an open /auth app...)
     if ($config->{ access }) {
         $self->{ access } = Logic( $config->{ access } );
         $self->{ realm  } = $self->workspace->realm;
-        $self->debug($self->uri, " APP: access: $self->{ access } in realm: $self->{ realm }") if DEBUG or 1;
+        $self->debug($self->urn, " APP: access: $self->{ access } in realm: $self->{ realm }") if DEBUG;
     }
     else {
-        $self->debug("No access rules for app: ", $self->urn) if DEBUG or 1;
+        $self->debug("No access rules for app: ", $self->urn) if DEBUG;
     }
 
     # TODO: also access, templates, template_path, urls, etc.
@@ -131,12 +143,12 @@ sub dispatch_method {
     my $route  = _params(@_);
 
     if ($self->{ access }) {
-        $self->debug("access for ", $self->uri, " is: $self->{ access }") if DEBUG or 1;
+        $self->debug("access for ", $self->uri, " is: $self->{ access }") if DEBUG;
 
         my $login = $self->login;
 
         if (! $login) {
-            $self->debug("User not logged in") if DEBUG or 1;
+            $self->debug("User not logged in") if DEBUG;
             return $self->redirect_login;
         }
 
@@ -147,18 +159,18 @@ sub dispatch_method {
         $self->debug_data(
             "user roles for $self->{ realm } realm: ",
             $roles,
-        ) if DEBUG or 1;
+        ) if DEBUG;
 
         if ($self->{ access }->evaluate($roles)) {
-            $self->debug("this user can access this page") if DEBUG or 1;
+            $self->debug("this user can access this page") if DEBUG;
         }
         else {
-            $self->debug("this user CANNOT access this page") if DEBUG or 1;
+            $self->debug("this user CANNOT access this page") if DEBUG;
             return $self->send_denied_page;
         }
     }
     else {
-        $self->debug("No access rules for app") if DEBUG or 1;
+        $self->debug("No access rules for app") if DEBUG;
     }
 
     return $self->$method;
@@ -206,7 +218,17 @@ sub present {
 
 
 sub template_path {
-    shift->resource_path( template => @_ );
+    my $self = shift;
+    my $uri  = join_uri(@_);
+    my $path = $self->{ templates }->{ $uri };
+    if ($path) {
+        $self->debug("found match for template $uri => $path") if DEBUG;
+        return $path;
+    }
+    $self->debug("template_path($uri) -> resource_path") if DEBUG;
+    return $self->resource_path(
+        template => $uri
+    );
 }
 
 

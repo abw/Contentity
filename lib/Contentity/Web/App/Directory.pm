@@ -4,13 +4,16 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Web::App',
-    accessors => 'root template index vfs',
+    accessors => 'root index vfs',
     constants => ':html :http_status SLASH BLANK TRUE FALSE',
     utils     => 'extend join_uri VFS',
     constant  => {
         RENDERER => 'dynamic',
-        TEMPLATE => 'directory/index.html',
     };
+
+our $TEMPLATES = {
+    directory => '/directory/index.html',
+};
 
 
 sub init_app {
@@ -22,7 +25,6 @@ sub init_directory {
 
     $self->debug_data( directory => $config ) if DEBUG;
 
-    $self->{ template   } = $config->{ template } || $self->TEMPLATE;
     $self->{ index      } = $config->{ index };
     $self->{ files      } = { };
     $self->{ dirs       } = { };
@@ -44,13 +46,13 @@ sub init_vfs {
 }
 
 sub dispatch {
-    shift->action_method( '', dispatcher => @_ );
+    shift->dispatch_method( dispatcher => @_ );
 }
 
 sub dispatcher {
     my $self = shift;
     my $root = $self->root;
-    my $uri  = $self->uri;
+    my $uri  = $self->path_uri;
     my ($path, $dir, $file, $url);
 
     $self->debug("URI: $uri") if DEBUG;
@@ -74,21 +76,25 @@ sub dispatcher {
 
     # Have a look for it in the virtual filesystem
     # Hmmm... I have my suspicions that this isn't working properly
-    $path = $self->path($uri);
+    $path = $self->vfs_path($uri);
 
     if (DEBUG) {
         $self->debug("URL: ", $path->definitive);
+        $self->debug("is file: ", $path->is_file);
+        $self->debug("is dir: ", $path->is_dir);
         $self->debug_data($uri, $path);
     }
 
     # Is it a file?
-    return $self->found_file($uri, $self->file($path))
+    return $self->found_file($uri, $self->vfs_file($path))
         if $path->is_file;
 
     # Is is a directory?
     if ($path->is_dir) {
-        $dir  = $self->dir($path);
+        $dir  = $self->vfs_dir($path);
         $file = $dir->file(INDEX_HTML);
+
+        $self->debug("is there an index file? $file: ", $file->exists ? 'yes' : 'no') if DEBUG;
 
         # Is there an index.html file in the directory?  Redirect to it.
         return $self->found_redirect($uri, $file->path)
@@ -102,10 +108,10 @@ sub dispatcher {
     }
 
     # Otherwise try appending '.html' to find a file
-    $path = $self->path($uri.DOT_HTML);
+    $path = $self->vfs_path($uri.DOT_HTML);
 
     # Is it a file?
-    return $self->found_file($uri, $self->file($path))
+    return $self->found_file($uri, $self->vfs_file($path))
         if $path->is_file;
 
     # give up
@@ -172,22 +178,11 @@ sub present_file {
 sub present_dir {
     my ($self, $uri, $dir) = @_;
 
-    $self->debug_data( $uri => $dir ) if DEBUG;
-    $self->debug_data( VFS => $dir->filesystem ) if DEBUG;
-    my $kids = $dir->children;
-    $self->debug_data( kids => $kids ) if DEBUG;
-
-    # TODO: fix up the mess of file paths vs VFS paths vs resource URLS
-    my $base = $self->script_name;
-    $base =~ s[/$][];
-
     return $self->present(
-        $self->template,
-        {
-            base => $base,    # TODO: get rid
+        directory => $self->template_data({
             uri  => $uri,
-            dir  => $dir
-        }
+            dir  => $dir,
+        })
     );
 }
 
@@ -206,26 +201,27 @@ sub content_icon {
     return $type->{ icon };
 }
 
-sub path {
+sub vfs_path {
     shift->vfs->path(@_);
 }
 
-sub file {
+sub vfs_file {
     shift->vfs->file(@_);
 }
 
-sub dir {
+sub vfs_dir {
     shift->vfs->dir(@_);
 }
 
-sub uri {
-    shift->context->path->path_todo || SLASH;
+sub path_uri {
+    my $uri = shift->context->path->path_todo || SLASH;
+
 }
 
-sub url {
-    my $self = shift;
-    return $self->script_name(@_);
-}
+#sub url {
+#    my $self = shift;
+#    return $self->script_name(@_);
+#}
 
 sub file_uri {
     my ($self, $file) = @_;
