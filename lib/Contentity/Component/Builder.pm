@@ -109,6 +109,7 @@ sub process_templates {
     my $srcdirs  = $renderer->source_dirs;
     my $libdirs  = $renderer->library_dirs;
     my $filter   = $self->filter;
+    my $verbose  = $self->verbose;
 
     $data->{ date } ||= Now->date;
     $data->{ time } ||= Now->time;
@@ -132,6 +133,8 @@ sub process_templates {
     $self->template_dirs_info("From: ", $srcdirs);
     $self->template_dirs_info("With: ", $libdirs);
     $self->template_dir_info( "  To: ", $outdir);
+
+    $self->reporter->init_progress( size => scalar @$files );
 
     foreach my $file (@$files) {
         my $path = $file->absolute;
@@ -246,11 +249,15 @@ sub template_dirs_info {
 
 sub template_dir_info {
     my ($self, $info, $dir) = @_;
-    $self->reporter->info($info, yellow($dir));
+    $self->reporter->info($info . yellow($dir));
 }
 
 sub verbose {
     shift->reporter->verbose(@_);
+}
+
+sub progress {
+    shift->reporter->progress(@_);
 }
 
 sub quiet {
