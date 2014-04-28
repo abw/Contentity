@@ -165,9 +165,11 @@ sub prompt_list {
     my $an      = ($type =~ /^[aeiou]/) ? 'an' : 'a';
     my (@items, $item);
 
-    $self->prompt_about($about) if $about;
-    $self->prompt_comment($comment) if $comment;
-    $self->prompt_comment($comment) if $comment;
+    unless ($self->quiet) {
+        $self->prompt_about($about) if $about;
+        $self->prompt_comment($comment) if $comment;
+        $self->prompt_comment($comment) if $comment;
+    }
 
     if ($list) {
         foreach $item (@$list) {
