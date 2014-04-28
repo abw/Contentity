@@ -385,6 +385,7 @@ sub option_prompt {
     my $path    = $option->{ path      };
     my $default = $option->{ default   };
     my $list    = $option->{ list      };
+    my $prepare = $option->{ prepare   };
     my $value   = $self->get($path); # || $option->{ default };
     my $result;
 
@@ -392,6 +393,9 @@ sub option_prompt {
         $self->debug_data( path => $path );
         $self->debug("$name VALUE: [$value]  DEFAULT: [$default]");
     }
+
+    # call prepare method if there is one
+    $self->$prepare($option) if $prepare;
 
     local $option->{ value } = $value || $default;
 
@@ -401,6 +405,7 @@ sub option_prompt {
     }
     else {
         $result = $self->prompt($title, $option->{ value }, $option);
+        $self->prompt_newline;
     }
 
     $self->debug_data("got [$result] for ", $path) if DEBUG;

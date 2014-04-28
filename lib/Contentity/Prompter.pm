@@ -366,7 +366,7 @@ sub prompt_title {
 
 sub read_input {
     my $self  = shift;
-    my $input = <STDIN>;
+    my $input = <STDIN> // '';
     chomp($input);
     return trim($input);
 }
