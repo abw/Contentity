@@ -79,9 +79,13 @@ sub accept_types {
     my @keys    = keys %$types;
     my $accepts = $self->accepts;
 
+    $self->debug_data( accepts => $accepts ) if DEBUG;
+    $self->debug_data( client  => $types ) if DEBUG;
+
     foreach my $key (@keys) {
         my $type = $accepts->{ $key } || next;
-        $types->{ $type } = $type->{ urn };
+        $self->debug_data("$key" => $type ) if DEBUG;
+        $types->{ $type->{ urn } } = $type->{ content_type };
     }
 
     $self->debug_data( merged_accept_types => $types ) if DEBUG;
