@@ -14,7 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 91,
+    tests => 93,
     debug => 'Contentity::Colour',
     args  => \@ARGV;
 
@@ -213,8 +213,14 @@ is( $orange2, '#ff9933', 'lightened orange by 20');
 is( $orange3, '#ff9933', 'lightened orange by 0.2');
 is( $orange4, '#ff9933', 'lightened orange by lighten20');
 
-my $trans1 = $orange->trans(10);
-is( $trans1, 'rgba(255,128,0,0.1)', 'orange trans(10)' );
+my $opaque1 = $orange->opaque(10);
+is( $opaque1, 'rgba(255,128,0,0.1)', 'orange opaque(10)' );
 
-my $trans2 = $orange->trans20;
-is( $trans2, 'rgba(255,128,0,0.2)', 'orange.trans20' );
+my $opaque2 = $orange->opaque20;
+is( $opaque2, 'rgba(255,128,0,0.2)', 'orange.opaque20' );
+
+my $trans1 = $orange->transparent(10);
+is( $trans1, 'rgba(255,128,0,0.9)', 'orange trans(10)' );
+
+my $trans2 = $orange->transparent20;
+is( $trans2, 'rgba(255,128,0,0.8)', 'orange.trans20' );

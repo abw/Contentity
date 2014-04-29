@@ -238,8 +238,12 @@ sub mix {
     );
 }
 
-sub trans {
-    shift->rgb->trans(@_);
+sub transparent {
+    shift->rgb->transparent(@_);
+}
+
+sub opaque {
+    shift->rgb->opaque(@_);
 }
 
 
@@ -324,7 +328,7 @@ sub normalise_alpha {
 
 our $VARIANTS = {
     map { $_ => $_ }
-    qw( lighten darken trans )
+    qw( lighten darken transparent opaque )
 };
 
 sub variant {

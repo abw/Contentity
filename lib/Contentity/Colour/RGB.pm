@@ -377,9 +377,16 @@ sub blend {
     return $copy;
 }
 
-sub trans {
+sub opaque {
     my $copy = shift->copy;
-    $copy->alpha(shift);
+    $copy->alpha(@_);
+    return $copy;
+}
+
+sub transparent {
+    my $copy  = shift->copy;
+    my $trans = $copy->normalise_alpha(@_);
+    $copy->alpha( 1 - $trans );
     return $copy;
 }
 
