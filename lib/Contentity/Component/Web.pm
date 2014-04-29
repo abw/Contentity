@@ -7,7 +7,8 @@ use Contentity::Class
     base      => 'Contentity::Component Contentity::Plack::Component',
     constants => 'BLANK :http_status :content_types',
     accessors => 'env context',
-    utils     => 'join_uri resolve_uri strip_hash',
+    utils     => 'join_uri resolve_uri strip_hash extend split_to_list',
+    codecs    => 'json',
     alias     => {
         _params => \&Contentity::Utils::params,
     },
@@ -29,6 +30,12 @@ our $URLS = {
     login      => '/auth/login',
     logged_in  => '/auth/logged_in',
     logged_out => '/auth/logged_out',
+};
+
+our $TEMPLATES = {
+    error      => '/error/error.html',
+    forbidden  => '/error/forbidden.html',
+    not_found  => '/error/not_found.html',
 };
 
 
@@ -89,6 +96,14 @@ sub call_app {
 
 sub request {
     shift->context->request;
+}
+
+sub accept {
+    shift->context->accept_type(@_);
+}
+
+sub accept_json {
+    shift->accept(JSON);
 }
 
 sub uri {
@@ -262,6 +277,57 @@ sub user {
 }
 
 
+#-----------------------------------------------------------------------------
+# authorisation roles
+#-----------------------------------------------------------------------------
+
+sub roles_for_user {
+    my $self = shift;
+    return  $self->{ roles_for_user }
+        ||= $self->roles_hash('roles.user');
+}
+
+sub roles_for_guest {
+    my $self = shift;
+    return  $self->{ roles_for_guest }
+        ||= $self->roles_hash('roles.guest');
+}
+
+sub roles_hash {
+    my ($self, $key) = @_;
+    return {
+        map { $_ => 1 }
+        @{ split_to_list( $self->workspace->config($key) ) }
+    };
+}
+
+sub authorisation_roles {
+    my $self  = shift;
+    my $login = $self->login;
+    my $roles = { };
+
+    if ($login) {
+        # merge in the roles explicitly granted to them as realm roles,
+        # and any global roles for users defined in config/roles.yaml
+        extend(
+            $roles,
+            $login->realm_roles_hash(
+                $self->{ realm } ||= $self->workspace->realm,
+            ),
+            $self->roles_for_user
+        );
+    }
+    else {
+        extend(
+            $roles,
+            $self->roles_for_guest,
+        );
+    }
+
+    return $roles;
+}
+
+
 #-----------------------------------------------------------------------
 # Response
 #-----------------------------------------------------------------------
@@ -270,13 +336,13 @@ sub response {
     shift->context->response(@_);
 }
 
-sub send_redirect {
+sub redirect_response {
     shift->response(
         redirect => join(BLANK, @_)
     );
 }
 
-sub send_not_found {
+sub not_found_reponse {
     shift->response(
         type    => HTML,
         status  => NOT_FOUND,
@@ -284,15 +350,23 @@ sub send_not_found {
     );
 }
 
-sub send_forbidden {
-    shift->response_type(
+sub forbidden_response {
+    shift->response(
         type    => HTML,
         status  => FORBIDDEN,
         content => join(BLANK, @_),
     );
 }
 
-sub send_type_content {
+sub error_response {
+    shift->response(
+        type    => HTML,
+        status  => SERVER_ERROR,
+        content => join(BLANK, @_),
+    );
+}
+
+sub type_content_response {
     my $self    = shift;
     my $type    = shift;
     my $content = join(BLANK, @_);
@@ -302,21 +376,121 @@ sub send_type_content {
     );
 }
 
+#-----------------------------------------------------------------------------
+# Slightly higher level wrappers which account for the client wanting HTML or
+# JSON where appropriate.
+#-----------------------------------------------------------------------------
+
 sub send_text {
-    shift->send_type_content(TEXT, @_);
+    shift->type_content_response(TEXT, @_);
 }
 
 sub send_html {
-    shift->send_type_content(HTML, @_);
+    shift->type_content_response(HTML, @_);
 }
 
 sub send_xml {
-    shift->send_type_content(XML, @_);
+    shift->type_content_response(XML, @_);
 }
 
 sub send_json {
-    shift->send_type_content(JSON, @_);
+    my $self = shift;
+    my $data = @_ > 1 ? { @_ } : shift;
+    my $jpcb = $self->param('callback');
+
+    if ($jpcb) {
+        $self->debug("called as JSONP with callback: $jpcb") if DEBUG;
+        return $self->send_jsonp($jpcb, $data);
+    }
+
+    #if ($self->option('textarea')) {
+    #    return $self->send_json_textarea($data);
+    #}
+
+    $self->response(
+        type    => 'json',
+        content => encode_json($data),
+    );
 }
+
+sub send_jsonp {
+    my $self     = shift;
+    my $callback = shift;
+    my $data     = @_ > 1 ? { @_ } : shift;
+    my $json     = encode_json($data);
+
+    $self->response(
+        type    => 'js',
+        content => $callback . '(' . $json . ')',
+    );
+}
+
+
+sub send_json_error {
+    my $self = shift;
+    my $error = join('', @_);
+    return $self->send_json(
+        status  => 'error',
+        message => $error,
+    );
+}
+
+sub send_redirect {
+    shift->redirect_response(@_);
+}
+
+sub send_not_found {
+    shift->not_found_response(@_);
+}
+
+sub send_forbidden {
+    my $self  = shift;
+    my $error = @_ ? join('', @_) : ($@ || $self->reason || 'No reason given');
+
+    if ($self->accept_json) {
+        return $self->send_json_error($error);
+    }
+    else {
+        return $self->send_forbidden_html($error);
+    }
+}
+
+sub send_forbidden_html {
+    my $self  = shift;
+    my $error = join('', @_);
+
+    # subclasses (e.g. Contentity::Web::App) can redefine this method to embed
+    # the error message in a page.
+
+    return $self->error_response(
+        "Forbidden: ", $error
+    );
+}
+
+sub send_error {
+    my $self  = shift;
+    my $error = @_ ? join('', @_) : ($@ || $self->reason || 'No reason given');
+
+    if ($self->accept_json) {
+        return $self->send_json_error($error);
+    }
+    else {
+        return $self->send_error_html($error);
+    }
+}
+
+sub send_error_html {
+    my $self  = shift;
+    my $error = join('', @_);
+
+    # subclasses (e.g. Contentity::Web::App) can redefine this method to embed
+    # the error message in a page.
+
+    return $self->error_response(
+        "Error: ", $error
+    );
+}
+
 
 
 #-----------------------------------------------------------------------------
@@ -327,6 +501,13 @@ sub send_not_found_msg {
     my $self = shift;
     return $self->send_not_found(
         $self->message( not_found => @_ )
+    );
+}
+
+sub send_error_msg {
+    my $self = shift;
+    return $self->send_error(
+        $self->message(@_)
     );
 }
 
@@ -388,6 +569,18 @@ sub redirect_login_msg {
 
 sub login_url {
     shift->url(LOGIN_URL);
+}
+
+#-----------------------------------------------------------------------------
+# Other workspace resources
+#-----------------------------------------------------------------------------
+
+sub database {
+    shift->workspace->database;
+}
+
+sub model {
+    shift->workspace->model;
 }
 
 1;

@@ -34,6 +34,8 @@ our @HASH_ARGS = qw( templates forms urls );
 sub init_component {
     my ($self, $config) = @_;
     my $class = $self->class;
+    my $space = $self->workspace;
+    my $access;
 
     $self->debug_data( app => $config ) if DEBUG;
 
@@ -49,26 +51,40 @@ sub init_component {
         $self->debug("merged $arg: ", $self->dump_data($self->{ $arg })) if DEBUG;
     }
 
-    # save any access login as a Badger::Logic object
-    # TODO: should also look for any site access (although that would prevent
-    # logging in via an open /auth app...)
-    if ($config->{ access }) {
-        $self->{ access } = Logic( $config->{ access } );
-        $self->{ realm  } = $self->workspace->realm;
-        $self->debug($self->urn, " APP: access: $self->{ access } in realm: $self->{ realm }") if DEBUG;
-    }
-    else {
-        $self->debug("No access rules for app: ", $self->urn) if DEBUG;
-    }
-
-    # TODO: also access, templates, template_path, urls, etc.
+    # TODO: also template_path, urls, etc.
 
     $self->debug_data( max_path_length => $self->{ max_path_length } ) if DEBUG;
     $self->debug_data( action_format => $self->{ action_format } ) if DEBUG;
 
+    $self->init_access($config);
     $self->init_app($config);
 
     return $self;
+}
+
+sub init_access {
+    my ($self, $config) = @_;
+    my $space = $self->workspace;
+    my $access;
+
+    # Save any access login as a Badger::Logic object.
+    # Access defined by application config takes precedence over any site-wide
+    # access rule (allowing the default for a site to be restricted but leaving
+    # one or more apps open for acccess, e.g. /auth to allow login).
+    if ($access = $config->{ access } || $space->config('access')) {
+        $self->{ access } = Logic( $access );
+        $self->{ realm  } = $space->realm;
+        $self->debug(
+            $self->urn,
+            " APP: access: $self->{ access } in realm: $self->{ realm }"
+        ) if DEBUG;
+    }
+    else {
+        $self->debug(
+            "No access rules for app: ",
+            $self->urn
+        ) if DEBUG;
+    }
 }
 
 sub init_app {
@@ -143,18 +159,11 @@ sub dispatch_method {
     my $route  = _params(@_);
 
     if ($self->{ access }) {
-        $self->debug("access for ", $self->uri, " is: $self->{ access }") if DEBUG;
+        my $roles = $self->authorisation_roles;
 
-        my $login = $self->login;
-
-        if (! $login) {
-            $self->debug("User not logged in") if DEBUG;
-            return $self->redirect_login;
-        }
-
-        my $roles = $login->realm_roles_hash(
-            $self->{ realm },# 'realm.%s'
-        );
+        $self->debug(
+            "access for ", $self->uri, " is: $self->{ access }"
+        ) if DEBUG;
 
         $self->debug_data(
             "user roles for $self->{ realm } realm: ",
@@ -166,7 +175,12 @@ sub dispatch_method {
         }
         else {
             $self->debug("this user CANNOT access this page") if DEBUG;
-            return $self->send_denied_page;
+            if ($self->login) {
+                return $self->send_forbidden("You cannot access that page.");
+            }
+            else {
+                return $self->redirect_login;
+            }
         }
     }
     else {
@@ -222,7 +236,7 @@ sub template_path {
     my $uri  = join_uri(@_);
     my $path = $self->{ templates }->{ $uri };
     if ($path) {
-        $self->debug("found match for template $uri => $path") if DEBUG;
+        $self->debug("found match for template $uri => $path") if DEBUG or 1;
         return $path;
     }
     $self->debug("template_path($uri) -> resource_path") if DEBUG;
@@ -261,15 +275,6 @@ sub form_path {
     shift->resource_path( form => @_ );
 }
 
-
-#-----------------------------------------------------------------------------
-# Misc methods
-#-----------------------------------------------------------------------------
-
-sub version {
-    shift->VERSION;
-}
-
 sub resource_path {
     my $self = shift;
     my $type = shift;
@@ -284,6 +289,58 @@ sub resource_path {
     # ...or to the application base uri (typically its location URI)
     return $self->uri(@_);
 }
+
+
+#-----------------------------------------------------------------------------
+# Error handling
+#-----------------------------------------------------------------------------
+
+sub send_error_html {
+    shift->send_error_page(@_);
+}
+
+sub send_error_page {
+    my $self  = shift;
+    my $error = join('', @_);
+
+    return $self->error_response(
+        $self->render(
+            error => {
+                error => $error
+            }
+        )
+    );
+}
+
+sub send_forbidden_html {
+    shift->send_forbidden_page(@_);
+}
+
+sub send_forbidden_page {
+    my $self  = shift;
+    my $error = join('', @_);
+
+    return $self->forbidden_response(
+        $self->render(
+            forbidden => {
+                error => $error
+            }
+        )
+    );
+}
+
+
+#-----------------------------------------------------------------------------
+# Misc methods
+#-----------------------------------------------------------------------------
+
+sub version {
+    shift->VERSION;
+}
+
+
+
+
 
 
 
