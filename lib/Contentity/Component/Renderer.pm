@@ -257,7 +257,7 @@ sub render {
     my $self   = shift;
     my $name   = shift;
     my $engine = $self->engine;
-    my $path   = $self->template_path($name) || return $self->error_msg( invalid => template => $name );
+    my $path   = $self->template_path($name) || return $self->template_not_found($name);
     my $params = $self->template_data(@_);
     my $file   = $path->absolute;  # absolute relative to VFS
     my $output;
@@ -303,6 +303,12 @@ sub template_data {
     );
 }
 
+sub template_not_found {
+    my ($self, $name) = @_;
+    my $srcs = join(', ', @{ $self->source_dirs });
+    return $self->error_msg( invalid => template => "$name ($srcs)" );
+
+}
 
 1;
 
