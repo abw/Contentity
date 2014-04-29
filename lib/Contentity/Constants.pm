@@ -7,8 +7,8 @@ BEGIN {
     # case eqivalent, e.g. ACTIVE => 'active'
     @components = qw(
         APPS ASSETS BUILDER COLOURS CONTEXT CONTENT_TYPES CREATOR
-        DATABASES DOMAINS FONTS FORMS FORM_FIELDS
-        MIDDLEWARES PLACK RGB ROUTES REQUEST RESPONSE RESOURCES
+        DATABASES DOMAINS FONTS FORMS FORM_FIELDS MIDDLEWARES PLACK
+        RGB ROUTES REQUEST RESPONSE RESOURCES ROLES
         SCAFFOLD SITEMAP SKIN STYLES TEMPLATES URLS
     );
     @status = qw(
@@ -41,6 +41,7 @@ use Badger::Class
         DOT_HTML            => '.html',
         TEXT_HTML           => 'text/html',
         TEXT_PLAIN          => 'text/plain',
+        CHARSET_UTF8        => 'charset=utf-8',
 
         # virtual host files
         VHOST_FILE          => 'vhost.conf',
@@ -73,6 +74,7 @@ use Badger::Class
         OK                  => 200,
         FORBIDDEN           => 403,
         NOT_FOUND           => 404,
+        SERVER_ERROR        => 500,
 
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
@@ -94,10 +96,10 @@ use Badger::Class
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT ALPHA_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
-            html            => 'INDEX_HTML DOT_HTML TEXT_HTML TEXT_PLAIN',
+            html            => 'INDEX_HTML DOT_HTML TEXT_HTML TEXT_PLAIN CHARSET_UTF8',
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
             http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
-            http_status     => 'OK FORBIDDEN NOT_FOUND',
+            http_status     => 'OK FORBIDDEN NOT_FOUND SERVER_ERROR',
         },
     };
 
