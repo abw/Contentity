@@ -4,7 +4,7 @@
 #
 # Test the Contentity::Colour module.
 #
-# Written by Andy Wardley, October 2012, May 2013
+# Written by Andy Wardley, October 2012, May 2013, April 2014
 #
 #========================================================================
 
@@ -14,7 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 85,
+    tests => 91,
     debug => 'Contentity::Colour',
     args  => \@ARGV;
 
@@ -192,7 +192,29 @@ ok( $grey, "mixed white with black to get grey" );
 is( $grey, '#7f7f7f', "grey is $grey" );
 
 $grey  = $white->mix($black, 0.25);
-is( $grey, '#3f3f3f', "grey at 0.25 is $grey" );
+is( $grey, '#bfbfbf', "white mixed with 0.25 black is $grey" );
 
 $grey  = $white->mix($black, '75%');
-is( $grey, '#bfbfbf', "grey at 75% is $grey" );
+is( $grey, '#3f3f3f', "white mixed with black at 75% is $grey" );
+
+
+#-----------------------------------------------------------------------------
+# test darken, lighten and trans
+#-----------------------------------------------------------------------------
+
+$orange = Col->RGB('ff8000');
+my $orange1 = $orange->lighten('20%');
+my $orange2 = $orange->lighten(20);
+my $orange3 = $orange->lighten(0.2);
+my $orange4 = $orange->lighten20;
+
+is( $orange1, '#ff9933', 'lightened orange by 20%');
+is( $orange2, '#ff9933', 'lightened orange by 20');
+is( $orange3, '#ff9933', 'lightened orange by 0.2');
+is( $orange4, '#ff9933', 'lightened orange by lighten20');
+
+my $trans1 = $orange->trans(10);
+is( $trans1, 'rgba(255,128,0,0.1)', 'orange trans(10)' );
+
+my $trans2 = $orange->trans20;
+is( $trans2, 'rgba(255,128,0,0.2)', 'orange.trans20' );

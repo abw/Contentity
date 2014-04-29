@@ -1,8 +1,9 @@
 package Contentity::Colour::RGB;
 
 use POSIX 'floor';
+use Contentity::Colour 'Colour';
 use Contentity::Class
-    version   => 2.10,
+    version   => 2.20,
     debug     => 0,
     base      => 'Contentity::Colour',
     constants => 'ARRAY HASH :colour_slots',
@@ -20,7 +21,7 @@ sub new {
         $self = bless [@$proto], $class;
     }
     else {
-        $self = bless [0, 0, 0], $proto;
+        $self = bless [0, 0, 0, 1], $proto;
     }
     $self->rgb(@args) if @args;
     return $self;
@@ -32,6 +33,7 @@ sub copy {
     $args->{ red   } = $self->[RED_SLOT]   unless defined $args->{ red   };
     $args->{ green } = $self->[GREEN_SLOT] unless defined $args->{ green };
     $args->{ blue  } = $self->[BLUE_SLOT]  unless defined $args->{ blue  };
+    $args->{ alpha } = $self->[ALPHA_SLOT] unless defined $args->{ alpha };
     $self->new($args);
 }
 
@@ -43,8 +45,8 @@ sub rgb {
         # single argument is a list or hash ref, or RGB value
         $col = shift;
     }
-    elsif (@_ == 3) {
-        # three arguments provide red, green, blue components
+    elsif (@_ == 3 || @_ == 4) {
+        # three or 4 arguments provide red, green, blue (and alpha) components
         $col = [ @_ ];
     }
     elsif (@_ == 6) {
@@ -64,11 +66,17 @@ sub rgb {
 
     if (UNIVERSAL::isa($col, HASH)) {
         # convert hash ref to list
-        $col = [  map {
-            defined $col->{ $_ }
-            ? $col->{ $_ }
-            : return $self->error_msg( no_param => rgb => $_ );
-        } qw( red green blue ) ];
+        my $alpha = $col->{ alpha };
+        $col = [
+            map {
+                defined $col->{ $_ }
+              ? $col->{ $_ }
+              : return $self->error_msg( no_param => rgb => $_ );
+            }
+            qw( red green blue )
+        ];
+        push(@$col, $alpha)
+            if defined $alpha;
     }
     elsif (UNIVERSAL::isa($col, ARRAY)) {
         # $col list is ok as it is
@@ -84,12 +92,19 @@ sub rgb {
     }
 
     # ensure all rgb component values are in range 0-255
-    for (@$col) {
+    for (@$col[RED_SLOT..BLUE_SLOT]) {
         $_ =   0 if $_ < 0;
         $_ = 255 if $_ > 255;
     }
+    if (defined $col->[ALPHA_SLOT]) {
+        # alpha is normalised 0-1
+        $col->[ALPHA_SLOT] = $self->normalise_alpha($col->[ALPHA_SLOT]);
+    }
+    else {
+        $col->[ALPHA_SLOT] = 1;
+    }
 
-    # update self with new colour, also deletes any cached HSV
+    # update self with new colour
     @$self = @$col;
 
     return $self;
@@ -142,7 +157,7 @@ sub parse {
             $
           /ix) {
         @$self = map { $self->parse_value($_) } ($1, $2, $3);
-        $self->[ALPHA_SLOT] = $4;
+        $self->[ALPHA_SLOT] = $self->normalise_alpha($4);
         $self->debug("found $string => rgba($self->[0], $self->[1], $self->[2], $self->[3])") if DEBUG;
     }
     else {
@@ -185,7 +200,9 @@ sub parse_value {
 
 sub html {
     my $self = shift;
-    return $self->css_rgba if defined $self->[ALPHA_SLOT];
+    return $self->css_rgba
+        if defined $self->[ALPHA_SLOT]
+        && $self->[ALPHA_SLOT] != 1;
     return '#' . $self->hex();
 }
 
@@ -207,20 +224,18 @@ sub css_rgba {
     my $self  = shift;
     my $alpha = @_ ? shift : $self->[ALPHA_SLOT];
     return sprintf(
-        "rgba(%i,%i,%i,%f)",
+        "rgba(%i,%i,%i,%s)",
         $self->[RED_SLOT],
         $self->[GREEN_SLOT],
         $self->[BLUE_SLOT],
-        $alpha
+        $alpha,
     );
 }
 
 sub red {
     my $self = shift;
     if (@_) {
-        $self->[RED_SLOT]  = shift;
-        $self->[RED_SLOT]  = 0   if $self->[RED_SLOT] < 0;
-        $self->[RED_SLOT]  = 255 if $self->[RED_SLOT] > 255;
+        $self->[RED_SLOT] = $self->normalise_channel(@_);
         delete $self->[SCHEME_SLOT];
     }
     $self->[RED_SLOT];
@@ -229,9 +244,7 @@ sub red {
 sub green {
     my $self = shift;
     if (@_) {
-        $self->[GREEN_SLOT]  = shift;
-        $self->[GREEN_SLOT]  = 0   if $self->[GREEN_SLOT] < 0;
-        $self->[GREEN_SLOT]  = 255 if $self->[GREEN_SLOT] > 255;
+        $self->[GREEN_SLOT] = $self->normalise_channel(@_);
         delete $self->[SCHEME_SLOT];
     }
     $self->[GREEN_SLOT];
@@ -240,9 +253,7 @@ sub green {
 sub blue {
     my $self = shift;
     if (@_) {
-        $self->[BLUE_SLOT]  = shift;
-        $self->[BLUE_SLOT]  = 0   if $self->[BLUE_SLOT] < 0;
-        $self->[BLUE_SLOT]  = 255 if $self->[BLUE_SLOT] > 255;
+        $self->[BLUE_SLOT] = $self->normalise_channel(@_);
         delete $self->[SCHEME_SLOT];
     }
     $self->[BLUE_SLOT];
@@ -251,10 +262,9 @@ sub blue {
 sub alpha {
     my $self = shift;
     if (@_) {
-        $self->[ALPHA_SLOT]  = shift;
-        $self->[ALPHA_SLOT]  = 0 if $self->[ALPHA_SLOT] < 0;
-        $self->[ALPHA_SLOT]  = 1 if $self->[ALPHA_SLOT] > 1;
-        delete $self->[SCHEME_SLOT];
+        $self->[ALPHA_SLOT] = $self->normalise_alpha(@_);
+        # Probably doesn't invalidate scheme?
+        # delete $self->[SCHEME_SLOT];
     }
     $self->[ALPHA_SLOT];
 }
@@ -264,13 +274,20 @@ sub grey  {
 
     if (@_) {
         delete $self->[SCHEME_SLOT];
-        return ($self->[RED_SLOT] = $self->[GREEN_SLOT] = $self->[BLUE_SLOT] = shift);
+        return (
+            $self->[RED_SLOT]
+          = $self->[GREEN_SLOT]
+          = $self->[BLUE_SLOT]
+          = $self->normalise_channel(@_)
+        );
     }
     else {
-        return integer( $self->[RED_SLOT]  * 0.222
-                    + $self->[GREEN_SLOT]* 0.707
-                    + $self->[BLUE_SLOT] * 0.071
-                    + 0.5 );
+        return integer(
+            $self->[RED_SLOT]  * 0.222
+          + $self->[GREEN_SLOT]* 0.707
+          + $self->[BLUE_SLOT] * 0.071
+          + 0.5
+        );
     }
 }
 
@@ -279,19 +296,16 @@ sub update {
     my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
     my $value;
     if (defined ($value = $args->{ red })) {
-        $self->[RED_SLOT]  = $value;
-        $self->[RED_SLOT]  = 0   if $self->[RED_SLOT] < 0;
-        $self->[RED_SLOT]  = 255 if $self->[RED_SLOT] > 255;
+        $self->[RED_SLOT]  = $self->normalise_channel($value);
     }
     if (defined ($value = $args->{ green })) {
-        $self->[GREEN_SLOT]  = $value;
-        $self->[GREEN_SLOT]  = 0   if $self->[GREEN_SLOT] < 0;
-        $self->[GREEN_SLOT]  = 255 if $self->[GREEN_SLOT] > 255;
+        $self->[GREEN_SLOT]  = $self->normalise_channel($value);
     }
     if (defined ($value = $args->{ blue })) {
-        $self->[BLUE_SLOT]  = $value;
-        $self->[BLUE_SLOT]  = 0   if $self->[BLUE_SLOT] < 0;
-        $self->[BLUE_SLOT]  = 255 if $self->[BLUE_SLOT] > 255;
+        $self->[BLUE_SLOT]  = $self->normalise_channel($value);
+    }
+    if (defined ($value = $args->{ alpha })) {
+        $self->[ALPHA_SLOT]  = $self->normalise_alpha($value);
     }
     delete $self->[SCHEME_SLOT];
     return $self;
@@ -302,20 +316,26 @@ sub adjust {
     my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
     my $delta;
     if (defined ($delta = $args->{ red })) {
-        $self->[RED_SLOT] += $delta;
-        $self->[RED_SLOT]  = 0   if $self->[RED_SLOT] < 0;
-        $self->[RED_SLOT]  = 255 if $self->[RED_SLOT] > 255;
+        $self->[RED_SLOT] = $self->normalise_channel(
+            $self->[RED_SLOT] + $delta
+        );
     }
     if (defined ($delta = $args->{ green })) {
-        $self->[GREEN_SLOT] += $delta;
-        $self->[GREEN_SLOT]  = 0   if $self->[GREEN_SLOT] < 0;
-        $self->[GREEN_SLOT]  = 255 if $self->[GREEN_SLOT] > 255;
+        $self->[GREEN_SLOT] = $self->normalise_channel(
+            $self->[GREEN_SLOT] + $delta
+        );
     }
     if (defined ($delta = $args->{ blue })) {
-        $self->[BLUE_SLOT] += $delta;
-        $self->[BLUE_SLOT]  = 0   if $self->[BLUE_SLOT] < 0;
-        $self->[BLUE_SLOT]  = 255 if $self->[BLUE_SLOT] > 255;
+        $self->[BLUE_SLOT] = $self->normalise_channel(
+            $self->[BLUE_SLOT] + $delta
+        );
     }
+    if (defined ($delta = $args->{ alpha })) {
+        $self->[ALPHA_SLOT] = $self->normalise_alpha(
+            $self->[ALPHA_SLOT] + $delta
+        );
+    }
+
     delete $self->[SCHEME_SLOT];
     return $self;
 }
@@ -323,11 +343,13 @@ sub adjust {
 sub range {
     my $self   = shift;
     my $steps  = shift;
-    my $target = $self->SUPER::new(@_)->rgb();
+    my $target = $self->SUPER::new(@_)->rgb;
     my $dred   = ($target->[RED_SLOT]   - $self->[RED_SLOT])   / $steps;
     my $dgreen = ($target->[GREEN_SLOT] - $self->[GREEN_SLOT]) / $steps;
     my $dblue  = ($target->[BLUE_SLOT]  - $self->[BLUE_SLOT])  / $steps;
     my ($n, @range);
+
+    # TODO: alpha
 
     for ($n = 0; $n <= $steps; $n++) {
         push(@range, $self->copy->adjust({
@@ -338,6 +360,29 @@ sub range {
     }
     return wantarray ? @range : \@range;
 }
+
+
+sub blend {
+    my $copy   = shift->copy;
+    my $target = Colour(shift)->rgb;
+    my $amount = $copy->normalise_alpha(@_ ? shift : 0.1);
+
+    for my $c (RED_SLOT..BLUE_SLOT) {
+        my $n = $copy->[$c];
+        $copy->[$c] = $copy->normalise_channel(
+            $copy->[$c] + integer(($target->[$c] - $copy->[$c]) * $amount)
+        );
+    }
+
+    return $copy;
+}
+
+sub trans {
+    my $copy = shift->copy;
+    $copy->alpha(shift);
+    return $copy;
+}
+
 
 #------------------------------------------------------------------------
 # hsv()

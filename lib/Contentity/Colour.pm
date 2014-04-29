@@ -4,8 +4,9 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base',
     constants => 'HASH SCHEME_SLOT WHITE BLACK',
-    utils     => 'is_object floor',
+    utils     => 'is_object integer',
     import    => 'CLASS class',
+    autolook  => 'variant',
     alias     => {
         Color => \&Colour,
     },
@@ -20,7 +21,7 @@ use Contentity::Class
 use Contentity::Colour::RGB;
 use Contentity::Colour::HSV;
 
-our $VERSION = 0.06;
+our $VERSION = 1.0;
 our @SCHEME  = qw(
     black darkest darker dark darkish mid lightish light lighter lightest white
     pale wash dull bold bright
@@ -157,10 +158,13 @@ sub scheme {
     my $hsv    = $self->hsv;
     my $sat    = 0;
 
+    # TODO: black gets over-saturated
     foreach (@$shades) {
         $_ = $_->hsv->adjust( sat => "+$sat%" );
         $sat += $dsat;
     }
+
+    $self->debug_data( shades => $shades ) if DEBUG;
 
 #    $sat = $hsv->saturation;
 #    foreach (@$tints) {
@@ -189,6 +193,7 @@ sub scheme {
         # bright
         $self->copy->hsv->adjust(sat => '+10%', value => '+10%'),
     );
+    $self->debug_data( scheme => $scheme ) if DEBUG;
     return $scheme;
 }
 
@@ -202,24 +207,39 @@ sub variations {
     return $scheme;
 }
 
+
+sub blend {
+    shift->rgb->blend(@_);
+}
+
+#-----------------------------------------------------------------------------
+# lighten blends with white
+# darken blends with black
+#-----------------------------------------------------------------------------
+
+sub lighten {
+    shift->blend(
+        [255,255,255],
+        @_
+    );
+}
+
+sub darken {
+    shift->blend(
+        [0,0,0],
+        @_ ? shift : 0.1
+    );
+}
+
 sub mix {
-    my $self   = shift;
-    my $col2   = Colour(shift);
-    my $weight = shift || 0.5;
-    my $rgb1   = $self->rgb;
-    my $rgb2   = $col2->rgb;
-    my $w1     = ($weight =~ s/^([\d\.]+)%$/$1/)
-               ? $weight / 100        # 0-100% -> 0-1
-               : $weight;
-    my $w2     = 1 - $w1;
+    shift->blend(
+        shift,
+        @_ ? shift : 0.5
+    );
+}
 
-    $self->debug("mixing $rgb1 * $w1 + $rgb2 * $w2") if DEBUG;
-
-    return $self->RGB(
-        floor( $rgb1->red   * $w1 + $rgb2->red   * $w2 ),
-        floor( $rgb1->green * $w1 + $rgb2->green * $w2 ),
-        floor( $rgb1->blue  * $w1 + $rgb2->blue  * $w2 ),
-    )
+sub trans {
+    shift->rgb->trans(@_);
 }
 
 
@@ -252,6 +272,73 @@ sub max {
         $max = $v if $v > $max;
     }
     return $max;
+}
+
+
+#-----------------------------------------------------------------------------
+# normalise_channel($n) # clips $n to range 0-255
+# normalise_alpha($n)   # clips $n to range 0-1
+#-----------------------------------------------------------------------------
+
+sub normalise_channel {
+    my $self  = shift;
+    my $value = shift;
+    if ($value < 0) {
+        return 0;
+    }
+    elsif ($value > 255) {
+        return 255;
+    }
+    else {
+      return $value;
+    }
+}
+
+sub normalise_alpha {
+    my $self  = shift;
+    my $value = shift // return;
+    my $n;
+
+    if ($value =~ /^(\d+)%/) {
+        # explicit percentage
+        $n = $1 / 100;
+    }
+    elsif ($value > 1) {
+        # assumed to be a number in the range 1 to 100
+        $n = $value / 100;
+    }
+    else {
+        # assumed to be a number in the range 0 to 1
+        $n = $value;
+    }
+    $n = 0 if $n < 0;
+    $n = 1 if $n > 1;
+
+    return $n;
+}
+
+
+#-----------------------------------------------------------------------------
+# AUTOLOAD lookup method
+#-----------------------------------------------------------------------------
+
+our $VARIANTS = {
+    map { $_ => $_ }
+    qw( lighten darken trans )
+};
+
+sub variant {
+    my ($self, $method, @args) = @_;
+#    $self->debug_data( "variant=$method" => \@args ) if DEBUG or 1;
+
+    if ($method =~ /^(\D+)(\d+)$/) {
+        my $action  = $1;
+        my $amount  = $2;
+        $self->debug("$method => $action($amount)") if DEBUG;
+        my $handler = $VARIANTS->{ $action } || return;
+        return $self->$handler($amount);
+    }
+    return undef;
 }
 
 
