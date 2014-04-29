@@ -1,6 +1,6 @@
 package Contentity::Web::Handler::Log;
 
-use Cog::Class
+use Contentity::Class
     version   => 0.4,
     debug     => 1,
     base      => 'Contentity::Web::Handler';
