@@ -342,7 +342,7 @@ sub redirect_response {
     );
 }
 
-sub not_found_reponse {
+sub not_found_response {
     shift->response(
         type    => HTML,
         status  => NOT_FOUND,

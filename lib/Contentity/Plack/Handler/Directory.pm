@@ -1,7 +1,7 @@
 package Contentity::Plack::Handler::Directory;
 
-use Carp 'confess';
-confess __PACKAGE__, " is deprecated";
+#use Carp 'confess';
+#confess __PACKAGE__, " is deprecated";
 
 use Plack::MIME;
 use Plack::Util;

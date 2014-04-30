@@ -84,7 +84,7 @@ sub lookup_asset {
 sub fetch_asset {
     my $self   = shift;
     my $name   = shift;
-    my $config = $self->asset_config($name);
+    my $config = $self->asset_config($name, @_);
 
     $self->debug_data(
         "$self->{ asset } asset $name", $config
@@ -94,12 +94,13 @@ sub fetch_asset {
 }
 
 sub asset_config {
-    my ($self, $name) = @_;
+    my ($self, $name, @args) = @_;
     if (DEBUG) {
         my $data = $self->workspace->asset_config(
             $self->{ assets } => $name
         );
         $self->debug_data("[$self->{ assets }] => $name", $data);
+        $self->debug_data( args => \@args );
     }
 
     return extend(
@@ -108,6 +109,7 @@ sub asset_config {
         $self->workspace->asset_config(
             $self->{ assets } => $name
         ),
+        @args
     );
 }
 

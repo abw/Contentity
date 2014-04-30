@@ -19,6 +19,8 @@ sub type_args {
         $args = $type;
         $type = $args->{ type };
     }
+    $self->debug_data("type => $type", $args) if DEBUG;
+
     return ($type, $args);
 }
 

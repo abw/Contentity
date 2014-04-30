@@ -1,7 +1,7 @@
 package Contentity::Plack::Handler::File;
 
-use Carp 'confess';
-confess __PACKAGE__, " is deprecated";
+#use Carp 'confess';
+#confess __PACKAGE__, " is deprecated";
 
 use Contentity::Class
     version   => 0.01,

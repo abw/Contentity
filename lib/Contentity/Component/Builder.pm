@@ -5,7 +5,7 @@ use Contentity::Class
     debug       => 0,
     base        => 'Contentity::Component',
     import      => 'class',
-    utils       => 'Now Filter self_params yellow extend',
+    utils       => 'Now Filter Dir self_params yellow grey extend inflect split_to_list',
     accessors   => 'renderer reporter prompter filter',
     constant    => {
         RENDERER => 'static',
@@ -80,6 +80,9 @@ sub build {
     else {
         $self->process_templates($data);
     }
+
+    $self->watch_templates($data)
+        if $self->watch;
 }
 
 #-----------------------------------------------------------------------------
@@ -110,6 +113,7 @@ sub process_templates {
     my $libdirs  = $renderer->library_dirs;
     my $filter   = $self->filter;
     my $verbose  = $self->verbose;
+    my $watch    = $self->{ watch } = [ ];
 
     $data->{ date } ||= Now->date;
     $data->{ time } ||= Now->time;
@@ -150,24 +154,156 @@ sub process_templates {
                 next;
             }
         }
-
-        if ($renderer->try->process($path, $data, $path)) {
-            # Wow!  Much success.
-            $self->template_pass($path);
+        if ($self->process_template($path, $data, $file)) {
         }
-        else {
-            # Oh noes!
-            $self->template_fail($path, $renderer->error);
-        }
-
-        # output file should have the same file permissions as the source file
-        # to ensure that executable scripts remain executable, for example.
-        $outdir->file($path)->chmod(
-            $file->perms
-        );
     }
 }
 
+
+sub process_template {
+    my ($self, $path, $data, $file) = @_;
+    my $renderer = $self->renderer;
+
+    $self->debug("processing template: $path with ", $renderer) if DEBUG;
+
+    if ($renderer->try->process($path, $data, $path)) {
+        # Wow!  Much success.
+        $self->template_pass($path);
+
+        # output file should have the same file permissions as the source file
+        # to ensure that executable scripts remain executable, for example.
+        $renderer->output_file($path)->chmod(
+            $file->perms
+        );
+
+        my $used = $renderer->templates_used;
+
+        push(@{ $self->{ watch } }, [map { $_->[0] } @$used]);
+
+        return 1;
+    }
+    else {
+        # Oh noes!
+        $self->template_fail($path, $renderer->error);
+        return 0;
+    }
+}
+
+sub watch_templates {
+    my $self     = shift;
+    my $data     = $self->template_data(@_);
+    my $watch    = $self->{ watch };
+    my $wdirs    = $self->config->{ watch_dirs } || [ ];
+    my $reporter = $self->reporter;
+    my $all      = {
+        map {
+            my $list = $_;
+            map { $_ => 1 }
+            @$list
+        }
+        @$watch
+    };
+    $all    = [sort keys %$all];
+    $wdirs  = split_to_list($wdirs);
+    my $n   = scalar @$all;
+
+    $self->verbose(1);
+
+    return unless $n;
+
+    # watch all config directories for all workspaces
+    my $ancestors = $self->workspace->heritage;
+    foreach my $ancestor (@$ancestors) {
+        $self->debug("ancestor: $ancestor") if DEBUG;
+        push(@$wdirs, $ancestor->dir('config'));
+    }
+    push(@$wdirs, $self->workspace->project->dir('perl/lib'));
+
+
+    $reporter->info("Watching for changes:");
+    $reporter->info("  " . inflect($n, 'template'));
+
+    foreach my $w (@$all) {
+        $reporter->info('    - ' . yellow($w));
+    }
+
+    if ($wdirs) {
+        my $wn  = scalar @$wdirs;
+        my $wfs = $self->{ watch_dirs } = [
+            map { Dir($_) } @$wdirs
+        ];
+
+        $reporter->info("  " . inflect($wn, 'additional directory'));
+        foreach my $w (@$wdirs) {
+            $reporter->info('    - ' . yellow($w));
+        }
+    }
+
+    $self->debug_data( watch => $watch ) if DEBUG;
+
+    while (1) {
+        sleep(1);
+
+        foreach my $w (@$watch) {
+            $self->watch_template($w, $data);
+        }
+    }
+}
+
+sub watch_template {
+    my ($self, $watch, $data) = @_;
+    my $source     = $watch->[0];
+    my $renderer   = $self->renderer;
+    my $outfile    = $renderer->output_file($source);
+    my $outmod     = $outfile->modified->epoch_time;
+    my $watch_dirs = $self->{ watch_dirs };
+
+    foreach my $path (@$watch) {
+        my $template = $renderer->engine->context->template($path);
+        my $modtime  = $template->modtime;
+        my $name     = $path;
+        $self->debug("template $source | $path => $modtime | $outmod") if DEBUG;
+
+        # if the template hasn't been updated we might still have a modified
+        # file in one of the directories we've been told to watch.
+        if ($modtime <= $outmod && $watch_dirs) {
+            FS: {
+                foreach my $watch_dir (@$watch_dirs) {
+                    my $files = $watch_dir->visit(
+                        files   => 1,
+                        dirs    => 1,
+                        in_dirs => 1,
+                    )->collect;
+
+                    $self->debug_data( files => $$files ) if DEBUG;
+
+                    foreach my $file (@$files) {
+                        $modtime = $file->modified->epoch_time;
+                        if ($modtime > $outmod) {
+                            $name = $file->definitive;
+                            # better attempt to reset workspace in case config files
+                            # have changed
+                            # Ah tits!  We can't do this.  If we empty the workspace
+                            # component cache then this $self->workspace reference
+                            # disappears.
+                            $self->workspace->builder_reset;
+                            last FS;
+                        }
+                    }
+                }
+            }
+        }
+        if ($modtime > $outmod) {
+            $self->reporter->info(
+                "  ! [" . Now . "]"
+              . yellow(" $name ")
+              . grey("has been modified  ")
+            );
+            $self->process_template($source, $data, $outfile);
+            last;
+        }
+    }
+}
 
 sub template_data {
     my ($self, $data) = self_params(@_);
@@ -268,5 +404,8 @@ sub nothing {
     shift->reporter->nothing(@_);
 }
 
+sub watch {
+    shift->config->{ watch };
+}
 
 1;

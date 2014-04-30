@@ -11,9 +11,9 @@ use Contentity::Class
         SKINS_CFG   => 'skins',
     },
     messages => {
-        bad_col_rgb => 'Invalid RGB colour name specified for %s: %s',
-        bad_col_dot => 'Invalid colour method for %s: .%s',
-        bad_col_val => 'Invalid colour value for %s: %s',
+        bad_col_rgb => 'Invalid RGB colour name specified in %s for "%s": %s',
+        bad_col_dot => 'Invalid colour method in %s for "%s": .%s',
+        bad_col_val => 'Invalid colour value in %s for "%s": %s',
     };
 
 
@@ -67,6 +67,7 @@ sub prepare_skin {
 
     foreach my $name (@$skins) {
         my $skin = $self->load_skin($name);
+        $self->{ file } = $name;
 
         $self->debug_data( $name, $skin) if DEBUG;
 
@@ -161,6 +162,7 @@ sub load_colours {
     my $self = shift;
     my $rgb  = shift || $self->rgb;
     my $cols = $self->workspace->config(COLOURS) || return;
+    $self->{ file } = COLOURS;
     return $self->prepare_colours($cols, $rgb);
 }
 
@@ -168,6 +170,7 @@ sub prepare_colours {
     my $self = shift;
     my $cols = shift || $self->workspace->config(COLOURS) || return;
     my $rgb  = shift || $self->rgb;
+    my $file = $self->{ file } || COLOURS;
     my ($key, $value, $name, $ref, $dots, $col, $bit, @bits);
 
     foreach $key (keys %$cols) {
@@ -187,7 +190,7 @@ sub prepare_colours {
             $name = $1;
             $dots = $2;
             $col  = $rgb->{ $name }
-                || return $self->error_msg( bad_col_rgb => $key => $name  );
+                || return $self->error_msg( bad_col_rgb => $file, $key => $value  );
 
             if (length $dots) {
                 @bits = split(/\./, $dots);
@@ -195,7 +198,7 @@ sub prepare_colours {
                 while (@bits) {
                     $bit = shift (@bits);
                     $col = $col->try->$bit
-                        || return $self->error_msg( bad_col_dot => $key => $name => $bit );
+                        || return $self->error_msg( bad_col_dot => $file, $key => $value => $bit );
                     $self->debug(".$bit => $col") if DEBUG;
                 }
             }
@@ -204,7 +207,7 @@ sub prepare_colours {
             # otherwise we assume they're new colour definitions
             $self->debug("colour val $key => $value") if DEBUG;
             $col = Colour->try->new($value)
-                || return $self->error_msg( bad_col_val => $key => $value );
+                || return $self->error_msg( bad_col_val => $file, $key => $value );
         }
 
         $self->debug(" => $col") if DEBUG;

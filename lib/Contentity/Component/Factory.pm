@@ -74,6 +74,8 @@ sub init_factory {
 sub prepare_asset {
     my ($self, $params) = self_params(@_);
 
+    $self->debug_data( prepare_asset => $params) if DEBUG;
+
     # In the usual case the type of asset object we want to create is the
     # same as the component name/config file, e.g. the 'content' app corresponds
     # to Contentity::App::Content and can be loaded and instantiated via the

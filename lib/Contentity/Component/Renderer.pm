@@ -7,7 +7,7 @@ use Contentity::Class
     base      => 'Contentity::Component',
     import    => 'class',
     utils     => 'VFS Dir split_to_list extend params self_params',
-    accessors => 'source_dirs library_dirs output_dir extensions',
+    accessors => 'source_dirs library_dirs output_dir extensions templates_used',
     constants => 'DOT',
     constant  => {
         ENGINE  => 'Contentity::Template',
@@ -112,6 +112,12 @@ sub source_file {
     my $self = shift;
     return $self->source_vfs->file(@_);
 }
+
+sub output_file {
+    my $self = shift;
+    return $self->output_dir->file(@_);
+}
+
 
 sub include_path {
     my $self = shift;
@@ -282,7 +288,15 @@ sub process {
     my $name   = shift;
     my $params = $self->template_data(shift);
     my $engine = $self->engine;
-    return $engine->process($name, $params, @_)
+
+    $engine->watch_templates_used;
+
+    my $result = $engine->process($name, $params, @_);
+    my $used   = $self->{ templates_used } = $engine->templates_used;
+
+    $self->debug_data( templates_used => $used ) if DEBUG;
+
+    return $result
         || $self->error_msg( engine_render => $name, $engine->error );
 }
 

@@ -40,7 +40,7 @@ system.  It is a subclass of the L<Contentity::Base> and L<Plack::Component> mod
 
 =head2 init($config)
 
-The module redefines the C<init()|Contentity::Base/init()> method inherited from 
+The module redefines the C<init()|Contentity::Base/init()> method inherited from
 L<Contentity::Base>.  This is called automatically when a new component object is
 instantiated.
 
@@ -50,26 +50,26 @@ then calls the component-specific L<init_component()> method.
 
 =head2 init_component($config)
 
-This is an empty method that does nothing.  Subclasses may redefine it to 
+This is an empty method that does nothing.  Subclasses may redefine it to
 provide further initialisation.
 
 =head2 to_app()
 
-This method is called by Plack when a component is converted to an application 
-subroutine reference.  This custom implementation is a wrapper around the 
-default implementation provided by L<Plack::Component> (which it calls), 
-adding an extra function wrapper around the application via the 
+This method is called by Plack when a component is converted to an application
+subroutine reference.  This custom implementation is a wrapper around the
+default implementation provided by L<Plack::Component> (which it calls),
+adding an extra function wrapper around the application via the
 L<wrap_app()> method.
 
 =head2 wrap_app($app)
 
-This method creates an additional function wrapper around C<$app> which stores 
+This method creates an additional function wrapper around C<$app> which stores
 a local (temporary) reference to the C<$env> environment (passed automatically
 as the first argument to all components when they're called) in the component
-object as C<$self-E<gt>{ env }>.  
+object as C<$self-E<gt>{ env }>.
 
-This allows Contentity components to access the environment as C<$self-E<gt>env> and 
-avoids the need to pass the environment around to any and all methods that 
+This allows Contentity components to access the environment as C<$self-E<gt>env> and
+avoids the need to pass the environment around to any and all methods that
 might need to access it.
 
 =head2 context()
@@ -86,4 +86,3 @@ Andy Wardley E<lt>abw@wardley.orgE<gt>.
 Copyright (C) 2013-2014 Andy Wardley.  All Rights Reserved.
 
 =cut
-

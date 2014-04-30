@@ -435,6 +435,18 @@ sub item_schema {
 # Cleanup
 #-----------------------------------------------------------------------------
 
+# hack to get skin reloaded for build watcher
+sub builder_reset {
+    my $self  = shift;
+    my $cache = $self->{ component_cache };
+
+    delete $cache->{ $_ }
+        for qw( skin skitemap );
+
+    $self->parent->builder_reset
+        if $self->parent;
+}
+
 sub destroy {
     my $self = shift;
     $self->clear_component_cache;

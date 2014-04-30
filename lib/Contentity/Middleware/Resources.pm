@@ -6,7 +6,7 @@ use Contentity::Class
     component => 'middleware',
     constant  => {
         URL_MAP => 'URLMap',
-        DIR_APP => 'Directory',
+        DIR_APP => 'directory',
     };
 
 
@@ -59,12 +59,14 @@ sub resource_handler {
        $self->debug("creating directory handler for $resource->{ url }") if DEBUG;
     }
 
-    $self->debug_data( resource => $resource ) if DEBUG;
+    $self->debug_data( fetch_resource_handler => $resource ) if DEBUG;
+    my $type = $self->DIR_APP;
+    $self->debug_data( type => $type ) if DEBUG;
 
     my $dirapp = $space->app(
         $self->DIR_APP => {
             root      => $resource->{ location },
-          # uri_prefix => $resource->{ }
+            # uri_prefix => $resource->{ }
             # allow directory indexes if we're in development mode
             index     => $devel,
             singleton => 0,
