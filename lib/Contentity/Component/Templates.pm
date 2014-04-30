@@ -127,11 +127,13 @@ sub prepare_path {
     my $up    = $config->{ "${path}_up"   };              # e.g. source_up,  library_up
     my $space = $self->workspace;
     my $type  = $space->type;
+    my $prof  = $space->config('profile') || 'default';
 
     # An ugly, temporary hack to allow the scaffold components to load sources
     # templates from a scaffolding directory of the same name as the workspace
     # type, e.g. scaffold/project, scaffold/site.  This sucks big donkey dick.
     $pdir =~ s/<workspace_type>/$type/g;
+    $pdir =~ s/<workspace_profile>/$prof/g;
 
     # Add on the resolved directories for all workspace up the parent chain
     # if $up is set all the way up, or just the current one if not
