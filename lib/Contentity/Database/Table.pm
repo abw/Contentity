@@ -6,7 +6,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Badger::Database::Table Contentity::Database::Component',
     import    => 'class',
-    accessors => 'columns singular plural',
+    accessors => 'columns singular plural about',
     utils     => 'split_to_list',
     constants => 'DOT ARRAY HASH',
     constant  => {
@@ -37,6 +37,9 @@ sub init {
 
     $self->{ plural } = $config->{ plural }
        || Contentity::Utils::plural($self->{ singular });
+
+    # save some other things of interest
+    $self->{ about } = $config->{ about };
 
 
     # In the contentity config, we're using table/record to denote the

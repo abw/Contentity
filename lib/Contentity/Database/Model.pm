@@ -92,7 +92,7 @@ sub table_names {
     my $self = shift;
     return [
         map { $_->basename }
-        $self->workspace->config->dir( $self->table_path )->files
+        $self->workspace->project->config->dir( $self->table_path )->files
     ];
 }
 
