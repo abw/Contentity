@@ -236,7 +236,7 @@ sub template_path {
     my $uri  = join_uri(@_);
     my $path = $self->{ templates }->{ $uri };
     if ($path) {
-        $self->debug("found match for template $uri => $path") if DEBUG or 1;
+        $self->debug("found match for template $uri => $path") if DEBUG;
         return $path;
     }
     $self->debug("template_path($uri) -> resource_path") if DEBUG;

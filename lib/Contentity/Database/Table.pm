@@ -6,8 +6,9 @@ use Contentity::Class
     debug     => 0,
     base      => 'Badger::Database::Table Contentity::Database::Component',
     import    => 'class',
-    accessors => 'columns singular plural about',
+    accessors => 'spec singular plural about',
     utils     => 'split_to_list',
+    autolook  => 'autolook_query',
     constants => 'DOT ARRAY HASH',
     constant  => {
         RECORD  => 'Contentity::Database::Record',
@@ -22,7 +23,15 @@ sub init {
     $self->{ model } = $config->{ model }
         || return $self->error_msg( missing => 'model' );
 
-    my $cols = $self->{ columns  } = $config->{ columns  };
+    # Bother.  Badger::Database::Table is already storing a list of column
+    # names in $self->{ columns }
+    my $schema = { %$config };
+    delete $schema->{ model  };
+    delete $schema->{ engine };
+    $self->{ spec } = $schema;
+    $self->debug_data( schema => $schema ) if DEBUG;
+
+    my $cols = $config->{ columns };
 
     if ($cols && ! $config->{ fields }) {
         # fields defaults to everything specified in columns
@@ -40,7 +49,6 @@ sub init {
 
     # save some other things of interest
     $self->{ about } = $config->{ about };
-
 
     # In the contentity config, we're using table/record to denote the
     # plural/singular forms, e.g. users/user, and the more explicit
@@ -82,7 +90,7 @@ sub record_throws {
 
 sub column_schema {
     my $self = shift;
-    my $cols = $self->columns;
+    my $cols = $self->spec->{ columns };
     my $name = shift || return $cols;
     return $cols->{ $name }
         || return $self->error_msg( invalid => column => $name );
@@ -171,5 +179,21 @@ sub _demux_rows {
 }
 
 
+
+#-----------------------------------------------------------------------------
+# AUTOLOAD
+#-----------------------------------------------------------------------------
+
+sub autolook_query {
+    my $self  = shift;
+    my $name  = shift;
+    $self->debug("autolook_query($name)") if DEBUG;
+    if ($self->{ queries } ->{ $name }) {
+        return $self->rows($name);
+    }
+    else {
+        return undef;
+    }
+}
 
 1;

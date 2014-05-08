@@ -70,6 +70,7 @@ sub init_database {
 sub new_model {
     my ($self, $params) = self_params(@_);
     my $modclass = $self->model_class($params);
+
     $self->debug("Creating new $modclass model: ", $self->dump_data($params)) if DEBUG;
 
     # We're using a derivative of Badger::Workspace instead of Badger::Hub but

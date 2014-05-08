@@ -2,7 +2,7 @@ package Contentity::Component::Web;
 
 use Badger::URL;
 use Contentity::Class
-    version   => 0.02,
+    version   => 0.03,
     debug     => 0,
     base      => 'Contentity::Component Contentity::Plack::Component',
     constants => 'BLANK :http_status :content_types',
@@ -81,7 +81,7 @@ sub call_app {
     my $self = shift;
     my $app  = shift;
 
-    $self->debug("calling app: $app") if DEBUG or 1;
+    $self->debug("calling app: $app") if DEBUG;
 
     # TODO: this isn't right - it assume a Plack app
     return $app->(
@@ -132,20 +132,20 @@ sub url {
 
         if ($url = $self->{ urls }->{ $name }) {
             $url = $self->URL->new($url);
-            $self->debug("pre-defined URL mapping: $name => ", $url || "<NOT FOUND>") if DEBUG or 1;
+            $self->debug("pre-defined URL mapping: $name => ", $url || "<NOT FOUND>") if DEBUG;
         }
         elsif ($name =~ m[^(\w+:)?/]) {
             # if it's absolute (e.g. something like "/foo..." or "http://...")
             # then we return it as it is
             $url = $self->URL->new($name);
-            $self->debug("absolute URL: $name => $url\n") if DEBUG or 1;
+            $self->debug("absolute URL: $name => $url\n") if DEBUG;
         }
         # TODO: elsif $site->url(...)     # site-wide URL
         else {
             # if it's not absolute then make it relative to the parth of the
             # current URL that the app has consumed
             $url = $self->app_url($name);
-            $self->debug("app-relative URL: $name => $url\n") if DEBUG or 1;
+            $self->debug("app-relative URL: $name => $url\n") if DEBUG;
         }
         # add any parameters to URL or cache URLs without params for next time
         $self->add_url_params(@_)
@@ -154,7 +154,7 @@ sub url {
     else {
         $url = $self->app_url;
     }
-    $self->debug("URL => $url") if DEBUG or 1;
+    $self->debug("URL => $url") if DEBUG;
     return $url;
 }
 
@@ -162,10 +162,10 @@ sub app_url {
     my $self = shift;
     my $done = $self->path->path_done;
     $done = resolve_uri($done, shift) if @_;
-    $self->debug("app_url path done: $done") if DEBUG or 1;
+    $self->debug("app_url path done: $done") if DEBUG;
     my $url  = $self->URL->new($done);
     $self->add_url_params(@_) if @_;
-    $self->debug("app_url: $url") if DEBUG or 1;
+    $self->debug("app_url: $url") if DEBUG;
     return $url;
 }
 
@@ -316,8 +316,10 @@ sub authorisation_roles {
             ),
             $self->roles_for_user
         );
+        $self->debug_data( merged_roles => $roles ) if DEBUG;
     }
     else {
+        $self->debug("no login") if DEBUG;
         extend(
             $roles,
             $self->roles_for_guest,
@@ -529,7 +531,7 @@ sub redirect_login_url {
     my $params = shift;
     my $msg    = @_ ? join('', @_) : $self->message('redirect_login');
 
-    $self->debugf("user was going to: $final") if DEBUG or 1;
+    $self->debugf("user was going to: $final") if DEBUG;
 
     # ensure URL is stringified
     $final = "$final";
