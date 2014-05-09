@@ -241,22 +241,59 @@ sub watch_templates {
 
     $self->debug_data( watch => $watch ) if DEBUG;
 
+    $reporter->info('Waiting for changes...');
+
     while (1) {
-        sleep(1);
+        my ($dirmod, $dirfile) = $self->watch_dirs_modified;
+        $self->{ rebuilt } = 0;
 
         foreach my $w (@$watch) {
-            $self->watch_template($w, $data);
+            $self->watch_template($w, $data, $dirmod, $dirfile);
         }
+        $reporter->info( inflect($self->{ rebuilt }, 'file') . ' rebuilt, waiting for further changes...')
+            if $self->{ rebuilt };
+
+        sleep(1);
     }
 }
 
-sub watch_template {
+sub watch_dirs_modified {
     my ($self, $watch, $data) = @_;
-    my $source     = $watch->[0];
-    my $renderer   = $self->renderer;
-    my $outfile    = $renderer->output_file($source);
-    my $outmod     = $outfile->modified->epoch_time;
-    my $watch_dirs = $self->{ watch_dirs };
+    my $dirs = $self->{ watch_dirs };
+    my $seen = { };
+    my $last = 0;
+    my $name;
+
+    foreach my $dir (@$dirs) {
+        next if $seen->{ $dir }++;
+        my $files = $dir->visit(
+            files   => 1,
+            dirs    => 1,
+            in_dirs => 1,
+        )->collect;
+
+        $self->debug_data( files => $files ) if DEBUG;
+
+        foreach my $file (@$files) {
+            my $time = $file->modified->epoch_time;
+            if ($time > $last) {
+                $last = $time;
+                $name = $file->definitive;
+            }
+        }
+    }
+
+    return ($last, $name);
+
+}
+
+
+sub watch_template {
+    my ($self, $watch, $data, $dirmod, $dirfile) = @_;
+    my $source   = $watch->[0];
+    my $renderer = $self->renderer;
+    my $outfile  = $renderer->output_file($source);
+    my $outmod   = $outfile->modified->epoch_time;
 
     foreach my $path (@$watch) {
         my $template = $renderer->engine->context->template($path);
@@ -264,35 +301,11 @@ sub watch_template {
         my $name     = $path;
         $self->debug("template $source | $path => $modtime | $outmod") if DEBUG;
 
-        # if the template hasn't been updated we might still have a modified
-        # file in one of the directories we've been told to watch.
-        if ($modtime <= $outmod && $watch_dirs) {
-            FS: {
-                foreach my $watch_dir (@$watch_dirs) {
-                    my $files = $watch_dir->visit(
-                        files   => 1,
-                        dirs    => 1,
-                        in_dirs => 1,
-                    )->collect;
-
-                    $self->debug_data( files => $$files ) if DEBUG;
-
-                    foreach my $file (@$files) {
-                        $modtime = $file->modified->epoch_time;
-                        if ($modtime > $outmod) {
-                            $name = $file->definitive;
-                            # better attempt to reset workspace in case config files
-                            # have changed
-                            # Ah tits!  We can't do this.  If we empty the workspace
-                            # component cache then this $self->workspace reference
-                            # disappears.
-                            $self->workspace->builder_reset;
-                            last FS;
-                        }
-                    }
-                }
-            }
+        if ($dirmod > $modtime) {
+            $name = $dirfile;
+            $modtime = $dirmod;
         }
+
         if ($modtime > $outmod) {
             $self->reporter->info(
                 "  ! [" . Now . "]"
@@ -300,6 +313,7 @@ sub watch_template {
               . grey("has been modified  ")
             );
             $self->process_template($source, $data, $outfile);
+            $self->{ rebuilt }++;
             last;
         }
     }
