@@ -429,7 +429,7 @@ sub send_jsonp {
 
 
 sub send_json_error {
-    my $self = shift;
+    my $self  = shift;
     my $error = join('', @_);
     return $self->send_json(
         status  => 'error',

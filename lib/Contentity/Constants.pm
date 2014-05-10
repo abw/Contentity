@@ -66,7 +66,7 @@ use Badger::Class
         HUE_SLOT            => 0,
         SAT_SLOT            => 1,
         VAL_SLOT            => 2,
-        SCHEME_SLOT         => 3,
+        SCHEME_SLOT         => 4,
         BLACK               => '#000000',
         WHITE               => '#FFFFFF',
 
