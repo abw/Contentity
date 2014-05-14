@@ -45,7 +45,7 @@ sub init_domains {
     my $space   = $self->workspace;
     my $sdoms   = $space->server_domains;
     my $names   = $space->names;
-
+    
     return $self->error_msg( invalid => domains => "$domains (not a list)" )
         unless ref $domains eq ARRAY;
 
@@ -70,7 +70,21 @@ sub init_domains {
 
     #$self->init_domains($config);
     $self->{ names } = $domains;
+}
 
+
+sub local_server_domain {
+    my $self  = shift;
+    my $space = $self->workspace;
+    my $sdoms = $space->server_domains;
+    my $names = $space->names;
+    my $sdom  = $sdoms->[0];
+    my $name  = $names->[0];
+
+    # server domain can be *.something.com
+    $sdom =~ s/^\*\.//;
+
+    return $name.DOT.$sdom;
 }
 
 

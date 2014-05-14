@@ -127,6 +127,9 @@ sub server_domains {
     shift->config('server.domains') || [ ];
 }
 
+sub local_server_domain {
+    shift->domains->local_server_domain;
+}
 
 #-----------------------------------------------------------------------------
 # forms
