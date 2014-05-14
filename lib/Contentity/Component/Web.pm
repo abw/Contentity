@@ -5,7 +5,7 @@ use Contentity::Class
     version   => 0.03,
     debug     => 0,
     base      => 'Contentity::Component Contentity::Plack::Component',
-    constants => 'BLANK :http_status :content_types',
+    constants => 'BLANK :status :http_status :content_types',
     accessors => 'env context',
     utils     => 'join_uri resolve_uri strip_hash extend split_to_list',
     codecs    => 'json',
@@ -231,6 +231,24 @@ sub param_list {
     shift->request->parameters->get_all(@_);
 }
 
+sub some_params {
+    my $self  = shift;
+    my $spec  = shift;
+    my $dirty = shift || $self->params;
+    my $clean = { };
+    
+    $spec = split_to_list($spec);
+    
+    for my $k (@$spec) {
+        my $v = $dirty->{$k};
+        $clean->{$k} = $v
+            if defined $v
+            && length  $v;
+    }
+
+    return $clean;
+}
+
 
 #-----------------------------------------------------------------------------
 # Context data
@@ -432,10 +450,29 @@ sub send_json_error {
     my $self  = shift;
     my $error = join('', @_);
     return $self->send_json(
-        status  => 'error',
-        message => $error,
+        status => ERROR,
+        error  => $error,
     );
 }
+
+sub send_json_success {
+    my $self    = shift;
+    my $message = shift;
+    my $params  = _params(@_);
+    return $self->send_json(
+        %$params,
+        status  => SUCCESS,
+        success => $message,
+    );
+}
+
+sub send_json_error_msg {
+    my $self = shift;
+    return $self->send_json_error(
+        $self->message(@_)
+    );
+}
+
 
 sub send_redirect {
     shift->redirect_response(@_);

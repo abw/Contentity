@@ -12,7 +12,7 @@ BEGIN {
         SCAFFOLD SITEMAP SKIN STYLES TEMPLATES URLS
     );
     @status = qw(
-        ACTIVE INACTIVE
+        ACTIVE INACTIVE SUCCESS ERROR
     );
     @mutate = qw(
         STATIC DYNAMIC
