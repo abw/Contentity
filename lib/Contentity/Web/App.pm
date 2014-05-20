@@ -107,11 +107,13 @@ sub run {
         return $result;
     }
     else {
+        $self->debug($@);
         return $self->send_html(
             qq{<h3 class="red">ERROR:</h3><pre>$@</pre>\n}
         );
     }
 }
+
 
 sub dispatch {
     my $self   = shift;

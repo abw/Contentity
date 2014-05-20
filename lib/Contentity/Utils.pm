@@ -30,6 +30,7 @@ use Contentity::Class
             find_program prompt confirm floor
             red green blue cyan magenta yellow black white grey dark bold
             cmd
+            error_html_to_ansi
         }
     };
 use Contentity::Colour  'Colour';
@@ -516,6 +517,25 @@ sub cmd {
 #    return $output;
 #}
 
+
+#-----------------------------------------------------------------------------
+# Error message cleanup
+#-----------------------------------------------------------------------------
+
+sub error_html_to_ansi {
+    my $error = shift;
+
+    my $type  = bold red($error->type) . yellow(" error:\n");
+    my $info  = bold cyan $error->info . "\n";
+    my $trace = $error->stack_trace;
+
+    for ($trace) {
+        s{<span class="(?:method|module)">(.*?)</span>}{cyan($1)}eg;
+        s{<span class="(?:file|line)">(.*?)</span>}{yellow($1)}eg;
+        #s{<.*?>}{}g;
+    }
+    return $type . $info . $trace;
+}
 
 #-----------------------------------------------------------------------------
 # Aliases done at the end to avoid conflicts

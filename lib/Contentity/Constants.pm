@@ -31,7 +31,7 @@ use Badger::Class
     debug    => 0,
     base     => 'Badger::Constants',
     import   => 'class',
-    words    => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
+    words    => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE GET POST DELETE',
     constant => {
         COMPONENT           => 'component',
         MIDDLEWARE          => 'middleware',
@@ -100,6 +100,7 @@ use Badger::Class
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
             http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
             http_status     => 'OK FORBIDDEN NOT_FOUND SERVER_ERROR',
+            http_methods    => 'GET POST DELETE',
         },
     };
 

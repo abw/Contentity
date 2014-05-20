@@ -98,6 +98,22 @@ sub request {
     shift->context->request;
 }
 
+sub method {
+    shift->request->method;
+}
+
+sub GET {
+    shift->method eq 'GET';
+}
+
+sub POST {
+    shift->method eq 'POST';
+}
+
+sub DELETE {
+    shift->method eq 'DELETE';
+}
+
 sub accept {
     shift->context->accept_type(@_);
 }
@@ -236,9 +252,9 @@ sub some_params {
     my $spec  = shift;
     my $dirty = shift || $self->params;
     my $clean = { };
-    
+
     $spec = split_to_list($spec);
-    
+
     for my $k (@$spec) {
         my $v = $dirty->{$k};
         $clean->{$k} = $v
