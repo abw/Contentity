@@ -37,6 +37,7 @@ use Badger::Class
         MIDDLEWARE          => 'middleware',
 
         # misc constants relating to directory/file handling
+        INDEX               => 'index',
         INDEX_HTML          => 'index.html',
         DOT_HTML            => '.html',
         TEXT_HTML           => 'text/html',
@@ -96,7 +97,7 @@ use Badger::Class
             date_formats    => 'SHORT_DATE MEDIUM_DATE LONG_DATE',
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT ALPHA_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
-            html            => 'INDEX_HTML DOT_HTML TEXT_HTML TEXT_PLAIN CHARSET_UTF8',
+            html            => 'INDEX INDEX_HTML DOT_HTML TEXT_HTML TEXT_PLAIN CHARSET_UTF8',
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
             http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
             http_status     => 'OK FORBIDDEN NOT_FOUND SERVER_ERROR',
