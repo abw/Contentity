@@ -572,7 +572,7 @@ sub send_error_msg {
 
 sub redirect {
     my $self = shift;
-    return $self->redirect(
+    return $self->send_redirect(
         $self->url(@_)
     );
 }
