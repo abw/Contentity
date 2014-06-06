@@ -33,10 +33,9 @@ sub init {
 
     my $cols = $config->{ columns };
 
-    if ($cols && ! $config->{ fields }) {
-        # fields defaults to everything specified in columns
-        $config->{ fields } = [ keys %$cols ];
-    }
+    # Additional initialisation for columns before we hand things over to the
+    # Badger::Database::Table base class initialiser methods.
+    $self->init_columns($config, $cols) if $cols;
 
     $self->{ messages } = $config->{ messages };
     $self->{ singular } = $config->{ singular }
@@ -70,6 +69,21 @@ sub init {
     return $self;
 }
 
+sub init_columns {
+    my ($self, $config, $columns) = @_;
+
+    # fields defaults to everything specified in columns
+    $config->{ fields } ||= [ keys %$columns ];
+
+    # if there isn't an update or updateable list defined then we extract those
+    # columns that have an update flag set to any true-ish value
+    #$config->{ update } ||= $config->{ updateable } || [
+    #    grep { truelike( $columns->{ $_ }->{ update } ) }
+    #    keys %$columns
+    #];
+    return $self;
+}
+
 
 sub init_table {
     # stub for subclasses
@@ -84,9 +98,10 @@ sub record_throws {
 #    shift->database->model;
 #}
 
-# Darn! Fragile base class fail
+# Shitola! Here's a box full of fragile base class fail!
 # I wanted to call this column() but it collides with the column() method in
-# Badger::Database::Queries.
+# Badger::Database::Queries.  This whole thing really needs refactoring but we
+# just don't have the time right now!
 
 sub column_schema {
     my $self = shift;
