@@ -5,7 +5,11 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Workspace',
     utils     => 'join_uri resolve_uri split_to_list',
-    constants => ':components :deployment SLASH HASH STATIC DYNAMIC VHOST_FILE';
+    constants => ':components :deployment SLASH HASH STATIC DYNAMIC VHOST_FILE',
+    messages  => {
+        no_resource_dir => "Ignoring resources entry for %s - directory does not exist: %s\n",
+    };
+
 
 
 #------------------------------------------------------------------------
@@ -266,12 +270,18 @@ sub fix_resources {
         elsif ($dir) {
             my $d = $resource->{ directory } = $self->dir($dir);
             $self->debug("set for $urn, $dir => $resource->{ directory }") if DEBUG;
-            next unless $d->exists;
+            unless ($d->exists) {
+                $self->warn_msg( no_resource_dir => $urn, $d->definitive );
+                next;
+            }
         }
         else {
             my $d = $resource->{ directory } = $self->dir( resources => $urn );
             $self->debug("no directory for $urn, defaulting to $resource->{ directory }") if DEBUG;
-            next unless $d->exists;
+            unless ($d->exists) {
+                $self->warn_msg( no_resource_dir => $urn, $d->definitive );
+                next;
+            }
         }
 
         my $loc = $resource->{ file } || ($resource->{ directory } . SLASH);
