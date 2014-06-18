@@ -24,6 +24,7 @@ sub init_content_types {
         my $ctype   = $spec->{ content_type };
         my $acclist = $spec->{ accept };
         my $urn     = $spec->{ urn } ||= $key;
+        $spec->{ id } = $key;
 
         if ($ctype) {
             # add an accept mapping from the main content type to the entry
@@ -69,9 +70,26 @@ sub content_type {
     return $type;
 }
 
+sub media_type {
+    my $self = shift;
+    my $type = $self->type(@_) || return;
+    return $type->{ media_type };
+}
+
+sub file_type {
+    my $self = shift;
+    my $type = $self->type(@_) || return;
+    return $type->{ urn };
+}
+
 sub file_content_type {
     my ($self, $file) = @_;
     return $self->content_type($file->extension);
+}
+
+sub file_media_type {
+    my ($self, $file) = @_;
+    return $self->media_type($file->extension);
 }
 
 sub accept_types {
@@ -85,7 +103,7 @@ sub accept_types {
     foreach my $key (@keys) {
         my $type = $accepts->{ $key } || next;
         $self->debug_data("$key" => $type ) if DEBUG;
-        $types->{ $type->{ urn } } = $type->{ content_type };
+        $types->{ $type->{ id } } = $type->{ content_type };
     }
 
     $self->debug_data( merged_accept_types => $types ) if DEBUG;

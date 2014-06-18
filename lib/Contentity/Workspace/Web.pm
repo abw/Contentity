@@ -76,8 +76,20 @@ sub content_type {
     shift->content_types->content_type(@_);
 }
 
+sub media_type {
+    shift->content_types->media_type(@_);
+}
+
+sub file_type {
+    shift->content_types->file_type(@_);
+}
+
 sub file_content_type {
     shift->content_types->file_content_type(@_);
+}
+
+sub file_media_type {
+    shift->content_types->file_media_type(@_);
 }
 
 
