@@ -77,6 +77,7 @@ sub new {
     my $self = $class->SUPER::new($config);
 
     $self->init_vmethods($config);
+    $self->init_filters($config);
     $self->init_template($config);
 
     return $self;
@@ -114,6 +115,30 @@ sub define_vmethods {
         $context->define_vmethod( $type => $k => $v );
     }
 }
+
+sub init_filters {
+    my ($self, $config) = @_;
+    my $class = $self->class;
+
+    $self->debug("looking for filters in $class") if DEBUG;
+
+    $self->define_filters(
+        $class->hash_vars(
+            FILTERS => $config->{ filters }
+        )
+    );
+}
+
+sub define_filters {
+    my ($self, $filters) = @_;
+    my $context = $self->context;
+
+    while (my ($k, $v) = each %$filters) {
+        $self->debug("adding filter: $k") if DEBUG;
+        $context->define_filter( $k => $v );
+    }
+}
+
 
 sub init_template {
     # stub for subclasses

@@ -49,7 +49,7 @@ sub debug_data {
     my ($self, $msg, $data) = @_;
     local $Badger::Debug::CALLER_UP  = 1;
     local $Badger::Debug::CALLER_AT  = $self->debug_magic;
-    local $Badger::Debug::MAX_DEPTH  = 3;
+    #local $Badger::Debug::MAX_DEPTH  = 3;
     local $Badger::Debug::HIDE_UNDER = 1;
     my $dump = $self->dump_data($data);
     for ($dump) {
