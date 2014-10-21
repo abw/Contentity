@@ -320,7 +320,7 @@ sub template_data {
 sub template_not_found {
     my ($self, $name) = @_;
     my $srcs = join(', ', @{ $self->source_dirs });
-    return $self->error_msg( invalid => template => "$name ($srcs)" );
+    return $self->error_msg( invalid => template => $name );
 
 }
 

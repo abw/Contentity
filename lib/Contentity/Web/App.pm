@@ -6,8 +6,8 @@ use Contentity::Class
     import    => 'class',
     component => 'web',
     constants => 'BLANK :http_status',
-    utils     => 'extend join_uri resolve_uri Logic',
-    accessors => 'max_path_length action_format',
+    utils     => 'extend join_uri resolve_uri Logic self_params',
+    accessors => 'max_path_length action_format realm',
     config    => [
         'max_path_length|method:MAX_PATH_LENGTH',
         'action_format|method:ACTION_FORMAT',
@@ -65,6 +65,8 @@ sub init_component {
 sub init_access {
     my ($self, $config) = @_;
     my $space = $self->workspace;
+    # Hmmm.... why did I previously put this inside the access condition?
+    my $realm = $self->{ realm } = $self->workspace->realm;
     my $access;
 
     # Save any access login as a Badger::Logic object.
@@ -73,7 +75,6 @@ sub init_access {
     # one or more apps open for acccess, e.g. /auth to allow login).
     if ($access = $config->{ access } || $space->config('access')) {
         $self->{ access } = Logic( $access );
-        $self->{ realm  } = $space->realm;
         $self->debug(
             $self->urn,
             " APP: access: $self->{ access } in realm: $self->{ realm }"
@@ -108,9 +109,7 @@ sub run {
     }
     else {
         $self->debug($@);
-        return $self->send_html(
-            qq{<h3 class="red">ERROR:</h3><pre>$@</pre>\n}
-        );
+        return $self->send_app_error_page( error => $@ );
     }
 }
 
@@ -159,9 +158,11 @@ sub dispatch_method {
     my $self   = shift;
     my $method = shift || $self->can('default_action');
     my $route  = _params(@_);
+    my $roles  = $self->realm_roles;
+
+    $self->debug_data( roles => $roles ) if DEBUG or 1;
 
     if ($self->{ access }) {
-        my $roles = $self->authorisation_roles;
 
         $self->debug(
             "access for ", $self->uri, " is: $self->{ access }"
@@ -222,13 +223,15 @@ sub render {
 
 
 sub present {
-    my ($self, $name, $params) = @_;
+    my $self = shift;
+    my $name = shift;
+
 
     # TODO:
     #  - send appropriate content type for file extension (not always HTML)
 
     return $self->send_html(
-        $self->render($name, $params)
+        $self->render($name, @_)
     );
 }
 
@@ -251,10 +254,14 @@ sub template_path {
 sub template_data {
     my $self  = shift;
     return $self->context->template_data(
-        { App     => $self          },
-        { Session => $self->session || undef },  # in case they return empty lists
-        { Login   => $self->login   || undef },
-        { User    => $self->user    || undef },
+        {
+            App     => $self,
+            Session => $self->session || undef,  # in case they return empty lists
+            Login   => $self->login   || undef,
+            User    => $self->user    || undef,
+            Realm   => $self->realm   || undef,
+            Roles   => $self->realm_roles || undef,
+        },
         @_
     );
 }
@@ -314,6 +321,13 @@ sub send_error_page {
     );
 }
 
+sub send_app_error_page {
+    my ($self, $params) = self_params(@_);
+    return $self->present(
+        error => $params
+    );
+}
+
 sub send_forbidden_html {
     shift->send_forbidden_page(@_);
 }
@@ -330,7 +344,6 @@ sub send_forbidden_page {
         )
     );
 }
-
 
 #-----------------------------------------------------------------------------
 # Misc methods

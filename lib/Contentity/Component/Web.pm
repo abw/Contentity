@@ -158,7 +158,7 @@ sub url {
         }
         # TODO: elsif $site->url(...)     # site-wide URL
         else {
-            # if it's not absolute then make it relative to the parth of the
+            # if it's not absolute then make it relative to the part of the
             # current URL that the app has consumed
             $url = $self->app_url($name);
             $self->debug("app-relative URL: $name => $url\n") if DEBUG;
@@ -335,7 +335,7 @@ sub roles_hash {
     };
 }
 
-sub authorisation_roles {
+sub realm_roles {
     my $self  = shift;
     my $login = $self->login;
     my $roles = { };
@@ -362,6 +362,7 @@ sub authorisation_roles {
 
     return $roles;
 }
+
 
 
 #-----------------------------------------------------------------------
