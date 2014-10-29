@@ -164,7 +164,7 @@ sub url {
             $self->debug("app-relative URL: $name => $url\n") if DEBUG;
         }
         # add any parameters to URL or cache URLs without params for next time
-        $self->add_url_params(@_)
+        $self->add_url_params($url, @_)
             if @_;
     }
     else {
@@ -180,7 +180,7 @@ sub app_url {
     $done = resolve_uri($done, shift) if @_;
     $self->debug("app_url path done: $done") if DEBUG;
     my $url  = $self->URL->new($done);
-    $self->add_url_params(@_) if @_;
+    $self->add_url_params($url, @_) if @_;
     $self->debug("app_url: $url") if DEBUG;
     return $url;
 }
@@ -194,6 +194,14 @@ sub add_url_params {
         $url->params($params);
     }
     return $url;
+}
+
+sub full_url {
+    my $self = shift;
+  
+    return $self->app_url(
+        $self->path->todo
+    );
 }
 
 sub OLD_full_url {
