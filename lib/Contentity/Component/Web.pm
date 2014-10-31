@@ -198,7 +198,7 @@ sub add_url_params {
 
 sub full_url {
     my $self = shift;
-  
+
     return $self->app_url(
         $self->path->todo
     );
@@ -593,12 +593,10 @@ sub redirect_login_url {
     my $params = shift;
     my $msg    = @_ ? join('', @_) : $self->message('redirect_login');
 
-    $self->debugf("user was going to: $final") if DEBUG;
+    $self->debugf("user was going to: $final") if DEBUG or 1;
 
     # ensure URL is stringified
     $final = "$final";
-
-    #
 
     # save the final destination url/params that the user was trying to get to
     $self->session->data(
@@ -613,12 +611,25 @@ sub redirect_login_url {
     $self->send_redirect($login);
 }
 
+sub pending_redirect_login_url {
+    my $self    = shift;
+    my $session = $self->session;
+    my $data    = $session->data;
+    my $url     = delete($data->{ redirect_login  }) || return;
+    my $params  = delete($data->{ redirect_params });
+    $session->save;
+    my $redirect = $self->url($url, $params);
+    $self->debug("pending_redirect_login_url: $redirect") if DEBUG;
+    return $redirect;
+}
+
+
 sub redirect_login {
     my $self = shift;
     # TODO: might also need domain if we're authenticating across domains
     return $self->redirect_login_url(
         $self->login_url,
-        $self->path,
+        $self->full_url,
         $self->params,
         @_,
     );
