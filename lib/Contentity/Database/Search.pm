@@ -5,7 +5,7 @@ use Cog::Class
     debug       => 0,
     base        => 'Badger::Database::Query::Select Contentity::Base',
     import      => 'class',
-    utils       => 'params self_params min Now numlike split_to_list',
+    utils       => 'params self_params min Now numlike split_to_list extend',
     throws      => 'Contentity.Search',
     accessors   => 'default_page_size max_page_size max_page_no',
     constants   => 'ARRAY CODE DOT DELIMITER BLANK MYSQL_WILDCARD',
@@ -19,7 +19,10 @@ use Cog::Class
     },
     config      => [
         'autojoin|class:AUTOJOIN',
-        qw( default_page_size max_page_size max_page_no ),
+        'page_size|class:PAGE_SIZE',
+        'default_page_size|class:DEFAULT_PAGE_SIZE=25',
+        'max_page_size|class:MAX_PAGE_SIZE=500',
+        'max_page_no|class:MAX_PAGE_NO=999',
     ],
     messages    => {
         dup_relation => 'Existing relation to %s (fixing this is TODO)',
@@ -27,11 +30,15 @@ use Cog::Class
 
 
 
-our $RELATIONS     = { };
-our $SEARCH_TYPES  = { };
-our $SEARCH_PARAMS = { };
-our $SORT_ORDERS   = { };
-
+our $MATCH_FRAGMENT = qr/<(\??\w+(=\?)?)>/;
+our $RELATIONS      = { };
+our $SEARCH_PARAMS  = { };
+our $SORT_ORDERS    = { };
+our $SEARCH_TYPES   = {
+    timestamp => \&timestamp_param,
+    min       => \&min_param,
+    max       => \&max_param,
+};
 
 sub init {
     my ($self, $config) = @_;
@@ -57,6 +64,8 @@ sub init {
         $self->debug_data( search => $self->{ search } );
         $self->debug_data( sort => $self->{ order } );
     }
+
+    #$self->debug("table: $table") if DEBUG or 1;
 
     if ($self->{ autojoin }) {
         my $autojoin = split_to_list($self->{ autojoin });
@@ -93,7 +102,12 @@ sub search_params {
     my ($name, $value, $field, $type, $like, $order, $code, @args);
 
     $self->debug("search_params(): $params => ", $self->dump_data($params))
-        if DEBUG;
+        if DEBUG or 1;
+
+    if (DEBUG) {
+        $self->debug_data( fields => $fields );
+        $self->debug_data( ignore => $ignore );
+    }
 
     while (($name, $value) = each %$params) {
         next
@@ -103,6 +117,7 @@ sub search_params {
                 && length  $value
                 && ($field = $fields->{ $name });
 
+        $self->debug("search_param [$name] = [$value]") if DEBUG or 1;
         # allow field to be specified as [type => value]
         if (ref $field eq ARRAY) {
             ($type, $field, @args) = @$field;
@@ -169,12 +184,12 @@ sub sort_order {
     my $sorts = $self->{ sort_orders };
     my $name  = shift || BLANK;
     my $desc  = ($name =~ s/(_reverse|_desc)$//);       # TODO: look for separate reverse param
-    my $field = $sort->{ $name }
+    my $field = $sorts->{ $name }
         || $self->{ search  }->{ $name }
-        || $sort->{ default }
+        || $sorts->{ default }
         || BLANK;
 
-    $self->debugf("sort order $name in %s => $field", $self->dump_data($sort))
+    $self->debugf("sort order $name in %s => $field", $self->dump_data($sorts))
         if DEBUG;
 
     return unless $field;
@@ -295,7 +310,7 @@ sub relation {
         @{ $join->{ on } }
     ];
 
-    $self->debugf("relation(%s)", $self->dump_data($join)) if DEBUG;
+    $self->debugf("$name relation(%s)", $self->dump_data($join)) if DEBUG;
 
     if ($with) {
         if (ref $with) {
@@ -409,6 +424,7 @@ sub column {
 sub where {
     my $self = shift;
     my ($name, $cmp, $value, $alias, $join);
+    my $dbh = $self->{ queries }->dbh;
 
     if (@_ == 1 && ! ref $_[0]) {
         # single SQL string
@@ -430,8 +446,10 @@ sub where {
         elsif (ref $value eq ARRAY) {
             $self->debug("* $x: where([]) [$name] [$value]") if DEBUG;
             # two value: ($field, [$value1, $value2, ...]) => x IN (..)
+            # SHIT ON A STICK!  This allows for an SQL injection attack!
+            # These must be escaped or converted to placeholders!
             $cmp   = 'in';
-            $value = '(' . join(', ', map { '"' . $_ . '"' } @$value) . ')';
+            $value = '(' . join(', ', map { $dbh->quote($_) } @$value) . ')';
         }
         else {
             # two value: ($field, $value)
@@ -453,44 +471,6 @@ sub fragments {
         table => $self->{ from }->[0]
     };
 }
-
-sub expand {
-    my $self   = shift;
-    my $sql    = shift;
-    my $params = params(@_);
-
-    # Each query subclass can define its own set of SQL fragments,
-    # along with any that are provided by the user as config params.
-    my $frags = $self->fragments;
-
-    # a set of user-defined fragments can also be passed to the method
-    $params ||= { };
-
-    $self->debug(
-        "Expanding fragments in query: $sql\n",
-        " fragments: ", $self->dump_data($frags), "\n",
-        " params: ", $self->dump_data($params), "\n"
-    ) if DEBUG;
-
-    my $n = 16;
-    1 while $n-- && $sql =~
-        s/
-            # accept fragments like <keys> <?keys> and <keys=?>
-            < (\?? \w+ (=\?)?) >
-        /
-            $params->{ $1 }     # user-defined fragment
-         || $frags->{ $1 }      # table-specific fragment
-         || return $self->error_msg( bad_sql_frag => $1 => $sql )
-        /gex;
-
-    # cleanup any excessive whitespace
-#    $sql =~ s/\n(\s*\n)+/\n  /g;
-    $self->debug("Expanded fragments in query: $sql\n")
-        if DEBUG;
-
-    return $sql;
-}
-
 
 
 # This is called by prepare_sql() in the Badger::Database::Query::Select
@@ -516,40 +496,40 @@ sub table_name {
 
 sub fix_name {
     my ($self, $name) = @_;
-    $name = "`$name`" if $name eq 'order';
+    $name = "`$name`"; # if $name eq 'order';
     return $name;
+}
+
+sub expand_fragments {
+    my $self  = shift;
+    my $text  = shift;
+    my $frags = params(@_);
+
+    $self->debug(
+        "Expanding fragments in template: $text\n",
+        " fragments: ", $self->dump_data($frags), "\n",
+    ) if DEBUG;
+
+    my $n = 16;
+    1 while $n-- > 0
+         && $text =~ s/$MATCH_FRAGMENT/$frags->{$1} || return $self->error_msg( bad_sql_frag => $1 => $text )/eg;
+
+    $self->debug("Expanded fragments in template: $text\n")
+        if DEBUG;
+
+    return $text;
 }
 
 
 
+sub expand {
+    my $self = shift;
+    my $sql  = shift;
 
-
-sub status_param {
-    my ($self, $name, $field, $value, $params) = @_;
-    my @values;
-
-    $self->debug("STATUS: $name => $value") if DEBUG;
-
-    if (! $value) {
-        return;
-    }
-    elsif ($value eq 'any') {
-# This looks wrong
-#        delete $params->{ $value };
-        delete $params->{ $name };
-        return;
-    }
-
-    $self->ident( $name => $value );
-
-    # this is wrong, too - @values is never set to contain anything
-    if (@values) {
-        $self->where( $name => \@values );
-    }
-    else {
-        $self->where( $name => '?' );
-        $self->value($value);
-    }
+    return $self->expand_fragments(
+        $sql,
+        extend({ }, $self->fragments, @_)
+    );
 }
 
 
@@ -616,7 +596,7 @@ sub max_param {
 sub results {
     my $self   = shift;
     my $params = $self->search_params(@_);
-    my $table  = $self->{ table };
+    my $table  = $self->{ queries };
 
     $self->debugf("results(%s)", $self->dump_data($params)) if DEBUG;
 

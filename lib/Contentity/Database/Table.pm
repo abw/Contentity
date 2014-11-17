@@ -7,13 +7,17 @@ use Contentity::Class
     base      => 'Badger::Database::Table Contentity::Database::Component',
     import    => 'class',
     accessors => 'spec singular plural about',
-    utils     => 'split_to_list',
+    utils     => 'split_to_list self_params',
     autolook  => 'autolook_query',
     constants => 'DOT ARRAY HASH',
     constant  => {
         RECORD  => 'Contentity::Database::Record',
+        RESULTS => 'Contentity::Database::Results',
     };
 
+our $QUERIES = {
+    found_rows      => 'SELECT FOUND_ROWS() AS count',
+};
 
 sub init {
     my ($self, $config) = @_;
@@ -108,7 +112,57 @@ sub column_schema {
     my $cols = $self->spec->{ columns };
     my $name = shift || return $cols;
     return $cols->{ $name }
-        || return $self->error_msg( invalid => column => $name );
+        || $self->error_msg( invalid => column => $name );
+}
+
+#-----------------------------------------------------------------------------
+# Record methods
+#-----------------------------------------------------------------------------
+
+sub subclass_record {
+    my $self = shift;
+    my $key  = shift;
+    my $args = params(@_);
+    my $type = $args->{ $key }     || return $self->error_msg( missing => $key );
+    my $record = $self->{ record } || return $args;
+    $self->{ module } ||= { };
+
+    # generate a subclass module name
+    my $module = $self->{ module }->{ $type } ||= do {
+        # generate subclass name from record base and class argument,
+        # e.g. 'My::Record::Resource' + 'document'
+        #   => 'My::Record::Resource::Document'
+        my $subtype = module_name($record, $type);
+        $self->debug_data( "subtype $subtype for " => $args ) if DEBUG;
+        class($subtype)->load;
+        $subtype;
+    };
+
+    $args->{ _table } = $self;
+    $args->{ _model } = $self->{ model };
+
+    my $result = $module->new($args);
+
+    return defined $result
+        ? $result
+        : $self->error_msg( new_record => $module, $module->error );
+}
+
+#-----------------------------------------------------------------------------
+# Results methods
+#-----------------------------------------------------------------------------
+
+sub results {
+    my ($self, $params) = self_params(@_);
+    my $rclass = $self->RESULTS;
+    class($rclass)->load;
+    $params->{ table } ||= $self;
+    return $rclass->new($params);
+}
+
+
+sub found_rows {
+    shift->row('found_rows')->{ count };
 }
 
 
