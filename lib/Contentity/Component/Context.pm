@@ -246,13 +246,13 @@ sub load_session {
     # session for every visit by every search bot.
 
     if ($skey && ($session = $sessions->session_login_user( cookie => $skey ))) {
-        $self->debug("loaded existing session: #$session->{ id }:$skey\n") if DEBUG or 1;
+        $self->debug("loaded existing session: #$session->{ id }:$skey\n") if DEBUG;
     }
     else {
         $session = $sessions->insert( ip_address => $self->request->address );
         $skey    = $session->cookie;
         $self->set_session_key($skey);
-        $self->debug("created new session: #$session->{ id }:$skey") if DEBUG or 1;
+        $self->debug("created new session: #$session->{ id }:$skey") if DEBUG;
     }
 
     return $session;
@@ -383,7 +383,7 @@ sub user {
 sub accept_type {
     my $self  = shift;
     my $types = $self->accept_types;
-    $self->debug_data( accept_type => $types ) if DEBUG or 1;
+    $self->debug_data( accept_type => $types ) if DEBUG;
     return $types unless @_;
     my $type = shift;
     return $types->{ $type };

@@ -40,6 +40,17 @@ sub load_workspace {
 
     $self->debug("workspace config: ", $self->dump_data($config)) if DEBUG;
 
+    # We want to be able to define the 'base' workspace in the config/site.yaml
+    # (or appropriate) config file for a workspace.  This requires a bit of a
+    # kludge in the workspace initialisation.  If it sees a 'base' parameter
+    # then it looks at the parent workspace URI to see if it matches.  If it
+    # doesn't then it calls back to the project to reload the workspace (via the
+    # reload_workspace() method), specifying the new base class named which
+    # gets patched into the configuration.  We end up back here in the
+    # load_workspace() method with the base option set.  So we load it up and
+    # ask it to create a subspace with the relevant configuration details.
+    # Thus, the correct base workspace eventually becomes the parent of
+    # the newly created workspace.
     if ($config->{ base }) {
         $self->debug("fetching base workspace for $uri: $config->{ base }") if DEBUG;
         $base = $self->workspace( $config->{ base } );
@@ -86,8 +97,6 @@ sub load_workspace_configs {
         ?   $configs
         :   $self->decline_msg('no_workspaces');
 }
-
-
 
 sub workspace_config {
     my $self    = shift;
@@ -155,31 +164,55 @@ sub workspace_dirs_configs {
 
         $self->debug("workspace dir: [uri:$uri] => [dir:$dir] => [root:$root]") if DEBUG;
 
-        my $kids   = $root->dirs;
-        my $cfgdir = $self->CONFIG_DIR;
+        my @configs = $self->workspace_dir_configs($root, $dir, $uri, $type);
+        $self->debug_data( configs => \@configs) if DEBUG;
 
-        $self->debug_data("sub-dirs" => $kids) if DEBUG;
+        foreach my $config (@configs) {
+            my $kuri = $config->{ uri };
+            $configs->{ $kuri } = $config;
+        }
+    }
+    return $configs;
+}
 
-        foreach my $kid (@$kids) {
-            # Only consider sub-directories that have a config directory - it's
-            # not a perfect test to indicate that it's a workspace and not just
-            # some other directory, but it's the one thing that we require to
-            # create a workspace object for it, so we should at least weed out
-            # those that don't.
-            next unless $kid->dir($cfgdir)->exists;
-            my $name   = $kid->name;
-            my $kuri   = join_uri($uri, $name);
-            my $kdir   = join_uri($dir, $name);
+sub workspace_dir_configs {
+    my ($self, $base, $dir, $uri, $type) = @_;
+    my $kids   = $base->dirs;
+    my $cfgdir = $self->CONFIG_DIR;
+    my @configs;
+
+    $self->debug_data("sub-dirs" => $kids) if DEBUG;
+
+    foreach my $kid (@$kids) {
+        my $name   = $kid->name;
+        my $kdir   = join_uri($dir, $name);
+        my $kuri   = join_uri($uri, $name);
+
+        if ($kid->dir($cfgdir)->exists) {
+            # If the sub-directories has a config directory then we assume
+            # it's a workspace.  It's not a perfect test but it's the one
+            # thing that we require to create a workspace object for it, so
+            # we should at least weed out those that don't.
             my $config = {
                 uri  => $kuri,
                 root => $kdir,
                 type => $type,
             };
             $self->debug_data("added workspace config for $kuri" => $config ) if DEBUG;
-            $configs->{ $kuri } = $config;
+            push(@configs, $config);
+        }
+        else {
+            $self->debug("traversing into $dir directory") if DEBUG;
+            # if there isn't a config directory then it's not a workspace
+            # but it might be a directory containing workspaces in sub-dirs
+            my @subcfgs = $self->workspace_dir_configs($kid, $kdir, $kuri, $type);
+            $self->debug("grandkids: ", join(', ', @subcfgs)) if DEBUG;
+            unshift(@configs, @subcfgs);
         }
     }
-    return $configs;
+    return wantarray
+        ?  @configs
+        : \@configs;
 }
 
 sub workspace_dir_names {

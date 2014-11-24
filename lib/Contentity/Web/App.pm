@@ -160,7 +160,7 @@ sub dispatch_method {
     my $route  = _params(@_);
     my $roles  = $self->realm_roles;
 
-    $self->debug_data( roles => $roles ) if DEBUG or 1;
+    $self->debug_data( roles => $roles ) if DEBUG;
 
     if ($self->{ access }) {
 
