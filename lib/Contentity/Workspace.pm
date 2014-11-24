@@ -88,7 +88,18 @@ sub post_init_workspace {
         else {
             $self->debug("asking project to reload $uri workspace with new base: $base") if DEBUG;
 
-            return $self->project->reload_workspace(
+            # A hack to allow us to attach a portfolio workspace to many
+            # different web site workspaces.  To do this, we have to call back
+            # to the web site we're attaching the portfolio to when we need to
+            # reload the project with the newly discovered base workspace.
+            # This is so that the base portfolio workspace is also correctly
+            # attached to the web site rather than the parent project.
+            my $reloader = $config->{ reload_via    } || $self->project;
+            my $method   = $config->{ reload_method } || 'reload_workspace';
+
+            $self->debug("RELOAD VIA [$reloader]->[$method]") if DEBUG;
+
+            return $reloader->$method(
                 $uri, { base => $base }
             );
         }
