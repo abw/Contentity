@@ -99,12 +99,12 @@ sub page_metadata {
 
     $self->debug_data("page $uri", $page) if DEBUG;
 
-    if ($page) {
+    if (truelike $page) {
         $page->{ uri } ||= $uri;
+        return $page;
     }
 
-    return $page
-        || $self->decline_msg( invalid => page => $uri );
+    return $self->decline_msg( invalid => page => $uri );
 }
 
 
