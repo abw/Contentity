@@ -602,14 +602,20 @@ sub results {
 
     my ($limit, $offset) = $self->limit_offset($params);
 
-    $self->debug("SQL: ", $self->sql) if DEBUG || $self->DEBUG;
-#   $self->debug("limit: $limit   offset: $offset");
+    if (DEBUG || $self->DEBUG) {
+        $self->debug("SQL: ", $self->sql);
+        $self->debug("Placeholder values: ", $self->dump_values);
+        $self->debug("limit: $limit   offset: $offset");
+        $self->debug("fetching rows...");
+    }
 
     my $rows = $self->rows($limit, $offset);
 
-    $self->debug("Values: ", $self->dump_values) if DEBUG || $self->DEBUG;
-
-    $self->debug("rows: ", $self->dump_data($rows)) if DEBUG;
+    if (DEBUG || $self->DEBUG) {
+        my $n = scalar @$rows;
+        $self->debug("fetched $n rows");
+        $self->debug("rows: ", $self->dump_data($rows)) if DEBUG;
+    }
 
     return $table->results(
         ident   => $self->ident,

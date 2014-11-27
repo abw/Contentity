@@ -5,12 +5,13 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base',
     import    => 'bclass',   # use Plan B so class() can be a regular method
-    utils     => 'xprintf weaken',
+    utils     => 'xprintf weaken join_uri',
     accessors => 'form type disabled',
     mutators  => 'name size label layout display default class style tabindex n',
     constants => 'ARRAY HASH',
     constant  => {
         DEFAULT      => 'text',
+        FIELD_PREFIX => 'field',
         can_focus    => 1,
         submit_field => undef,
     },
@@ -171,6 +172,8 @@ sub value {
               : $self->{ default };
 }
 
+# TODO: values
+
 sub field_values {
     my $self   = shift;
     my $name   = shift || $self->name;
@@ -208,11 +211,13 @@ sub present {
 
     $args->{ field } = $self;
 
+    my $uri = join_uri($self->FIELD_PREFIX, $self->display);
     # render the field content using any pre-defined display value or the field name
-    $args->{ content } = $view->include('field/' . $self->display(), $args);
+    $self->debug("rendering field template: $uri") if DEBUG;
+    $args->{ content } = $view->include($uri, $args);
 
     # now render the field in a layout template
-    return $view->include('layout/' . $self->layout(), $args);
+    return $view->include('layout/' . $self->layout, $args);
 }
 
 sub disable {

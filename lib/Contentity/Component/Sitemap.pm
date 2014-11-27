@@ -42,7 +42,7 @@ sub page {
     my $params = params(@_);
     my $strict = truelike $params->{ strict };
     my @paths  = $self->uri_walk_up($uri);
-    my ($path, $page, $parent, @parents);
+    my ($path, $page, $parent, @parents, $matched_uri);
 
     $self->debug_data("page paths for $uri", \@paths) if DEBUG;
 
@@ -51,6 +51,7 @@ sub page {
         $path = shift @paths;
 
         if ($page = $self->page_metadata($path)) {
+            $matched_uri = $path;
             $self->debug_data("found page for $uri: $path", $page) if DEBUG;
             last;
         }
@@ -80,8 +81,8 @@ sub page {
         $page, @parents
     );
 
-    $data->{ uri }   = $uri;
-    $data->{ url } ||= $uri;
+    $data->{ uri }   = $matched_uri;
+    $data->{ url } ||= $matched_uri;
 
     $self->debug_data("merged page data for $uri", $data) if DEBUG;
 

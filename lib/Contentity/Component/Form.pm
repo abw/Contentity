@@ -25,7 +25,7 @@ use Contentity::Class
         ENCODING      => 'application/x-www-form-urlencoded',
         CHARSET       => 'utf-8',
         METHOD        => 'POST',
-        LAYOUT_PREFIX => 'layout/',
+        LAYOUT_PREFIX => 'layout',
     },
     messages  => {
         no_name       => 'Missing name in field specification',
@@ -130,12 +130,11 @@ sub values {
     return $values;
 }
 
-sub OLD_values {
-    my $self = shift;
-    my $args = @_ && ref $_[0] eq 'HASH' ? shift : { @_ };
+sub set_values {
+    my ($self, $params) = self_params(@_);
     my ($name, $value, $field);
 
-    while (($name, $value) = each %$args) {
+    while (($name, $value) = each %$params) {
         $field = $self->field($name) || next;
         $field->value($value);
         $self->debug("set field $name value to $value\n") if $DEBUG;
@@ -190,6 +189,8 @@ sub present {
     my ($self, $view, $args) = @_;
 #    my $with = $self->present_with($args);
 
+    $self->debug("presenting form") if DEBUG or 1;
+
     # reset internal tab_index counter
     $self->{ tab_index } = 1;
 
@@ -197,7 +198,7 @@ sub present {
 
     $self->debug("presenting form: $uri") if DEBUG;
     $view->include(
-        join_uri($self->LAYOUT_PREFIX, $self->layout),
+        $uri,
         { form => $self, args => $args }
     );
 }
