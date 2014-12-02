@@ -28,7 +28,6 @@ our @DISPLAY_ARGS = qw(
     start_page end_page page_range
 );
 
-
 sub init {
     my ($self, $config) = @_;
 
@@ -130,48 +129,45 @@ sub buttons {
         ||= $self->paging_buttons(@_);
 }
 
-
 sub paging_buttons {
-    my $self  = shift;
+    my ($self, $params) = self_params(@_);
     my $start = $self->start_page;
     my $end   = $self->end_page;
     my $width = $end - $start;
     my $psize = $self->{ page_size };
-    my $extra = $self->{ pages_before } + $self->{ pages_after } - $width;
-    my $view  = $self->view;
+    #my $extra = $self->{ pages_before } + $self->{ pages_after } - $width;
+    #my $view  = $self->view;
     my @buttons;
-
-    # blanks to ensure we always have the same number of buttons
-    foreach (1..$extra) {
-        push(@buttons, { blank => 1 });
-    }
 
     # if we're not on the first page then we can go back to the first page
     if ($self->{ less }) {
         my $prev_from = $self->{ from } - $psize;
         my $prev_to   = $self->{ from } - 1;
+        my $prev_p    = $self->{ page_no } - 1;
+        #push(
+        #    @buttons,
+        #    {
+        #        first   => 1,
+        #        prev    => 1,
+        #        from    => 1,
+        #        to      => $psize,
+        #        text    => 1,
+        #        page_no => 1,
+        #        icon    => 'backward',
+        #        params  => { page_no => 1 },
+        #    }
+        #);
         push(
             @buttons,
-            $view->button(
-                first_page  => {
-                    to      => $psize,
-                    params  => { page_no => 1 },
-                }
-            ),
-            $view->button(
-                previous_page  => {
-                    from    => $prev_from,
-                    to      => $prev_to,
-                    params  => { page_no => $self->{ page_no } - 1 },
-                }
-            ),
-        );
-    }
-    else {
-        push(
-            @buttons,
-            $view->button('no_first_page'),
-            $view->button('no_previous_page'),
+            {
+                prev    => 1,
+                from    => $prev_from,
+                to      => $prev_to,
+                page_no => $prev_p,
+                text    => $prev_p,
+                icon    => 'backward',
+                params  => { page_no => $prev_p },
+            }
         );
     }
 
@@ -183,52 +179,50 @@ sub paging_buttons {
 
         push(
             @buttons,
-            $view->button(
-                page_no => {
-                    page_no => $p,
-                    from    => $page_from,
-                    to      => $page_to,
-                    text    => $p,
-                    warm    => $warm,
-                    params  => { page_no => $p },
-                },
-            ),
+            {
+                page_no => $p,
+                from    => $page_from,
+                to      => $page_to,
+                text    => $p,
+                warm    => $warm,
+                params  => { page_no => $p },
+            },
         );
     }
 
     # if we're not on the last page then we can go forward
     if ($self->{ more }) {
-        my $next_from = $self->{ from } + $psize;
-        my $next_to   = $self->{ to   } + $psize;
-        my $last_from = $self->{ last_page } * $psize + 1;
+        my $next_from = $self->{ from    } + $psize;
+        my $next_to   = $self->{ to      } + $psize;
+        my $next_page = $self->{ page_no } + 1;
+        my $last_page = $self->{ last_page };
+        my $last_from = $last_page * $psize + 1;
         my $last_to   = $self->{ total };
         $next_to = $self->{ total } if $next_to > $self->{ total };
         push(
             @buttons,
-            $view->button(
-                next_page  => {
-                    from    => $next_from,
-                    to      => $next_to,
-                    page_no => $self->{ last_page },
-                    params  => { page_no => $self->{ page_no } + 1 },
-                }
-            ),
-            $view->button(
-                last_page  => {
-                    from    => $last_from,
-                    to      => $last_to,
-                    page_no => $self->{ last_page },
-                    params  => { page_no => $self->{ last_page } },
-                }
-            ),
+            {
+                next    => 1,
+                from    => $next_from,
+                to      => $next_to,
+                text    => $next_page,
+                icon    => 'forward',
+                page_no => $next_page,
+                params  => { page_no => $next_page },
+            }
         );
-    }
-    else {
-        push(
-            @buttons,
-            $view->button('no_next_page'),
-            $view->button('no_last_page'),
-        );
+        #push(
+        #    @buttons,
+        #        last => 1,
+        #        next => 1,
+        #        from    => $last_from,
+        #        to      => $last_to,
+        #        text    => $last_page,
+        #        icon    => 'forward',
+        #        page_no => $last_page,
+        #        params  => { page_no => $last_page },
+        #    }
+        #);
     }
 
     $self->debug("buttons: ", $self->dump_data(\@buttons)) if DEBUG;
