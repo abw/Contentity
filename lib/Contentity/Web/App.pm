@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     import    => 'class',
     component => 'web',
-    constants => 'BLANK :http_status',
+    constants => 'BLANK :http_status :content_types',
     utils     => 'extend join_uri resolve_uri Logic self_params',
     accessors => 'max_path_length action_format realm',
     config    => [
@@ -226,9 +226,8 @@ sub present {
     my $self = shift;
     my $name = shift;
 
-
     # TODO:
-    #  - send appropriate content type for file extension (not always HTML)
+    #  - send appropriate content type for file extension (not always HTML)?
 
     return $self->send_html(
         $self->render($name, @_)
@@ -298,6 +297,30 @@ sub resource_path {
     # ...or to the application base uri (typically its location URI)
     return $self->uri(@_);
 }
+
+
+#-----------------------------------------------------------------------------
+# Content negotiation
+#-----------------------------------------------------------------------------
+
+sub wants_json {
+    my $self = shift;
+    return $self->accept_json
+        || $self->url_file_extension_is(JSON);
+}
+
+sub url_file_extension_is {
+    my ($self, $want) = @_;
+    my $ext = $self->url_file_extension || return;
+    return $ext eq $want;
+}
+
+sub url_file_extension {
+    my $self = shift;
+    my $path = $self->request->path_info;
+    return ($path =~ /\.(\w+)$/) && lc $1;
+}
+
 
 
 #-----------------------------------------------------------------------------
