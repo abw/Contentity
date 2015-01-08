@@ -7,7 +7,7 @@ use Contentity::Class
     base      => 'Contentity::Component Contentity::Plack::Component',
     constants => 'BLANK :status :http_status :content_types',
     accessors => 'env context',
-    utils     => 'join_uri resolve_uri strip_hash extend split_to_list',
+    utils     => 'join_uri resolve_uri strip_hash extend split_to_list is_object',
     codecs    => 'json',
     alias     => {
         _params => \&Contentity::Utils::params,
@@ -18,6 +18,7 @@ use Contentity::Class
     },
     constant => {
         URL       => 'Badger::URL',
+        EXCEPTION => 'Badger::Exception',
         LOGIN_URL => 'login',
     };
 
@@ -120,6 +121,10 @@ sub accept {
 
 sub accept_json {
     shift->accept(JSON);
+}
+
+sub force_json {
+    shift->context->accept_types->{ json } = 1;
 }
 
 sub uri {
@@ -473,11 +478,22 @@ sub send_jsonp {
 
 sub send_json_error {
     my $self  = shift;
-    my $error = join('', @_);
+    my $error = $self->json_error_message(@_);
     return $self->send_json(
         status => ERROR,
         error  => $error,
     );
+}
+
+sub json_error_message {
+    my $self = shift;
+    if (@_ == 1 && is_object($self->EXCEPTION, $_[0])) {
+        $self->debug("got exception object") if DEBUG;
+        return $_[0]->info;
+    }
+    else {
+        return join('', @_);
+    }
 }
 
 sub send_json_success {
