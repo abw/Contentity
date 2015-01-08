@@ -109,7 +109,9 @@ sub run {
     }
     else {
         $self->debug($@);
-        return $self->send_app_error_page( error => $@ );
+        return $self->wants_json
+            ? $self->send_json_error($@)
+            : $self->send_app_error_page( error => $@ );
     }
 }
 
