@@ -196,6 +196,7 @@ sub add_url_params {
     if (@_) {
         my $params = Badger::Utils::params(@_);
         strip_hash($params);
+        $self->debug_data( adding => $params ) if DEBUG;
         $url->params($params);
     }
     return $url;
@@ -207,6 +208,13 @@ sub full_url {
     return $self->app_url(
         $self->path->todo
     );
+}
+
+sub url_with_params {
+    my $self = shift;
+    my $url  = $self->app_url;
+    $self->add_url_params($url, $self->params);
+    return $url;
 }
 
 sub OLD_full_url {
