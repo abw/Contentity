@@ -34,6 +34,19 @@ sub app {
     shift->apps->app(@_);
 }
 
+#------------------------------------------------------------------------
+# auths are authentication handlers
+#------------------------------------------------------------------------
+
+sub auths {
+    shift->component(AUTHS, @_);
+}
+
+sub auth {
+    shift->auths->auth(@_);
+}
+
+
 #-----------------------------------------------------------------------------
 # middlewares wrap around apps, e.g. for serving resources, error pages, etc
 #-----------------------------------------------------------------------------
@@ -205,8 +218,6 @@ sub scaffold {
 sub builder {
     shift->component(BUILDER, @_);
 }
-
-
 
 
 #-----------------------------------------------------------------------------
@@ -436,8 +447,10 @@ sub url {
     my $self = shift;
     my $urls = $self->urls;
     my $name = shift || return $urls;
-    return $urls->{ $name }
+    my $url  = $urls->{ $name }
         || $self->decline_msg( invalid => url => $name );
+    # TODO:
+    return $url;
 }
 
 #-----------------------------------------------------------------------------

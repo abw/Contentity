@@ -257,10 +257,11 @@ sub template_data {
     return $self->context->template_data(
         {
             App     => $self,
-            Session => $self->session || undef,  # in case they return empty lists
-            Login   => $self->login   || undef,
-            User    => $self->user    || undef,
-            Realm   => $self->realm   || undef,
+            Session => $self->session     || undef,  # explicit "|| undef"
+            Login   => $self->login       || undef,  # in case any of these
+            User    => $self->user        || undef,  # methods return
+            Params  => $self->params      || undef,  # empty lists
+            Realm   => $self->realm       || undef,
             Roles   => $self->realm_roles || undef,
         },
         @_

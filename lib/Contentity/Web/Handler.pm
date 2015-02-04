@@ -11,6 +11,7 @@ use Contentity::Class
         SITE_CONFIG_ITEM  => 'site',
         SPACE_CONFIG_ITEM => 'workspace',
         APP_CONFIG_ITEM   => 'app',
+        AUTH_CONFIG_ITEM  => 'auth',
         LOG_CONFIG_ITEM   => 'log',
     };
 
@@ -55,8 +56,16 @@ sub app {
     );
 }
 
+sub auth {
+    my $self = shift;
+    return $self->workspace->auth(
+        $self->auth_name
+    );
+}
+
 sub log {
     my $self = shift;
+    # Hmmm... why is this calling site() and not workspace()?
     return $self->site->app(
         join_uri( log => $self->log_name )
     );
@@ -92,6 +101,11 @@ sub workspace_name {
 sub app_name {
     my $self = shift;
     $self->config( $self->APP_CONFIG_ITEM );
+}
+
+sub auth_name {
+    my $self = shift;
+    $self->config( $self->AUTH_CONFIG_ITEM );
 }
 
 sub log_name {
