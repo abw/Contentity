@@ -74,7 +74,7 @@ sub init_access {
     my ($self, $config) = @_;
     my $space = $self->workspace;
     # Hmmm.... why did I previously put this inside the access condition?
-    my $realm = $self->{ realm } = $self->workspace->realm;
+    #my $realm = $self->{ realm } = $self->workspace->realm;
     my $access;
 
     # Save any access login as a Badger::Logic object.
@@ -85,7 +85,7 @@ sub init_access {
         $self->{ access } = Logic( $access );
         $self->debug(
             $self->urn,
-            " APP: access: $self->{ access } in realm: $self->{ realm }"
+            " APP: access: $self->{ access }"
         ) if DEBUG;
     }
     else {
