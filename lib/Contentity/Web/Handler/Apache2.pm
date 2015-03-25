@@ -46,6 +46,15 @@ sub handle_error {
     return;
 }
 
+# default handle() method
+
+sub handle {
+    my $self = shift;
+    $self->handle_app(
+        $self->app
+    );
+}
+
 #-----------------------------------------------------------------------------
 # Methods to fetch configuration values from Apache directory/location config
 #-----------------------------------------------------------------------------
