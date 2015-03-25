@@ -294,6 +294,8 @@ sub errors {
         map { $_->{ error } }
         @$invalid
     ];
+    # add in any general form invalid message
+    unshift(@$errors, $self->{ invalid }) if $self->{ invalid };
     return wantarray
         ? @$errors
         :  $errors;
