@@ -29,7 +29,7 @@ use Contentity::Class
             ordinal ordinate commas trim
             find_program prompt confirm floor
             red green blue cyan magenta yellow black white grey dark bold
-            cmd
+            cmd generate_id
             error_html_to_ansi
         }
     };
@@ -315,6 +315,19 @@ sub format_date {
 }
 
 #-----------------------------------------------------------------------------
+# Generate ID, e.g. for session ID cookie
+#-----------------------------------------------------------------------------
+
+sub generate_id {
+    my $length = (@_ && numlike($_[0])) ? shift : 32;
+    my $text   = join('', grep { defined } @_) . time() . md5_hex(
+        time() . rand() . $$ . { }
+    );
+    return substr( md5_hex($text), 0, $length );
+}
+
+
+#-----------------------------------------------------------------------------
 # Word munging: pluralisation, inflection, etc.
 #-----------------------------------------------------------------------------
 
@@ -383,13 +396,6 @@ sub snake_down {
 }
 
 
-sub generate_id {
-    my $length = (@_ && numlike($_[0])) ? shift : 32;
-    my $text   = join('', grep { defined } @_) . time() . md5_hex(
-        time() . rand() . $$ . { }
-    );
-    return substr( md5_hex($text), 0, $length );
-}
 
 
 #-----------------------------------------------------------------------------
