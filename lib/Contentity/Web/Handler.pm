@@ -21,11 +21,11 @@ use Contentity::Class
 #-----------------------------------------------------------------------------
 
 sub handle {
-    shift->not_in_base_class;
+    shift->not_implemented('in base class');
 }
 
 sub handle_app {
-    shift->not_in_base_class;
+    shift->not_implemented('in base class');
 }
 
 
@@ -43,10 +43,10 @@ sub project {
 }
 
 sub workspace {
-    my $self = shift;
-    return $self->project->workspace(
-          $self->workspace_name
-    );
+    my $self    = shift;
+    my $project = $self->project;
+    my $wsname  = $self->try->workspace_name || return $project;
+    return $project->workspace($wsname);
 }
 
 sub app {
