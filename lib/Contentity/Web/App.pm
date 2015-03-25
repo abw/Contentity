@@ -1,23 +1,31 @@
 package Contentity::Web::App;
 
+use Contentity::Router;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     import    => 'class',
     component => 'web',
-    constants => 'BLANK :http_status :content_types',
+    constants => 'BLANK SLASH :http_status :content_types',
     utils     => 'extend join_uri resolve_uri Logic self_params',
-    accessors => 'max_path_length action_format realm',
+    accessors => 'max_path_length action_format route_format realm',
     config    => [
         'max_path_length|method:MAX_PATH_LENGTH',
         'action_format|method:ACTION_FORMAT',
+        'route_format|method:ROUTE_FORMAT',
     ],
     messages  => {
-        not_found => 'Resource not found: %s',
+        not_found   => 'Resource not found: %s',
+        bad_handler => 'Invalid handler "%s" specified for "%s" route (no %s() method)',
+        bad_method  => 'Invalid method "%s" specified for "%s"',
     },
     constant  => {
         MAX_PATH_LENGTH => 8,
         ACTION_FORMAT   => '%s_action',
+        ROUTE_FORMAT    => '%s_route',
+        ROUTER          => 'Contentity::Router',
+        MATCHED_ROUTE   => 'Route',
+        DEBUG_ROUTER    => 0,
     },
     alias => {
         _params => \&Contentity::Utils::params,
@@ -102,7 +110,14 @@ sub init_app {
 
 sub run {
     my $self   = shift;
-    my $result = $self->try->dispatch;
+    my $result;
+
+    eval {
+        # We allow routes to be defined to handle the routing of URLs to
+        # methods, otherwise we fall back to the base class dispatch() method
+        $result = $self->route
+               || $self->dispatch;
+    };
 
     if ($result) {
         return $result;
@@ -115,6 +130,55 @@ sub run {
     }
 }
 
+sub route {
+    my $self     = shift;
+    my $routes   = $self->config('routes') || return;
+    my $router   = $self->ROUTER->new( routes => $routes );
+    my $matched  = $router->match($self->path) || return;
+    my $match    = $matched->{ data };
+    my $method   = $match->{ method   };
+    my $handler  = $match->{ handler  };
+    my $template = $match->{ template };
+
+    if (DEBUG or DEBUG_ROUTER) {
+        $self->debug_data( routes => $routes );
+        $self->debug_data( matched_route => $match );
+    }
+
+    # copy the route that was matched into the Route data
+    $match->{ route } = SLASH . $matched->{ path }->done->text;
+    $self->set($self->MATCHED_ROUTE, $match);
+
+    if ($handler) {
+        # there was a handler defined in the route configuration so we call the
+        # corresponding XXX_handler() method
+        $method = sprintf($self->route_format, $handler);
+    }
+
+    if ($method) {
+        my $code = $self->can($method);
+
+        if ($code) {
+            $self->debug("routing to ${method}() method") if DEBUG or DEBUG_ROUTER;
+            return $self->$code($match);
+        }
+        return $handler
+            ? $self->error_msg( bad_handler => $handler, $match->{ route }, $method )
+            : $self->error_msg( bad_method => $method, $match->{ route } );
+    }
+    elsif ($template) {
+        # there was a template defined in the route configuration, and possibly
+        # some optional template data
+        return $self->present( $template, $match->{ template_data } );
+    }
+
+    return undef;
+}
+
+sub matched_route {
+    my $self = shift;
+    $self->get( $self->MATCHED_ROUTE );
+}
 
 sub dispatch {
     my $self   = shift;
