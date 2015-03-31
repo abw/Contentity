@@ -109,10 +109,13 @@ sub values {
     my $self   = shift;
     my $params = shift || { };
     my $fields = $self->{ fields };
-    my $values = { };
+    my @values;
 
-    $self->each_field_method( values => $values );
+    foreach my $field (@$fields) {
+        push(@values, $field->values);
+    }
 
+    my $values = { @values };
     my $extra = $self->{ extra_params } || return $values;
 
     $extra = split_to_list($extra);
@@ -189,7 +192,7 @@ sub present {
     my ($self, $view, $args) = @_;
 #    my $with = $self->present_with($args);
 
-    $self->debug("presenting form") if DEBUG or 1;
+    $self->debug("presenting form") if DEBUG;
 
     # reset internal tab_index counter
     $self->{ tab_index } = 1;

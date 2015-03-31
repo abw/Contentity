@@ -123,10 +123,11 @@ sub run {
         return $result;
     }
     else {
-        $self->debug($@);
+        my $error = $@ || $self->reason || "No further information available.";
+        $self->debug($error);
         return $self->wants_json
-            ? $self->send_json_error($@)
-            : $self->send_app_error_page( error => $@ );
+            ? $self->send_json_error($error)
+            : $self->send_app_error_page( error => $error );
     }
 }
 
@@ -306,10 +307,9 @@ sub template_path {
     my $uri  = join_uri(@_);
     my $path = $self->{ templates }->{ $uri };
     if ($path) {
-        $self->debug("found match for template $uri => $path") if DEBUG;
+        $self->debug("found match for template [uri:$uri] => [path:$path]") if DEBUG;
         return $path;
     }
-    $self->debug("template_path($uri) -> resource_path") if DEBUG;
     return $self->resource_path(
         template => $uri
     );
@@ -357,11 +357,13 @@ sub resource_path {
 
     # resolve resource name to an explicit path...
     if ($path) {
+        $self->debug("resolving path [$path] [@_]") if DEBUG;
         return @_
             ? resolve_uri($path, @_)
             : $path;
     }
     # ...or to the application base uri (typically its location URI)
+    $self->debug_data("resolving url(): ", \@_) if DEBUG;
     return $self->uri(@_);
 }
 
@@ -413,6 +415,7 @@ sub send_error_page {
 
 sub send_app_error_page {
     my ($self, $params) = self_params(@_);
+    $self->debug_data( error_page => $params ) if DEBUG;
     return $self->present(
         error => $params
     );

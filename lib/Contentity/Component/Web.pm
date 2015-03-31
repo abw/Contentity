@@ -217,20 +217,6 @@ sub url_with_params {
     return $url;
 }
 
-sub OLD_full_url {
-    my $self   = shift;
-    my $url    = $self->url(@_);
-    my $apache = $self->hub->config->apache;
-
-    # make this nicer
-    $url->scheme('http');
-    $url->host($apache->{ hostname });
-    $url->port($apache->{ port })
-        if $apache->{ port } &&  $apache->{ port } != 80;
-
-    return $url;
-}
-
 
 #-----------------------------------------------------------------------
 # Path

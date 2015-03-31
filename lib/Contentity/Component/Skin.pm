@@ -40,6 +40,8 @@ sub fonts {
 
 sub font {
     my $self = shift;
+    my $s = $self->styles;
+    $self->debug_data( styles => $s ) if DEBUG;
     my $font = $self->styles->{ font };
     return @_
         ? $font->{ $_[0] }
@@ -117,14 +119,23 @@ sub base_skin {
 }
 
 sub load_base_skin {
-    my $self  = shift;
-    my $rgb   = $self->load_rgb;
-    my $fonts = $self->load_fonts;
+    my $self   = shift;
+    my $rgb    = $self->load_rgb            || return $self->error($self->reason);
+    my $fonts  = $self->load_fonts          || return $self->error($self->reason);
+    my $cols   = $self->load_colours($rgb)  || return $self->error($self->reason);
+    my $styles = $self->load_styles($fonts) || return $self->error($self->reason);
+    if (DEBUG) {
+        $self->debug_data( rgb => $rgb );
+        $self->debug_data( fonts => $fonts );
+        $self->debug_data( cols => $cols );
+        $self->debug_data( styles => $fonts );
+    }
+
     return {
         rgb     => $rgb,
         fonts   => $fonts,
-        colours => $self->load_colours($rgb),
-        styles  => $self->load_styles($fonts),
+        colours => $cols,
+        styles  => $styles,
     };
 }
 
@@ -141,13 +152,13 @@ sub load_skin {
 
 sub load_rgb {
     my $self = shift;
-    my $rgb  = $self->workspace->config(RGB) || return;
+    my $rgb  = $self->workspace->config(RGB) || return $self->decline_msg( missing => RGB );
     return $self->prepare_rgb($rgb);
 }
 
 sub prepare_rgb {
     my $self = shift;
-    my $rgb  = shift || $self->workspace->config(RGB) || return;
+    my $rgb  = shift || $self->workspace->config(RGB) || return $self->decline_msg( missing => RGB );
     foreach my $key (keys %$rgb) {
         $rgb->{ $key } = Colour($rgb->{ $key });
     }
@@ -161,14 +172,14 @@ sub prepare_rgb {
 sub load_colours {
     my $self = shift;
     my $rgb  = shift || $self->rgb;
-    my $cols = $self->workspace->config(COLOURS) || return;
+    my $cols = $self->workspace->config(COLOURS) || return $self->decline_msg( missing => COLOURS );
     $self->{ file } = COLOURS;
     return $self->prepare_colours($cols, $rgb);
 }
 
 sub prepare_colours {
     my $self = shift;
-    my $cols = shift || $self->workspace->config(COLOURS) || return;
+    my $cols = shift || $self->workspace->config(COLOURS) || return $self->decline_msg( missing => COLOURS );
     my $rgb  = shift || $self->rgb;
     my $file = $self->{ file } || COLOURS;
     my ($key, $value, $name, $ref, $dots, $col, $bit, @bits);
@@ -223,7 +234,9 @@ sub prepare_colours {
 #-----------------------------------------------------------------------------
 
 sub load_fonts {
-    shift->workspace->config(FONTS);
+    my $self = shift;
+    return $self->workspace->config(FONTS)
+        || $self->decline_msg( missing => FONTS )
 }
 
 #-----------------------------------------------------------------------------

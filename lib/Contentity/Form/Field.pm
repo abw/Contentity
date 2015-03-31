@@ -172,9 +172,7 @@ sub value {
               : $self->{ default };
 }
 
-# TODO: values
-
-sub field_values {
+sub values {
     my $self   = shift;
     my $name   = shift || $self->name;
     my $value  = $self->value;      # scalar context
@@ -237,6 +235,9 @@ sub TYPE {
     lc $class;
 }
 
+sub workspace {
+    shift->form->workspace;
+}
 
 
 1;
