@@ -271,7 +271,7 @@ sub attempt_login {
         return $user;
     }
     else {
-        $self->debug("failed login attempt: ", $self->reason) if DEBUG or 1;
+        $self->debug("failed login attempt: ", $self->reason) if DEBUG;
         $self->session->failed_login_attempt;
         return undef;
     }

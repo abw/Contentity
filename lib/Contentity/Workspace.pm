@@ -189,7 +189,9 @@ sub load_component {
     if ($module) {
         # load the module
         $self->debug("instantiating $module for $name component") if DEBUG;
-        $LOADED->{ $name } ||= class($module)->load;
+        $self->debug_data( LOADED => $LOADED ) if DEBUG;
+        $LOADED->{ $module } ||= class($module)->load;
+        $self->debug_data( "LOADED $name" => $LOADED->{ $module } ) if DEBUG;
         $object = $module->new($config) || return;
     }
     else {
