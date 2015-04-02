@@ -219,6 +219,12 @@ sub builder {
     shift->component(BUILDER, @_);
 }
 
+sub sass_builder {
+    my $self = shift;
+    $self->component(BUILDER.'.sass', @_);
+}
+
+
 
 #-----------------------------------------------------------------------------
 # resources are local directories containing images, etc., that are accessible
