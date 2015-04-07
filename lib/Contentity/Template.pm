@@ -9,7 +9,7 @@ use Contentity::Class
                   commas falselike floor id_safe inflect integer
                   plural plurality random truelike uri_safe
                   snake_up snake_down
-                  H data_attrs',
+                  H html_attrs data_attrs',
     codecs    => 'html json',
     constants => 'ARRAY';
 
@@ -46,6 +46,7 @@ our $ITEM_VMETHODS = {
 our $HASH_VMETHODS = {
     json          => \&encode_json,
     data_attrs    => \&data_attrs,
+    html_attrs    => \&html_attrs,
 };
 
 our $LIST_VMETHODS = {
