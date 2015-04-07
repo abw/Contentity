@@ -213,6 +213,39 @@ sub parse_svg_glyph_file {
 }
 
 
+#-----------------------------------------------------------------------------
+# Filtering/mapping glyphs
+#-----------------------------------------------------------------------------
+
+sub select_glyphs {
+    my ($self, $spec) = @_;
+    my $map = $self->glyph_map;
+    my @glyphs;
+
+    while (my ($key, $value) = each %$spec) {
+        my $glyph = $map->{ $value }
+            || return $self->error_msg( invalid => icon_map => "$key => $value" );
+        $glyph = { %$glyph, name => $key };
+        push(@glyphs, $glyph);
+    }
+    $self->{ glyphs } = \@glyphs;
+    return \@glyphs;
+}
+
+sub glyph_map {
+    my $self   = shift;
+    my $map    = { };
+    my $glyphs = $self->glyphs;
+
+    for my $glyph (@$glyphs) {
+        my $canon = join('.', $glyph->{ source }, $glyph->{ name });
+        $self->debug_data( "$canon glyph" => $glyph ) if DEBUG;
+        $map->{ $canon } = $glyph;
+    }
+
+    return $map;
+}
+
 #=============================================================================
 # OUTPUT
 #=============================================================================
