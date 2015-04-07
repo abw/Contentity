@@ -8,7 +8,7 @@ use Carp;
 use POSIX               'floor';
 use Badger::Debug       'debug_caller';
 use Badger::Utils       'params numlike is_object plural permute_fragments
-                         xprintf TIMESTAMP split_to_list md5_hex';
+                         xprintf Timestamp TIMESTAMP split_to_list md5_hex Now';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
@@ -25,7 +25,7 @@ use Contentity::Class
             snake_up snake_down
             self_key self_keys
             H html_elem html_attrs data_attrs
-            datestamp today format_date
+            datestamp today format_date date_range
             ordinal ordinate commas trim
             find_program prompt confirm floor
             red green blue cyan magenta yellow black white grey dark bold
@@ -261,6 +261,8 @@ sub html_attrs {
         sort keys %$attrs
     );
 
+    #Contentity->debug_data( ATTRS => \@attrs ) if DEBUG or 1;
+
     return @attrs
         ? ' ' . join(' ', @attrs)
         : '';
@@ -312,6 +314,76 @@ sub format_date {
     $output =~ s/<ord>/$ord/g;
 
     return $output;
+}
+
+sub date_range {
+    my $params  = shift;
+    my $target  = shift || $params;
+    my $days    = $params->{ days  };
+    my $from    = $params->{ from  };
+    my $to      = $params->{ to    };
+    my $month   = $params->{ month };
+    my $year    = $params->{ year  };
+    my $now     = Now;
+    my $defdays = 28;
+    my ($start, $end);
+
+    # Allow month to be specified as year-month, e.g. '2013-11'
+    # Note we also allow month ranges, e.g. '01-03', which we assume are
+    # always less than 4 digits.  In theory, we can also have year-m1-m2,
+    # e.g. 2012-01-03 for Jan (01) to March (03), 2013
+    if (! $year && $month && $month =~ s/^(\d{4})-(\d+)/$2/) {
+        $year = $1;
+    }
+
+    if ($from && $to) {
+        $start = datestamp($from);
+        $end   = datestamp($to);
+
+        if ($end->before($start)) {
+            ($start, $end) = ($end, $start);
+        }
+    }
+    elsif ($from) {
+        $days ||= $defdays;
+        $start  = datestamp($from);
+        $end    = $start->copy->adjust( days => $days );
+    }
+    elsif ($to) {
+        $days ||= $defdays;
+        $end   = datestamp($to);
+        $start = $end->copy->adjust( days => -$days );
+    }
+    elsif ($days) {
+        $start = Now->adjust( days => -$days );
+        $end   = Now->adjust( days =>  $days );
+    }
+    elsif ($year) {
+        if ($month) {
+            my ($m1, $m2) = split('-', $month);
+            $start = datestamp("$year-$m1-01");
+            if ($m2) {
+                $end = datestamp("$year-$m2-01");
+                $end->day( $end->days_in_month );
+            }
+            else {
+                $end = $start->copy->day( $start->days_in_month );
+            }
+        }
+        else {
+            $start = datestamp("$year-01-01");
+            $end   = datestamp("$year-12-31");
+        }
+    }
+    else {
+        $start = Now;
+        $end   = Now->copy->adjust( days => 28 );
+    }
+
+    $target->{ from } = $start->date;
+    $target->{ to   } = $end->date;
+
+    return $target;
 }
 
 #-----------------------------------------------------------------------------
