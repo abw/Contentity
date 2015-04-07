@@ -6,9 +6,9 @@ use Contentity::Class
     base      => 'Contentity::Base',
     import    => 'bclass',   # use Plan B so class() can be a regular method
     utils     => 'xprintf weaken join_uri',
-    accessors => 'form type disabled',
+    accessors => 'form type disabled mandatory',
     mutators  => 'name size label layout display default class style tabindex n',
-    constants => 'ARRAY HASH',
+    constants => 'ARRAY HASH SPACE',
     constant  => {
         DEFAULT      => 'text',
         FIELD_PREFIX => 'field',
@@ -239,6 +239,59 @@ sub workspace {
     shift->form->workspace;
 }
 
+#-----------------------------------------------------------------------------
+# Somewhat opinionated methods for generating HTML attrs.  These should be
+# generalised so we're not hard-coding certain class names, e.g. mandatory,
+# error, etc.
+#-----------------------------------------------------------------------------
+
+sub layout_classes {
+    my $self    = shift;
+    my @classes = qw(field);
+    push(@classes, 'mandatory') if $self->mandatory;
+    push(@classes, $self->{ layout_class }) if $self->{ layout_class };
+    if ($self->error) {
+        push(@classes, 'error invalid');
+    }
+    elsif ($self->valid) {
+        push(@classes, 'valid');
+    }
+    return join(SPACE, @classes);
+}
+
+sub layout_id {
+    my $self = shift;
+    my $lid;
+
+    if ($lid = $self->{ layout_id }) {
+        return $lid;
+    }
+    elsif ($lid = $self->{ id }) {
+        return "${lid}_field";
+    }
+    else {
+        return undef;
+    }
+}
+
+sub layout_attrs {
+    my $self  = shift;
+    my $attrs = {
+        class => $self->layout_classes,
+    };
+    my $lid = $self->layout_id;
+    $attrs->{ id } = $lid if $lid;
+    $self->debug_data( layout_attrs => $attrs ) if DEBUG or 1;
+    return $attrs;
+}
+
+sub label_attrs {
+    my $self  = shift;
+    my $attrs = { };
+    $attrs->{ for   } = $self->name;
+    $attrs->{ class } = $self->{ label_class } if $self->{ label_class };
+    return $attrs;
+}
 
 1;
 __END__
