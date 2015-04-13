@@ -26,6 +26,7 @@ use Contentity::Class
             self_key self_keys
             H html_elem html_attrs data_attrs
             datestamp today format_date date_range
+            parse_time canonical_time format_time
             ordinal ordinate commas trim
             find_program prompt confirm floor
             red green blue cyan magenta yellow black white grey dark bold
@@ -384,6 +385,101 @@ sub date_range {
     $target->{ to   } = $end->date;
 
     return $target;
+}
+
+#-----------------------------------------------------------------------------
+# times
+#-----------------------------------------------------------------------------
+
+sub parse_time {
+    my $time = shift;
+
+    # examples:
+    #  4pm
+    #  4.20pm
+    #  4.20 p.m.
+    #  1620
+    #  16:20:42    <- canonical form we return
+    #
+    for ($time) {
+        # strip leading and trailing whitespace
+        s/^\s+//;
+        s/\s*$//;
+    }
+    my $src = $time;
+
+    # look for sequences of digits separated by one or non-digits
+    $time =~ s/^(\d+(\D+\d+)*)\s*// || return;
+    my $nums = $1;
+    my $sufx = $time;
+    my @nums = split(/\D/, $nums);
+    my ($h, $m, $s) = (0) x 3;
+
+    if (@nums == 3) {
+        ($h, $m, $s) = @nums;
+    }
+    elsif (@nums == 2) {
+        ($h, $m) = @nums;
+    }
+    elsif (@nums == 1) {
+        my $digits = length $nums;
+        if ($digits <= 2) {
+            # e.g. 7, 18, etc.
+            $h = $nums;
+        }
+        elsif ($digits <= 4) {
+            # e.g. 715, 825, 1230 - take 2 from RHS
+            $nums =~ s/(\d\d)$//;
+            $m = $1;
+            $h = $nums;
+        }
+        elsif ($digits <= 6) {
+            # e.g. 71500, 123030 - take 2 from RHS, then 2 more
+            $nums =~ s/(\d\d)(\d\d)$//;
+            ($m, $s) = ($1, $2);
+            $h = $nums;
+        }
+        else {
+            return;
+        }
+    }
+    else {
+        return;
+    }
+
+    if (length $sufx) {
+        $sufx =~ s/\W//g;
+        $sufx = lc $sufx;
+        if ($sufx eq 'pm')  {
+            $h += 12 unless $h > 11;   # 1pm => 13.  NOTE: 12pm => 12:00
+        }
+        elsif ($sufx eq 'am') {
+            $h = 0 if $h == 12;     # 12am = 00:00
+        }
+        elsif ($sufx eq 'noon' || $sufx =~ /midd?ay/) {   # sic
+            return unless $h == 12;
+        }
+        else {
+            return;
+        }
+    }
+
+    return { h => $h, m => $m, s => $s };
+
+}
+
+sub canonical_time {
+    format_time(@_);
+}
+
+sub format_time {
+    my $time = parse_time(shift);
+    my $fmt  = shift || '<hh>:<mm>:<ss>';
+    $time->{ hh } = sprintf('%02d', $time->{ h });
+    $time->{ mm } = sprintf('%02d', $time->{ m });
+    $time->{ ss } = sprintf('%02d', $time->{ s });
+    $fmt =~ s/<(\w+)>/$time->{ lc $1 } || die "Invalid time format: <$1>"/ge;
+    return $fmt;
 }
 
 #-----------------------------------------------------------------------------
