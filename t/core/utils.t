@@ -13,7 +13,7 @@ use Badger
     Debug => [import => ':all'];
 
 use Badger::Test
-    tests => 9,
+    tests => 29,
     debug => 'Contentity::Utils',
     args  => \@ARGV;
 
@@ -100,6 +100,40 @@ use Contentity::Utils 'Colour';
 my $orange = Colour('#ff7f00');
 ok( $orange, "got orange: $orange" );
 
+
+
+#-----------------------------------------------------------------------------
+# canonical_time
+#-----------------------------------------------------------------------------
+
+use Contentity::Utils 'canonical_time';
+
+test_time('7',          '07:00:00');
+test_time('730',        '07:30:00');
+test_time('7.31',       '07:31:00');
+test_time('7:32',       '07:32:00');
+test_time('0733',       '07:33:00');
+test_time('8am',        '08:00:00');
+test_time('8.10am',     '08:10:00');
+test_time('8 20am',     '08:20:00');
+test_time('10',         '10:00:00');
+test_time('10.30',      '10:30:00');
+test_time('1030',       '10:30:00');
+test_time('10.30.20',   '10:30:20');
+test_time('10:30:1',    '10:30:01');
+test_time('10am',       '10:00:00');
+test_time('10 a.m.',    '10:00:00');
+test_time('230pm',      '14:30:00');
+test_time('10pm',       '22:00:00');
+test_time('10PM',       '22:00:00');
+test_time('23',         '23:00:00');
+test_time('2330',       '23:30:00');
+
+sub test_time {
+    my ($input, $expect) = @_;
+    my $output = canonical_time($input);
+    is( $output, $expect, "parsed time: $input => $output" );
+}
 
 
 __END__
