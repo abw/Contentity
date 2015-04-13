@@ -20,6 +20,7 @@ use Contentity::Class
         'title|class:TITLE',
         'layout|class:LAYOUT=form',
         'fragment|class:FRAGMENT',
+        'params',
     ],
     constant => {
         ENCODING      => 'application/x-www-form-urlencoded',
@@ -184,6 +185,14 @@ sub submit_field {
     return $self->{ submit_field };
 }
 
+sub params {
+    my $self = shift;
+    if (@_) {
+        $self->{ params } = shift;
+    }
+    return $self->{ params } ||= { };
+}
+
 #-----------------------------------------------------------------------------
 # Presentation methods
 #-----------------------------------------------------------------------------
@@ -231,7 +240,7 @@ sub content {
 
 sub validate {
     my $self   = shift;
-    my $params = shift || { };
+    my $params = shift || $self->params;
     my $good   = $self->{ valid_fields   } = [ ];
     my $bad    = $self->{ invalid_fields } = [ ];
     my $errors = $self->{ errors         } = [ ];
@@ -263,6 +272,7 @@ sub validate {
     }
 
     $self->{ errors } = 0 unless $nfail;
+
     return $nfail ? 0 : 1;
 }
 

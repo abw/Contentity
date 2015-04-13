@@ -342,7 +342,13 @@ sub form {
     my $form = $self->workspace->form(
         $self->form_path(@_)
     );
+
+    # prime the form with the application request parameters
+    $form->params($self->params);
+
+    # save the form in the context for templates to access
     $self->set( form => $form );
+
     return $form;
 }
 

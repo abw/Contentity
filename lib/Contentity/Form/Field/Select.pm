@@ -1,27 +1,49 @@
 package Contentity::Form::Field::Select;
 
 use Contentity::Class::Form::Field
-    version   => 0.03,
-    words    => 'ARRAY OPTIONS';
+    version  => 0.04,
+    import   => 'bclass',
+    words    => 'HASH ARRAY OPTIONS';
+
+sub init {
+    my ($self, $config) = @_;
+    $self = $self->SUPER::init($config);
+    $self->{ options } = $self->prepare_options($self->{ options })
+        if $self->{ options };
+    return $self;
+}
 
 
 sub options {
     my $self = shift;
 
     if (@_) {
-        $self->{ options } =
-            (@_ == 1 && ref $_[0] eq ARRAY) # if we get a single array ref
-            ? [ @{ $_[0] } ]                # then we clone it,
-            : [ @_ ];                       # otherwise construct list ref from args
+        $self->{ options } = $self->prepare_options(@_);
     }
     else {
-        $self->{ options } ||= do {
-            my $opts = $self->bclass->var(OPTIONS);
-            $opts ? [ @$opts ] : [ ];
-        };
+        $self->{ options } ||= $self->prepare_options(
+            $self->bclass->var(OPTIONS)
+        );
     }
 
     return $self->{ options };
+}
+
+
+sub prepare_options {
+    my $self = shift;
+    my @opts = (@_ == 1 && ref $_[0] eq ARRAY)  # if we get a single array
+             ? @{ $_[0] }                       # ref then clone it
+             : @_;
+
+    return [
+        map {
+            ref $_ eq HASH
+                ? $_
+                : { value => $_ }
+        }
+        @opts
+    ];
 }
 
 sub size {

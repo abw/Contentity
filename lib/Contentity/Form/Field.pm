@@ -281,7 +281,7 @@ sub layout_attrs {
     };
     my $lid = $self->layout_id;
     $attrs->{ id } = $lid if $lid;
-    $self->debug_data( layout_attrs => $attrs ) if DEBUG or 1;
+    $self->debug_data( layout_attrs => $attrs ) if DEBUG;
     return $attrs;
 }
 
