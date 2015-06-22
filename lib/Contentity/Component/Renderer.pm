@@ -16,6 +16,7 @@ use Contentity::Class
         engine_init   => 'Failed to initialise %s template engine: %s',
         engine_render => 'Failed to render %s (%s): %s',
         no_workspace  => 'Cannot provide template_data - renderer has become detached from the workspace',
+        no_template   => "Missing template: %s (looked in %s)",
     };
 
 sub init_component {
@@ -289,12 +290,12 @@ sub process {
     my $params = $self->template_data(shift);
     my $engine = $self->engine;
 
-    $engine->watch_templates_used;
+    #$engine->watch_templates_used;
 
     my $result = $engine->process($name, $params, @_);
-    my $used   = $self->{ templates_used } = $engine->templates_used;
 
-    $self->debug_data( templates_used => $used ) if DEBUG;
+    #my $used   = $self->{ templates_used } = $engine->templates_used;
+    # $self->debug_data( templates_used => $used ) if DEBUG;
 
     return $result
         || $self->error_msg( engine_render => $name, $engine->error );
@@ -320,7 +321,7 @@ sub template_data {
 sub template_not_found {
     my ($self, $name) = @_;
     my $srcs = join(', ', @{ $self->source_dirs });
-    return $self->error_msg( invalid => template => $name );
+    return $self->error_msg( no_template => $name => $srcs );
 
 }
 

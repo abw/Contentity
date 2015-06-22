@@ -13,7 +13,9 @@ use Contentity::Class
     codecs    => 'html json',
     constants => 'ARRAY';
 
-our $CONFIG_OPTIONS = {
+our $OPTIONS = {
+    ANYCASE        => 1,
+    OUTLINE_TAG    => '%%',
     # subclasses may add more here
 };
 our $ITEM_VMETHODS = {
