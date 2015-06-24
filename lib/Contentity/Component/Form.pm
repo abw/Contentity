@@ -337,7 +337,7 @@ bclass->methods(
                 :  $_[0]->{ style }->{ $item }
         }
     }
-    qw( encoding charset method action name class style title layout fragment )
+    qw( encoding charset method action name class style title layout fragment widget )
 );
 
 1;
