@@ -18,16 +18,16 @@ use Contentity::Class
     exports   => {
         any => q{
             Colour Path
-            debug_caller strip_hash strip_hash_undef
+            debug_caller strip_hash strip_hash_undef split_to_hash
             module_name
             integer random
             uri_safe id_safe
-            snake_up snake_down
             self_key self_keys
             H html_elem html_attrs data_attrs
             datestamp today format_date date_range
             parse_time canonical_time format_time
-            ordinal ordinate commas trim
+            ordinal ordinate commas trim ucwords
+            snake_up snake_down
             find_program prompt confirm floor
             red green blue cyan magenta yellow black white grey dark bold
             cmd generate_id
@@ -74,6 +74,17 @@ sub strip_hash_undef {
             unless defined $hash->{ $_ };
     }
     return $hash;
+}
+
+sub split_to_hash {
+    my $list = shift;
+    return { } unless $list;
+    return $list if ref $list eq HASH;
+    return {
+        map  { $_ => $_ || 1 }
+        grep { defined and length }
+        @{ split_to_list($list) }
+    };
 }
 
 
@@ -549,6 +560,15 @@ sub trim {
         s/\s+$//;
     }
     return $text;
+}
+
+sub ucwords(@) {
+    my $text = join('', @_);
+    join(
+        ' ',
+        map { /^and|of$/ ? $1 : ucfirst $_ }
+        split(/\s+/, $text)
+    );
 }
 
 sub snake_up {
