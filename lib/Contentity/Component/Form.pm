@@ -20,6 +20,7 @@ use Contentity::Class
         'title|class:TITLE',
         'layout|class:LAYOUT=form',
         'fragment|class:FRAGMENT',
+        'widget',
         'params',
     ],
     constant => {
