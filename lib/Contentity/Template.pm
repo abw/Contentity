@@ -8,7 +8,7 @@ use Contentity::Class
     utils     => 'self_params params extend
                   commas falselike floor id_safe inflect integer
                   plural plurality random truelike uri_safe
-                  snake_up snake_down
+                  ucwords snake_up snake_down
                   H html_attrs data_attrs',
     codecs    => 'html json',
     constants => 'ARRAY';
@@ -41,6 +41,7 @@ our $ITEM_VMETHODS = {
     uc            => sub { uc(shift) },
     upper         => sub { uc(shift) },
     ucfirst       => sub { ucfirst(shift) },
+    ucwords       => \&ucwords,
     urisafe       => \&uri_safe,
     uri_safe      => \&uri_safe,
 };
