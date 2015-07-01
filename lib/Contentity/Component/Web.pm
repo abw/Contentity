@@ -284,17 +284,12 @@ sub url {
 
 sub app_url {
     my $self = shift;
-    my $done = $self->path->done;
+    my $done = $self->path->path_done;  # NOT ->done which returns relative path
 
     if (@_) {
         my $path = shift;
         $done = resolve_uri($done, shift) if @_;
     }
-    # force absolute to avoid generate foo/bar that could be resolved
-    # relative to some other base.
-    #    $done = SLASH . $done unless $done =~ m{^/};
-    # NOPE - we need to be able to resolve scheme/12345/pictures against
-    # a portfolio to get /portfolio/Foo/scheme/12345/pictures
 
     my $url = $self->URL->new($done);
     $self->add_url_params($url, @_) if @_;
