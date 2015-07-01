@@ -214,8 +214,10 @@ sub vfs_dir {
 }
 
 sub path_uri {
-    my $uri = shift->context->path->path_todo || SLASH;
-
+    my $uri = shift->context->path->path_todo || '';
+    # force path to be absolute relative to VFS
+    $uri = SLASH.$uri unless $uri =~ m{^/};
+    return $uri;
 }
 
 #sub url {
