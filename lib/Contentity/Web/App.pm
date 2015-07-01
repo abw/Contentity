@@ -225,7 +225,7 @@ sub dispatch_method {
     my $self   = shift;
     my $method = shift || $self->can('default_action');
     my $route  = _params(@_);
-    my $roles  = $self->realm_roles;
+    my $roles  = $self->access_roles;
 
     $self->debug_data( roles => $roles ) if DEBUG;
 
@@ -260,10 +260,15 @@ sub dispatch_method {
     return $self->$method;
 }
 
+sub access_roles {
+    return { };
+}
+
 
 sub default_action {
     shift->not_implemented('in base class');
 }
+
 
 
 #-----------------------------------------------------------------------------
@@ -320,13 +325,14 @@ sub template_data {
     my $self  = shift;
     return $self->context->template_data(
         {
-            App     => $self,
-            Session => $self->session     || undef,  # explicit "|| undef"
-            Login   => $self->login       || undef,  # in case any of these
-            User    => $self->user        || undef,  # methods return
-            Params  => $self->params      || undef,  # empty lists
-            Realm   => $self->realm       || undef,
-            Roles   => $self->realm_roles || undef,
+            App       => $self,
+            Session   => $self->session     || undef,  # explicit "|| undef"
+            Login     => $self->login       || undef,  # in case any of these
+            User      => $self->user        || undef,  # methods return
+            Params    => $self->params      || undef,  # empty lists
+            #Realm     => $self->realm       || undef,
+            #Roles    => $self->realm_roles || undef,
+            #Authority => $self->authority   || undef,
         },
         @_
     );
