@@ -1,13 +1,14 @@
 package Contentity::Component::Web;
 
 use Badger::URL;
+use Badger::Utils;
 use Contentity::Class
     version   => 0.03,
     debug     => 0,
     base      => 'Contentity::Component Contentity::Plack::Component',
-    constants => 'BLANK :status :http_status :content_types',
+    constants => 'BLANK SLASH :status :http_status :content_types',
     accessors => 'env context',
-    utils     => 'extend join_uri resolve_uri strip_hash extend split_to_list split_to_hash is_object truelike bparams',
+    utils     => 'extend join_uri resolve_uri strip_hash extend split_to_list split_to_hash is_object truelike',
     codecs    => 'json',
     alias     => {
         _params => \&Contentity::Utils::params,
@@ -145,8 +146,8 @@ sub uri {
     my $self = shift;
     my $base = $self->context->base;
     return @_
-      ? resolve_uri($base, @_)
-      : $base;
+        ? resolve_uri($base, @_)
+        : $base;
 }
 
 sub script_name {
@@ -284,9 +285,18 @@ sub url {
 sub app_url {
     my $self = shift;
     my $done = $self->path->done;
-    $done = resolve_uri($done, shift) if @_;
-    $self->debug("app_url path done: $done") if DEBUG;
-    my $url  = $self->URL->new($done);
+
+    if (@_) {
+        my $path = shift;
+        $done = resolve_uri($done, shift) if @_;
+    }
+    # force absolute to avoid generate foo/bar that could be resolved
+    # relative to some other base.
+    #    $done = SLASH . $done unless $done =~ m{^/};
+    # NOPE - we need to be able to resolve scheme/12345/pictures against
+    # a portfolio to get /portfolio/Foo/scheme/12345/pictures
+
+    my $url = $self->URL->new($done);
     $self->add_url_params($url, @_) if @_;
     $self->debug("app_url: $url") if DEBUG;
     return $url;
@@ -304,12 +314,26 @@ sub add_url_params {
     return $url;
 }
 
-sub full_url {
+sub request_uri {
     my $self = shift;
+    my $uri  = $self->request->uri;
+    return $uri;
+}
 
-    return $self->app_url(
+sub OLD_full_url {
+    my $self = shift;
+    my $req  = $self->request;
+    my $url  = $self->app_url(
         $self->path->todo
     );
+
+    # TODO: make this nicer
+    $url->scheme( $req->scheme );
+    $url->host( $req->hostname );
+    #$url->port($apache->{ port })
+    #    if $apache->{ port } &&  $apache->{ port } != 80;
+
+    return $url;
 }
 
 # TODO: delete me
@@ -592,9 +616,9 @@ sub redirect {
 sub redirect_pending_data {
     my $self = shift;
     my $url  = shift;
-    my $data = bparams(@_);
+    my $data = Badger::Utils::params(@_);
 
-    $self->save_pending_data($params);
+    $self->save_pending_data($data);
     return $self->redirect($url);
 }
 
@@ -648,32 +672,29 @@ sub redirect_error_msg {
     return shift->redirect_status_msg(shift, error => @_);
 }
 
-
-
 sub redirect_login_url {
-    my $self   = shift;
-    my $login  = shift;
-    my $final  = shift;
-    my $params = shift;
-    my $msg    = @_ ? join('', @_) : $self->message('redirect_login');
+    my $self           = shift;
+    my $login_url      = shift;
+    my $pending_url    = shift;
+    my $pending_params = shift;
+    my $message        = @_ ? join('', @_) : $self->message('redirect_login');
 
-    $self->debugf("user was going to: $final") if DEBUG or 1;
-    $self->debug("message: $msg") if DEBUG or 1;
+    $self->debugf("redirect_login_url() sending user to $login_url instead of $pending_url") if DEBUG;
 
     # ensure URL is stringified
-    $final = "$final";
+    $pending_url = "" . $pending_url;
 
     # save the final destination url/params that the user was trying to get to
     $self->session->data(
-        redirect_login  => $final,
-        redirect_params => $params,
+        redirect_login  => $pending_url,
+        redirect_params => $pending_params,
         pending_data    => {
-            info => $msg
+            info => $message
         }
     )->save;
 
     #$self->send_html("REDIRECT: [$login] -=> [$final]");
-    $self->send_redirect($login);
+    $self->send_redirect($login_url);
 }
 
 sub pending_redirect_login_url {
@@ -682,19 +703,18 @@ sub pending_redirect_login_url {
     my $data    = $session->data;
     my $url     = delete($data->{ redirect_login  }) || return;
     my $params  = delete($data->{ redirect_params });
-    $session->save;
-    my $redirect = $self->url($url, $params);
-    $self->debug("pending_redirect_login_url: $redirect") if DEBUG;
-    return $redirect;
+    $self->debug("pending_redirect_login_url() redirecting to $url") if DEBUG;
+    return $url;
 }
 
 
 sub redirect_login {
     my $self = shift;
-    # TODO: might also need domain if we're authenticating across domains
+    my $uri = $self->request_uri;
+    $self->debug("redirect_login() uri: $uri") if DEBUG;
     return $self->redirect_login_url(
         $self->login_url,
-        $self->full_url,
+        $self->request_uri,
         $self->params,
         @_,
     );
