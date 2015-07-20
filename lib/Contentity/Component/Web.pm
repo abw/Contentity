@@ -698,6 +698,7 @@ sub pending_redirect_login_url {
     my $data    = $session->data;
     my $url     = delete($data->{ redirect_login  }) || return;
     my $params  = delete($data->{ redirect_params });
+    $session->save;
     $self->debug("pending_redirect_login_url() redirecting to $url") if DEBUG;
     return $url;
 }
