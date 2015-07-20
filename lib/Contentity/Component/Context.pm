@@ -299,10 +299,17 @@ sub login_user {
 
 sub logout_user {
     my $self = shift;
+    my $data = $self->data;
 
-    # Delete all the user-related data in the context
+    # Delete any user-related data in the context object...
     delete $self->{ user  };
     delete $self->{ login };
+
+    # and in the context variable stash for templates/response
+    delete $data->{ User  };
+    delete $data->{ Login };
+
+    $self->debug("deleted User/Login from context data ") if DEBUG;
 
     # Delete the user_id and any identifying data from session
     $self->session->logout;
