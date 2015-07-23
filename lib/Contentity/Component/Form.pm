@@ -7,7 +7,7 @@ use Contentity::Class
     import    => 'bclass',      # use Plan B so class() can be a CSS class
     accessors => 'fields',
   #  mutators  => 'encoding charset method action name class style title layout fragment',
-    utils     => 'self_params split_to_list join_uri',
+    utils     => 'self_params split_to_list join_uri strip_hash strip_hash_undef',
     codec     => 'html',
     config    => [
         'encoding|class:ENCODING|method:ENCODING',
@@ -133,6 +133,45 @@ sub values {
     $self->debug_data( values => $values ) if DEBUG;
 
     return $values;
+}
+
+sub field_values {
+    my $self   = shift;
+    my $params = shift || { };
+    my $fields = $self->{ field };
+    my $extra  = $self->{ extra_params };
+    my $values = {
+        map  { $fields->{ $_ }->field_values($_) }
+        grep { defined $fields->{ $_ } }
+        keys %$fields
+    };
+
+    return $values unless $extra;
+
+    $extra = split_to_list($extra);
+    $self->debug("extra params for form: ", $self->dump_data($extra)) if DEBUG;
+
+    foreach my $p (@$extra) {
+        $values->{ $p } = $params->{ $p }
+            if defined $params->{ $p }
+            && length  $params->{ $p };
+    }
+
+    $self->debug("field_values: ", $self->dump_data($values)) if DEBUG;
+
+    return $values;
+}
+
+sub stripped_field_values {
+    strip_hash(
+        shift->field_values
+    );
+}
+
+sub defined_field_values {
+    strip_hash_undef(
+        shift->field_values
+    );
 }
 
 sub set_values {

@@ -6,7 +6,7 @@ use Contentity::Class
     base      => 'Contentity::Base',
     import    => 'bclass',   # use Plan B so class() can be a regular method
     utils     => 'xprintf weaken join_uri',
-    accessors => 'form type disabled mandatory',
+    accessors => 'form type disabled mandatory data',
     mutators  => 'name size label layout display default class style tabindex n',
     constants => 'ARRAY HASH SPACE',
     constant  => {
@@ -52,7 +52,7 @@ sub init {
     # update $config to set defaults from package vars
     $self->configure($config => $config);
 
-    $self->debug_data( config => $config ) if DEBUG;
+    $self->debug_data( field_config => $config ) if DEBUG;
 
     # copy everything into object
     @$self{ keys %$config } = values %$config;
@@ -81,7 +81,8 @@ sub init {
 
 sub register {
     my ($self, $registry) = @_;
-    $registry->{ $self->name } = $self;
+    my $name = $self->name || return;
+    $registry->{ $name } = $self;
 }
 
 sub validate {
@@ -173,6 +174,13 @@ sub value {
 }
 
 sub values {
+    my $self   = shift;
+    my $name   = shift || $self->name;
+    my $value  = $self->value;      # scalar context
+    return ($name, $value);         # aways return 2 item list
+}
+
+sub field_values {
     my $self   = shift;
     my $name   = shift || $self->name;
     my $value  = $self->value;      # scalar context

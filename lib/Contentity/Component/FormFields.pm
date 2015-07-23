@@ -41,7 +41,7 @@ sub field_list {
     my @fields = map {
         # add 'n' as the field number
         $_->{ n } ||= $n++;
-        local $_->{ form } = $self;
+        local $_->{ factory } = $self;
         $self->debug_data( init_field => $_ ) if DEBUG;
         $self->field($_);
     } @$specs;

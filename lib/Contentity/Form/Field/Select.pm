@@ -2,6 +2,7 @@ package Contentity::Form::Field::Select;
 
 use Contentity::Class::Form::Field
     version  => 0.04,
+    debug    => 0,
     import   => 'bclass',
     words    => 'HASH ARRAY OPTIONS';
 
@@ -18,6 +19,7 @@ sub options {
     my $self = shift;
 
     if (@_) {
+        $self->debug_data( options => \@_ ) if DEBUG;
         $self->{ options } = $self->prepare_options(@_);
     }
     else {
