@@ -288,7 +288,7 @@ sub app_url {
 
     if (@_) {
         my $path = shift;
-        $done = resolve_uri($done, shift) if @_;
+        $done = resolve_uri($done, $path);
     }
 
     my $url = $self->URL->new($done);
