@@ -6,12 +6,25 @@ use Contentity::Class
     base    => 'Contentity::Configure::App';
 
 sub run {
-    my $self = shift;
+    my $self   = shift;
+    my $config = $self->config;
+
+    $self->prompt_expr([
+        [ selected => "Pre-building SASS:\n" ],
+    ]);
+
+    # do the pre-sass build
+    my $options = {
+        renderer => 'sassprep'
+    };
+    my $spbuilder = $site->builder($options);
+    $self->debug("got sassprep builder: $spbuilder") if DEBUG;
+    $spbuilder->build;
+
     $self->prompt_expr([
         [ selected => "Building SASS:\n" ],
     ]);
-    my $project  = $self->config('project');
-    my $config = $self->config;
+
 
     $project->sass_builder($config)->build;
 }

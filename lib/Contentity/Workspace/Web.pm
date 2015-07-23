@@ -224,6 +224,11 @@ sub sass_builder {
     $self->component(BUILDER.'.sass', @_);
 }
 
+sub sassprep_builder {
+    my $self = shift;
+    $self->component(BUILDER, @_);
+}
+
 
 
 #-----------------------------------------------------------------------------
