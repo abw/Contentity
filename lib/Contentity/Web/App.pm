@@ -345,12 +345,14 @@ sub template_data {
 
 sub form {
     my $self = shift;
-    my $form = $self->workspace->form(
-        $self->form_path(@_)
-    );
+    my $uri  = $self->form_path(@_);
+    my $form = $self->workspace->form($uri);
 
     # prime the form with the application request parameters
     $form->params($self->params);
+
+    # default the action to be the form URI relative to current app
+    $form->action( $self->url($uri) );
 
     # save the form in the context for templates to access
     $self->set( form => $form );

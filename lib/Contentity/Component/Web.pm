@@ -214,6 +214,11 @@ sub data {
     shift->context->data(@_);
 }
 
+sub json_data {
+    # this is for backward/foward compatibility
+    shift->data;
+}
+
 #-----------------------------------------------------------------------------
 # Cookies
 #-----------------------------------------------------------------------------
@@ -623,10 +628,6 @@ sub redirect_status {
     my $type = shift;
     my $text = join(' ', @_);
 
-    $self->save_pending_data(
-        $type => $text
-    );
-
     if ($self->accept_json) {
         return $self->send_json(
             extend(
@@ -640,6 +641,11 @@ sub redirect_status {
             )
         );
     }
+
+    $self->save_pending_data(
+        $type => $text
+    );
+
     return $self->redirect($url);
 }
 

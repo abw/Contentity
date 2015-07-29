@@ -5,8 +5,6 @@ use Cog::Class
     debug     => 1,
     base      => 'Contentity::Form::Field::Text';
 
-print STDERR "Using Contentity::Form::Field::Autocomplete";
-
 sub validate {
     my $self    = shift;
     my $value   = $self->prepare(shift);
@@ -80,6 +78,24 @@ sub values {
     );         # aways return 4 item list
 }
 
+sub field_values {
+    my $self    = shift;
+    my $name    = shift || $self->name;
+    my $value   = $self->value;      # scalar context
+    my $id_name = $self->id_param;
+    my $id_val  = $self->id_value || undef;
+
+    # if we have an ID then perhaps we shouldn't return the name?
+    # However, we can't predict what happens if the user gets an ID via
+    # the autocomplete and then changes the text
+
+    $self->debug("returning field values: [$name => $value] [$id_name => $id_val]") if DEBUG;
+
+    return (
+        $name    => $value,
+        $id_name => $id_val,
+    );         # aways return 4 item list
+}
 
 
 
