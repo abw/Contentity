@@ -27,7 +27,7 @@ use Contentity::Class
             datestamp today format_date date_range
             parse_time canonical_time format_time
             ordinal ordinate commas trim ucwords
-            snake_up snake_down
+            snake_up snake_down xformat
             find_program prompt confirm floor
             red green blue cyan magenta yellow black white grey dark bold
             cmd generate_id
@@ -583,7 +583,12 @@ sub snake_down {
     return lc $text;
 }
 
-
+sub xformat {
+    my $format = shift;
+    my $params = params(@_);
+    $format =~ s[<(\w+)>][$params->{$1}//"<$1>"]ge;
+    return $format;
+};
 
 
 #-----------------------------------------------------------------------------
