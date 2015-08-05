@@ -8,7 +8,7 @@ use Contentity::Class
     base      => 'Contentity::Component Contentity::Plack::Component',
     constants => 'BLANK SLASH :status :http_status :content_types',
     accessors => 'env context',
-    utils     => 'extend join_uri resolve_uri strip_hash extend split_to_list split_to_hash is_object truelike',
+    utils     => 'extend join_uri resolve_uri strip_hash split_to_list split_to_hash is_object truelike xformat',
     codecs    => 'json',
     alias     => {
         _params => \&Contentity::Utils::params,
@@ -289,14 +289,26 @@ sub url {
 
 sub app_url {
     my $self = shift;
-    my $done = $self->path->path_done;  # NOT ->done which returns relative path
+    my $uri;
 
     if (@_) {
+        # if an argument is specified then it's assumed to be an alternate
+        # URL for the same app, e.g. the /search app might be handling a
+        # /search/some/thing/or/other request, but calling this method with
+        # a 'property' argument will generate the URL /search/property
+        my $base = $self->uri;
         my $path = shift;
-        $done = resolve_uri($done, $path);
+        $uri = resolve_uri($base, $path);
+        $self->debug("resolved base [$base] [$path] as [$uri]") if DEBUG;
+    }
+    else {
+        # otherwise we assume that the caller wants the current App URL
+        # including the full part of the path consumed, e.g. /search/schemes
+        $uri = $self->path->path_done;
+        $self->debug("CURRENT URL: $uri") if DEBUG;
     }
 
-    my $url = $self->URL->new($done);
+    my $url = $self->URL->new($uri);
     $self->add_url_params($url, @_) if @_;
     $self->debug("app_url: $url") if DEBUG;
     return $url;
@@ -318,6 +330,16 @@ sub request_uri {
     my $self = shift;
     my $uri  = $self->request->uri;
     return $uri;
+}
+
+sub expand_url {
+    my $self = shift;
+    my $url  = shift;
+
+    # allow named URL mapping via config
+    $url = $self->{ urls }->{ $url } || $url;
+
+    return xformat($url, @_);
 }
 
 sub OLD_full_url {
