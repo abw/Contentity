@@ -24,8 +24,7 @@ sub init {
 
     # call back to the Contentity::Form::Fields factory to make the fields
     my $factory = $self->factory;
-    $self->debug("factory: $factory") if DEBUG or 1;
-    my $fields = $self->factory->field_list($self->{ fields });
+    my $fields  = $self->factory->field_list($self->{ fields });
 
     $self->{ fields } = $fields;
 
