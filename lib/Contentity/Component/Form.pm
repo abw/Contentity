@@ -20,6 +20,7 @@ use Contentity::Class
         'title|class:TITLE',
         'layout|class:LAYOUT=form',
         'fragment|class:FRAGMENT',
+        'extra_params',
         'widget',
         'params',
     ],
@@ -52,6 +53,7 @@ sub init_component {
 
 sub init_form {
     my ($self, $config) = @_;
+    $self->{ extra_params } = $config->{ extra_params };
     $self->init_fields($config);
     $self->init_values($config);
 }
