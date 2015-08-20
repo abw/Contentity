@@ -327,9 +327,7 @@ sub add_url_params {
 }
 
 sub request_uri {
-    my $self = shift;
-    my $uri  = $self->request->uri;
-    return $uri;
+    shift->request->uri;
 }
 
 sub expand_url {
@@ -342,31 +340,16 @@ sub expand_url {
     return xformat($url, @_);
 }
 
-sub OLD_full_url {
+sub full_url {
     my $self = shift;
-    my $req  = $self->request;
-    my $url  = $self->app_url(
-        $self->path->todo
-    );
+    my $uri  = $self->request_uri;
+    my $url  = $self->url(@_);
 
-    # TODO: make this nicer
-    $url->scheme( $req->scheme );
-    $url->host( $req->hostname );
-    #$url->port($apache->{ port })
-    #    if $apache->{ port } &&  $apache->{ port } != 80;
+    $url->scheme( $uri->scheme );
+    $url->host( $uri->host );
 
     return $url;
 }
-
-# TODO: delete me
-sub OLD_url_with_params {
-    my $self = shift;
-    my $url  = $self->app_url;
-    $self->add_url_params($url, $self->params);
-    return $url;
-}
-
-
 
 
 #-----------------------------------------------------------------------
