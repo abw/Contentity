@@ -8,12 +8,14 @@ use Carp;
 use POSIX               'floor';
 use Badger::Debug       'debug_caller';
 use Badger::Utils       'params numlike is_object plural permute_fragments
-                         xprintf Timestamp TIMESTAMP split_to_list md5_hex Now';
+                         xprintf split_to_list md5_hex inflect';
+use Contentity::Timestamp 'TS TIMESTAMP Timestamp Now';
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Badger::Utils',
-    constants => 'ARRAY PKG HASH DELIMITER BLANK SPACE :timestamp :date_formats',
+    constants => 'ARRAY PKG HASH DELIMITER BLANK SPACE
+                  :timestamp :date_formats',
     codecs    => 'html',
     exports   => {
         any => q{
@@ -32,6 +34,7 @@ use Contentity::Class
             red green blue cyan magenta yellow black white grey dark bold
             cmd generate_id
             error_html_to_ansi
+            TS TIMESTAMP Timestamp Now
         }
     };
 use Contentity::Colour  'Colour';
