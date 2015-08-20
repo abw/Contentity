@@ -334,6 +334,17 @@ sub invalid {
     return $self->{ invalid }; # || $self->{ errors };
 }
 
+sub invalidate_field {
+    my $self  = shift;
+    my $name  = shift;
+    my $field = $self->field($name)
+        || return $self->error_msg( invalid => field => $name );
+
+    $field->invalid(@_);
+    my $invalids = $self->{ invalid_fields } ||= [ ];
+    push(@$invalids, $field);
+}
+
 sub valid_fields {
     return $_[0]->{ valid_fields };
 }
