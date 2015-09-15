@@ -611,6 +611,8 @@ sub results {
 
     my $rows = $self->rows($limit, $offset);
 
+    $self->prepare_rows($rows);
+
     if (DEBUG || $self->DEBUG) {
         my $n = scalar @$rows;
         $self->debug("fetched $n rows");
@@ -630,6 +632,20 @@ sub results {
     );
 }
 
+sub prepare_rows {
+    # do nothing - stub for subclasses
+}
+
+sub prepare_row {
+    # do nothing - stub for subclasses
+}
+
+sub prepare_all_rows {
+    my ($self, $rows) = @_;
+    for my $row (@$rows) {
+        $self->prepare_row($row);
+    }
+}
 
 sub all_results {
     my $self   = shift;
