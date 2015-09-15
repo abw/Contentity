@@ -16,6 +16,7 @@ use Contentity::Class
 our $OPTIONS = {
     ANYCASE        => 1,
     OUTLINE_TAG    => '%%',
+    RECURSION      => 1,
     # subclasses may add more here
 };
 our $ITEM_VMETHODS = {
