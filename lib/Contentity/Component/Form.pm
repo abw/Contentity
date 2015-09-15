@@ -393,177 +393,129 @@ bclass->methods(
     qw( encoding charset method action name class style title layout fragment widget )
 );
 
-1;
-
-__END__
-package Badger::Web::Form;
-use Badger::Class::Methods;
-use Badger::Web::Form::Fields;
-use Badger::Web::Class
-
-sub fieldset {
-    my $self = shift;
-    my $name = shift || return $self->error('no fieldset name specified');
-    return $self->pkghash( FIELDSET => $name );
-}
-
-
-
-
-sub invalidate_field {
+sub default_action {
     my $self  = shift;
-    my $name  = shift;
-    my $field = $self->field($name)
-        || return $self->error_msg( no_such_field => $name );
-
-    $field->invalid(@_);
-    my $invalids = $self->{ invalid_fields } ||= [ ];
-    push(@$invalids, $field);
-#    my $error    = $field->error;
-#    my $errors   = $self->{ errors         } ||= [ ];
-#    push(@$errors, $field->error);
-#    return ($self->{ invalid } = 1);
-}
-
-
-sub tab_index {
-    my $self = shift;
-    $self->{ tab_index } ||= 1;
-    $self->{ tab_index } = shift if @_ && $_[0];
-    return $self->{ tab_index }++;
-}
-
-sub last_tab_index {
-    my $self = shift;
-    $self->{ tab_index } ||= 1;
-    return $self->{ tab_index };
-}
-
-sub tab {
-    my $self = shift;
-    return  'tabindex="' . $self->tab_index(@_) . '"';
-}
-
-sub css {
-    my $self = shift;
-    join(
-        ' ',
-        map {
-            defined $self->{ $_ }
-                ? $_ . '="' . encode($self->{ $_ }) . '"'
-                : ()
-        }
-        qw( class style )
-    );
-}
-
-sub focus {
-    my $self  = shift;
-    my ($field, $list);
-
-    if ( (($list = $self->{ invalid_fields }) && @$list)
-      || (($list = $self->{ fields }) && @$list) ) {
-          my $n = 0;
-          while ($n < @$list) {
-              if ($list->[$n]->can_focus) {
-                  $field = $list->[$n];
-                  last;
-              }
-              $n++;
-          }
+    my $style = $self->{ style };
+    if (@_) {
+        $style->{ action } ||= shift;
     }
-    return '' unless $field;
-    my @nodes = ($self->{ name }, $field->name);
-    return join('.', grep { defined $_ } @nodes);
+    return $style->{ action };
 }
 
 1;
+
 __END__
 
 =head1 NAME
 
-Badger::Web::Form - generate and validate web forms
-
-=head1 SYNOPSIS
-
-    package Badger::Web::Form::Example;
-    use base 'Badger::Web::Form';
-
-    our $FIELDS = [
-        username => {
-            label     => 'Username',
-            mandatory => 1,
-            validate  => 'username',
-        },
-        password => {
-            label     => 'Password',
-            type      => 'password',
-            mandatory => 1,
-            validate  => 'username',
-        },
-    ];
-
-    package main;
-    my $form = Badger::Web::Form::Example->new();
-    my $params = {
-        username => 'arthur',
-        password => 'dent42',
-    };
-    if ($form->validate($params)) {
-        # good
-    }
-    else {
-        print "Bad form: ", $form->error();
-    }
+Contentity::Component::Form - generate and validate web forms
 
 =head1 DESCRIPTION
 
-This module implements a base class for creating forms.  It is still
-in development and is subject to change.
+This module implements an object to represent a web form.  Forms are
+usually populated from a YAML configuration file in the C<config/forms>
+directory.
 
-NOTE: this module defines the class() method to get/set a CSS class.
-The L<Badger::Class> class() method is aliased under bclass().
+=head1 ACCESSOR METHODS
 
-=head1 METHODS
+The following methods can be used to get (or set when called with an
+argument) various configuration values for the form.
 
-=head1 new()
+=head2 action()
 
-Constructor method used to create a new form object.
+The C<action> URL.
 
-=head1 fieldset($name)
+=head2 class()
 
-Fetch a set of fields defined in a C<$FIELDSET> package variable hash.
+Any CSS classes to be added to the form element.
 
-=head1 field($name)
+=head2 encoding()
 
-Fetch a named field either from the pre-defined list of fields in the form
-or from the $FIELDS package variable hash.
+The character encoding added as an C<enctype> attribute.  Defaults to C<application/x-www-form-urlencoded>
 
-=head1 name()
+=head2 charset()
 
-Returns the form name.
+The character set added as an C<accept-charset> attribute.  Defaults to
+C<utf-8>.
 
-=head1 action()
+=head2 default_action($action)
 
-Returns the form action.
+This sets the L<action()> for the form if it's not already set.  This
+is typically used by a web application loading the form that want to
+provide a sensible default but not overwrite an explicit value set in
+the form configuration.
 
-=head1 method()
+=head2 fragment()
 
-Returns the form method.
+An additional C<#whatever> fragment to be added to the end of the
+C<action> URL.
 
-=head1 encoding()
+=head2 layout()
 
-Returns the form encoding.
+An alternate layout template to use (typically located somewhere
+like C<templates/library/form/layout>) for the form.  Defaults to C<form>.
 
-=head1 values(\%values)
+=head2 method()
+
+The submission method added as the C<method> attribute.  Defaults to C<POST>.
+
+=head2 name()
+
+The form name.  Added as the C<name> attribute with a C<_form> suffix.
+
+=head2 style()
+
+Additional styling, added as the C<style> attribute.
+
+=head2 title()
+
+A title for the form.  Typically rendered by a C<form/layout/title> template
+if defined.
+
+=head2 widget()
+
+The name of a widget to bind to the form element.
+
+=head1 FIELD METHODS
+
+=head2 fields()
+
+Returns a list of all fields.
+
+=head2 field($name)
+
+Returns a field by name.  If no name is specified then it returns a
+hash array indexing all fields by name.  The following lines of code
+both do the same thing:
+
+    $field = $form->field('foo');
+    $field = $form->field->{ foo };
+
+=head1 PARAMETER VALIDATION METHODS
+
+=head2 params(\%params)
+
+Use to set or get a reference to a hash array of request parameters.
+
+=head2 values(\%values)
 
 Populate the form fields with the values passed as a hash reference.  Calls the
 C<value()> method on each field object.
 
-=head1 validate(\%values)
+=head2 validate(\%params)
 
-Calls the C<validate()> method for each field in the form, using the values passed as a
-reference to a hash array.
+Calls the C<validate()> method for each field in the form.  If a reference
+to a hash of parameters is passed then those are used, otherwise the methods
+calls its own L<params()> method to fetch any parameters that may have
+been previously set via the same L<params()> method.
+
+=head2 field_values()
+
+Returns a hash reference to all the post-validation values for each field.
+
+=head1 NOTE
+
+This documentation is incomplete.
 
 =head1 AUTHOR
 
@@ -571,7 +523,7 @@ Andy Wardley L<http://wardley.org/>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2001-2009 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2001-2015 Andy Wardley.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
