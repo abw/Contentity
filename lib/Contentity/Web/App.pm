@@ -352,7 +352,7 @@ sub form {
     $form->params($self->params);
 
     # default the action to be the form URI relative to current app
-    $form->action( $self->url($uri) );
+    $form->default_action( $self->url($uri) );
 
     # save the form in the context for templates to access
     $self->set( form => $form );
