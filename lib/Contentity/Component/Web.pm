@@ -481,6 +481,14 @@ sub send_json_success {
     );
 }
 
+sub send_json_success_msg {
+    my $self = shift;
+    my $data = pop;         # last argument assumed to be data hash
+    return $self->send_json_success(
+        $self->message(@_), $data
+    );
+}
+
 sub send_json_error_msg {
     my $self = shift;
     return $self->send_json_error(
