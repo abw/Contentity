@@ -567,11 +567,14 @@ sub trim {
 
 sub ucwords(@) {
     my $text = join('', @_);
-    join(
+    my $caps = join(
         ' ',
-        map { /^and|of$/ ? $1 : ucfirst $_ }
-        split(/\s+/, $text)
+        map { /^(a|an|and|at|for|from|in|of|on|the|to)$/ ? $1 : ucfirst $_ }
+        split(/[\s_]+/, $text)
     );
+    # first letter is always capitalised even if one of the above stop words
+    # that aren't usually capitalised
+    return ucfirst $caps;
 }
 
 sub snake_up {
