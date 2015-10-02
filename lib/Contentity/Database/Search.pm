@@ -102,7 +102,7 @@ sub search_params {
     my ($name, $value, $field, $type, $like, $order, $code, @args);
 
     $self->debug("search_params(): $params => ", $self->dump_data($params))
-        if DEBUG or 1;
+        if DEBUG;
 
     if (DEBUG) {
         $self->debug_data( fields => $fields );
@@ -117,7 +117,7 @@ sub search_params {
                 && length  $value
                 && ($field = $fields->{ $name });
 
-        $self->debug("search_param [$name] = [$value]") if DEBUG or 1;
+        $self->debug("search_param [$name] = [$value]") if DEBUG;
         # allow field to be specified as [type => value]
         if (ref $field eq ARRAY) {
             ($type, $field, @args) = @$field;
@@ -408,13 +408,15 @@ sub column {
         $self->debug("WHERE: $tbl") if DEBUG;
         $name = $tbl.DOT.$name;
     }
-    elsif ($name =~ s/^(\W+)//) {
-        # Remove leading '.' or other non-alpha from start of name.
+    elsif ($name =~ s/^([\.=])//) {
+        # Remove leading '.' or '=' from start of name.
         # This is a hack because the above code automagically adds the
         # table name.  Problem is that asking for foo when we have a query
         # like "SELECT XXX AS foo" ends up looking for table_name.foo.  So
         # we set the field to '.foo', '=foo' or something similar to default
         # this badly conceived table name mapping.
+        # NOTE: we used to remove any non-alpha character but that
+        # fails hard when the column name is "`property`.availability"
     }
 
     return $name . $desc;
