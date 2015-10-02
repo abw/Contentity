@@ -147,8 +147,7 @@ sub route {
     }
 
     # copy the route that was matched into the Route data
-    $match->{ route } = SLASH . $matched->{ path }->done->text;
-    $self->set($self->MATCHED_ROUTE, $match);
+    $self->set_matched_route($matched);
 
     if ($handler) {
         # there was a handler defined in the route configuration so we call the
@@ -174,6 +173,25 @@ sub route {
     }
 
     return undef;
+}
+
+sub set_matched_route {
+    my ($self, $matched) = @_;
+    my $match = $matched->{ data };
+    my $path  = $matched->{ path };
+    my $done  = $path->done;
+
+    $self->debug("SET MATCHED ROUTE") if DEBUG or 1;
+
+    # copy the route that was matched into the Route data
+    if (@$done) {
+        $self->debug("path done: ", $done) if DEBUG or 1;
+        $match->{ route } = SLASH . $done->text;
+    }
+    $self->set( $self->MATCHED_ROUTE, $match );
+
+    # update the app path to reflect what the router matched
+    $self->path->take_path( $done );
 }
 
 sub matched_route {
