@@ -96,7 +96,9 @@ sub page {
 sub page_metadata {
     my $self  = shift;
     my $uri   = shift || return $self->error_msg( missing => 'uri' );
-    my $page  = $self->pages->{ $uri };
+    my $bare  = $uri; $bare =~ s/\.(\w+)$//;        # try name as requested and also without .extension
+    my $pages = $self->pages;
+    my $page  = $pages->{ $uri } || $pages->{ $bare };
 
     $self->debug_data("page $uri", $page) if DEBUG;
 
@@ -153,7 +155,8 @@ sub load_menus {
 }
 
 sub menu {
-    my ($self, $name, $uris) = @_;
+    my ($self, $name, $uris, @args) = @_;
+    my $params = params(@args);
 
     # if $uris isn't specified then $name must be the name of a menu
     # defined in the menus.yaml or menus/*.yaml metadata tree
@@ -166,7 +169,11 @@ sub menu {
         ||  return $self->error_msg( invalid => "$name menu" => $uris )
             unless ref $uris eq ARRAY;
 
-    return $self->menu_pages( $name => $uris );
+    my $menu = $self->menu_pages( $name => $uris );
+
+    # TODO: if $params->{ page_uri } is specified then we set warm, etc.
+
+    return $menu;
 }
 
 sub menu_pages {

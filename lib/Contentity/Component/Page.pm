@@ -19,6 +19,11 @@ sub uri {
         : $self->{ data }->{ uri };
 }
 
+sub filename {
+    my $self = shift;
+    return (split(SLASH, $self->uri))[-1];
+}
+
 sub title {
     my $self = shift;
     return $self->{ data }->{ title }
