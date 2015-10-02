@@ -83,6 +83,23 @@ sub take_next {
         : join(SLASH, @items);
 }
 
+sub take_path {
+    my $self = shift;
+    my $path = shift;
+    my $done = $self->{ done };
+    my $todo = $self->{ todo };
+    my (@items, $item);
+
+    while (@$path && @$todo && $path->[0] eq $todo->[0]) {
+        $item = shift @$todo;
+        push(@$done, $item);
+        push(@items, $item);
+    }
+    return wantarray
+        ? @items
+        : join(SLASH, @items);
+}
+
 sub take_all {
     my $self = shift;
     my $done = $self->{ done };
