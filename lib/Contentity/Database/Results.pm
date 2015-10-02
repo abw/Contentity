@@ -5,14 +5,28 @@ use Contentity::Class
     debug     => 0,
     import    => 'class',
     base      => 'Contentity::Base',
-    utils     => 'self_params blessed',
+    utils     => 'self_params blessed split_to_list ucwords',
+    constants => 'ARRAY HASH',
+    mutators  => 'pages_before pages_after',
     accessors => 'table ident rows query params args
                   size total limit offset
                   page_no page_size last_page
                   more less all from to',
-    mutators  => 'pages_before pages_after',
     alias     => {
         page => 'page_no',
+    },
+    constant => {
+        REVERSE_ORDER_FORMAT => "%s_reverse",
+        ORDER_BY_FORMAT      => "Order by %s",
+        STATIC_COLUMN_CLASS  => "static",
+        ORDER_PARAMETER      => 'order',
+        ORDER_CSS_CLASS      => 'order',
+        ORDERING_CSS_CLASS   => 'ordering',
+        # Yes, this IS correct.  Rows returned in ascending order are
+        # displayed going down the page, descending order has them going
+        # up
+        ASCENDING_CSS_CLASS  => 'down',
+        DESCENDING_CSS_CLASS => 'up',
     };
 
 use Badger::Debug 'debug_caller';
@@ -242,6 +256,129 @@ sub params_used {
     };
 }
 
+
+sub columns {
+    my $self = shift;
+    return @_
+        ? $self->set_columns(@_)
+        : $self->{ columns };
+}
+
+sub set_columns {
+    my $self  = shift;
+    my $cols  = @_ == 1 ? split_to_list(shift) : [ @_ ];
+    my $sane  = $self->{ columns } = [ ];
+    my $order = $self->params->{ order };
+
+    # Most of the time a simple list of columns will suffice, e.g.
+    # ['town', 'availability', 'postcode']. From that we can extract
+    # the relevant data item from the row data and print a column heading
+    # with a capital letter.  Some times we want a different heading,
+    # e.g. "Location" instead of "Town".  Some fucking numpty (me)
+    # thought it would be a good idea to allow a two element list,
+    # e.g. [['town', 'Location'], 'availability', 'postcode'].  Then
+    # that wasn't enough, so the moron added more positional arguments
+    # (I'm not going to even pretend I can remember what order they go
+    # in).  At some point Mr Fuckwit saw sense and added support for a
+    # hash array but it was too late because the array form was already
+    # being used in a dozen different places.  So here we are now.
+    # Writing a method to take any of those various column specifications
+    # and turn it into something sane.
+
+    my $ord_css  = $self->ORDERING_CSS_CLASS;
+    my $asc_css  = $self->ASCENDING_CSS_CLASS;
+    my $desc_css = $self->DESCENDING_CSS_CLASS;
+
+    for my $column (@$cols) {
+        my ($spec, $name);
+        my (@head_classes, @body_classes);
+
+        if (ref $column eq HASH) {
+            $spec = $column;
+        }
+        elsif (ref $column eq ARRAY) {
+            my ($name, $title, $class, $span) = @$column;
+            $spec = {
+                name    => $name,
+                title   => $title,
+                colspan => $span,
+                class   => $class,
+            };
+        }
+        else {
+            $spec = {
+                name => $column
+            };
+        }
+
+        $name = $spec->{ name };
+
+        if ($spec->{ class }) {
+            push(@head_classes, $spec->{ class });
+            push(@body_classes, $spec->{ class });
+        }
+
+        if ($name) {
+            $spec->{ title   } ||= ucwords( $name );
+            $spec->{ order   } ||= $name;
+            $spec->{ reverse } ||= sprintf($self->REVERSE_ORDER_FORMAT, $spec->{ order });
+            $spec->{ tooltip } ||= sprintf($self->ORDER_BY_FORMAT, $spec->{ order });
+        }
+        else {
+            $spec->{ static } = 1;
+            $spec->{ class  } ||= $self->STATIC_COLUMN_CLASS;
+            push(@head_classes, $self->STATIC_COLUMN_CLASS);
+        }
+
+        # support shorter name for 'colspan'
+        $spec->{ colspan } ||= $spec->{ span };
+
+        push(@head_classes, $spec->{ head_class})
+            if $spec->{ head_class };
+
+        push(@body_classes, $spec->{ body_class})
+            if $spec->{ body_class };
+
+
+        if ($spec->{ order }) {
+            push(@head_classes, $self->ORDER_CSS_CLASS);
+            push(@body_classes, $self->ORDER_CSS_CLASS);
+            $spec->{ set_order } = $spec->{ order };
+
+            # see if the order parameter matches either of these
+            if ($order) {
+                $self->debug("comparing order parameter [$order] to spec: [$spec->{order}]") if DEBUG;
+
+                if ($order eq $spec->{ order }) {
+                    push(@head_classes, $ord_css, $asc_css);
+                    push(@body_classes, $ord_css, $asc_css);
+                    $spec->{ set_order } = $spec->{ reverse };
+                    $spec->{ ordering } = "$ord_css $asc_css";
+                }
+                elsif ($order eq $spec->{ reverse }) {
+                    push(@head_classes, $ord_css, $desc_css);
+                    push(@body_classes, $ord_css, $desc_css);
+                    $spec->{ set_order } = $spec->{ order };
+                    $spec->{ ordering } = "$ord_css $desc_css";
+                }
+            }
+        }
+
+        # Set head_classes and body_classes to contain our computed classes
+        # but don't override any explciti head_class or body_class that's
+        # been set by the user
+        $spec->{ head_classes }   = \@head_classes;
+        $spec->{ body_classes }   = \@body_classes;
+        $spec->{ head_class   } ||= join(' ', @head_classes);
+        $spec->{ body_class   } ||= join(' ', @body_classes);
+
+        push(@$sane, $spec);
+    }
+
+    $self->debug_data( columns => $sane ) if DEBUG or 1;
+
+    return $sane;
+}
 
 #sub view {
 #    my $self = shift;
