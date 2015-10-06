@@ -199,7 +199,7 @@ sub creator {
 }
 
 sub create {
-    shift->creator(@_)->build;
+    shift->creator(@_)->create;
 }
 
 
