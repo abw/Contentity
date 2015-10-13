@@ -181,11 +181,10 @@ sub set_matched_route {
     my $path  = $matched->{ path };
     my $done  = $path->done;
 
-    $self->debug("SET MATCHED ROUTE") if DEBUG or 1;
+    $self->debug_data("set_matched_route()", $matched) if DEBUG;
 
     # copy the route that was matched into the Route data
     if (@$done) {
-        $self->debug("path done: ", $done) if DEBUG or 1;
         $match->{ route } = SLASH . $done->text;
     }
     $self->set( $self->MATCHED_ROUTE, $match );

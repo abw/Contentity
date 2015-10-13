@@ -223,6 +223,10 @@ sub select_glyphs {
     my @glyphs;
 
     while (my ($key, $value) = each %$spec) {
+        if ($key =~ /^\d/) {
+            $self->warn("WARNING: invalid icon name (numeric first character): $key");
+            next;
+        }
         my $glyph = $map->{ $value }
             || return $self->error_msg( invalid => icon_map => "$key => $value" );
         $glyph = { %$glyph, name => $key };
@@ -244,6 +248,25 @@ sub glyph_map {
     }
 
     return $map;
+}
+
+sub remove_numerical_glyphs {
+    my $self = shift;
+    my $glyphs = $self->glyphs;
+    my (@good, @bad);
+
+    for my $glyph (@$glyphs) {
+        my $name = $glyph->{ name };
+        if ($name =~ /^\d/) {
+            $self->warn("WARNING: invalid icon name (numeric first character): $name");
+            push(@bad, $name);
+            next;
+        }
+        push(@good, $glyph);
+    }
+    $self->{ glyphs } = \@good;
+
+    return join(', ', @bad);
 }
 
 #=============================================================================
