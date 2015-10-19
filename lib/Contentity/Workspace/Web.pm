@@ -269,40 +269,50 @@ sub fix_resources {
     my $self      = shift;
     my $fixed     = shift || { };
     my $resources = $self->config(RESOURCES) || return $fixed;
-    my $purn      = $self->urn;
-    my $puri      = $self->uri;
     my $devmode   = $self->development;
     my $devapps   = { };
 
     $self->debug_data("local resources: ", $resources) if DEBUG;
 
     while (my ($key, $resource) = each %$resources) {
-        $self->debug("RESOURCE: $purn $key") if DEBUG;
-        my  $urn    = $resource->{ urn       } ||= $key;
-        my  $uri    = $resource->{ uri       } ||= $urn;
-        my  $type   = $resource->{ type      } ||= STATIC;
-        my  $file   = $resource->{ file      };
-        my  $dir    = $resource->{ directory };
-        my  $devapp = $resource->{ dev_app   };
-        my  $purn   = resolve_uri($purn, $urn);
-        my  $url    = resolve_uri(SLASH, $uri);
-            $url   .= SLASH
-                unless $file
-                    || $url =~ /\/$/;
+        # An alternate workspace can be specified for a resource, e.g.
+        # to link between web sites.
+        my $spaceurn  = $resource->{ workspace };
+        my $workspace = $spaceurn ? $self->project->workspace($spaceurn) : $self;
+        my $wsurn     = $workspace->urn;
+        my $wsuri     = $workspace->uri;
+        my $urn       = $resource->{ urn       } ||= $key;
+        my $uri       = $resource->{ uri       } ||= $urn;
+        my $type      = $resource->{ type      } ||= STATIC;
+        my $file      = $resource->{ file      };
+        my $dir       = $resource->{ directory };
+        my $devapp    = $resource->{ dev_app   };
+        my $url       = resolve_uri(SLASH, $uri);
+        my $resurn    = resolve_uri($wsurn, $urn);
+
+        $self->debug("RESOURCE: $wsurn $key") if DEBUG;
+
+        # Add a trailing slash to URL if it's a directory
+        $url  .= SLASH
+            unless $file
+                || $url =~ /\/$/;
 
         # Ugh!  Big fat mess!  Must add local (e.g. /css/) and also explicit
         # name (e.g. /cog/css/) for sites to inherit.  Needs cleaning up.
-        my  $purl = resolve_uri(SLASH, $purn);
-            $purl.= SLASH
-                unless $file
-                    || $purl =~ /\/$/;
+        my $resurl = resolve_uri(SLASH, $resurn);
+        $resurl.= SLASH
+            unless $file
+                || $resurl =~ /\/$/;
+
+
+        #$self->debug("workspace($spaceurn) => $workspace") if DEBUG;
 
         if ($file) {
-            my $f = $resource->{ file } = $self->file($file);
+            my $f = $resource->{ file } = $workspace->file($file);
             next unless $f->exists;
         }
         elsif ($dir) {
-            my $d = $resource->{ directory } = $self->dir($dir);
+            my $d = $resource->{ directory } = $workspace->dir($dir);
             $self->debug("set for $urn, $dir => $resource->{ directory }") if DEBUG;
             unless ($d->exists) {
                 $self->warn_msg( no_resource_dir => $urn, $d->definitive );
@@ -310,7 +320,7 @@ sub fix_resources {
             }
         }
         else {
-            my $d = $resource->{ directory } = $self->dir( resources => $urn );
+            my $d = $resource->{ directory } = $workspace->dir( resources => $urn );
             $self->debug("no directory for $urn, defaulting to $resource->{ directory }") if DEBUG;
             unless ($d->exists) {
                 $self->warn_msg( no_resource_dir => $urn, $d->definitive );
@@ -320,21 +330,21 @@ sub fix_resources {
 
         my $loc = $resource->{ file } || ($resource->{ directory } . SLASH);
 
-        $self->dbg("$key: [purn:$purn] + [urn:$urn] => [uri:$uri]") if DEBUG;
+        $self->dbg("$key: [WSurn:$wsurn] + [urn:$urn] => [uri:$uri], [url:$url]") if DEBUG or 1;
 
         my $rel = {
             %$resource,
             uri      => $uri,
             url      => $url,
             type     => $type,
-            space    => $puri,
-            prefix   => $purn,
+            space    => $wsuri,
+            prefix   => $wsurn,
             location => $loc,
         };
 
         my $abs = {
             %$rel,
-            url      => $purl,
+            url      => $resurl,
         };
 
         # if we're in development mode then we can attach any specified dev_app
@@ -348,14 +358,14 @@ sub fix_resources {
 
             if (DEBUG) {
                 $self->debug("Created $devapp-$base application for $url via $base in developer mode: $rel->{ app }");
-                $self->debug("Created $devapp-$purn application for $url via $base in developer mode: $abs->{ app }");
+                $self->debug("Created $devapp-$resurn application for $url via $base in developer mode: $abs->{ app }");
             }
         }
 
         #$self->debug("+++ [$urn => $url] + [$purn => $purl]");
 
-        $fixed->{ $urn  } = $rel;
-        $fixed->{ $purn } = $abs;
+        $fixed->{ $urn    } = $rel;
+        $fixed->{ $resurn } = $abs;
     }
 
     $self->debug_data("combined fixed resources: ", $fixed) if DEBUG;
@@ -372,7 +382,7 @@ sub inherit_resource_list {
     my $list = [
         map     { $_->[1] }
         sort    { $a->[0] cmp $b->[0] }
-#        grep    { ! $seen{ $_->[1]->{ url } }++ }
+#       grep    { ! $seen{ $_->[1]->{ url } }++ }
         map     { [ $self->resource_sort_sig($_), $_ ] }
         values  %$resources
     ];
