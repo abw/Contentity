@@ -330,7 +330,7 @@ sub fix_resources {
 
         my $loc = $resource->{ file } || ($resource->{ directory } . SLASH);
 
-        $self->dbg("$key: [WSurn:$wsurn] + [urn:$urn] => [uri:$uri], [url:$url]") if DEBUG or 1;
+        $self->dbg("$key: [workspace-urn:$wsurn] + [urn:$urn] => [uri:$uri], [url:$url]") if DEBUG;
 
         my $rel = {
             %$resource,
