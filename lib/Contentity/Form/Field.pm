@@ -6,8 +6,8 @@ use Contentity::Class
     base      => 'Contentity::Base',
     import    => 'bclass',   # use Plan B so class() can be a regular method
     utils     => 'xprintf weaken join_uri',
-    accessors => 'form type disabled mandatory data',
-    mutators  => 'name size label layout display default class style tabindex n',
+    accessors => 'form type disabled mandatory data factory',
+    mutators  => 'name size label layout placeholder display default class style tabindex n',
     constants => 'ARRAY HASH SPACE',
     constant  => {
         DEFAULT      => 'text',
@@ -70,7 +70,7 @@ sub init {
         if ! defined $config->{ mandatory }
           && defined $config->{ optional  };
 
-    # weaken any reference to a form to avoid circular references
+    # weaken any reference to a form and/or factory to avoid circular references
     weaken $self->{ form }
         if $self->{ form };
 

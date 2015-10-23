@@ -2,7 +2,7 @@ package Contentity::Component::Lists;
 
 use Contentity::Class
     version   => 0.03,
-    debug     => 1,
+    debug     => 0,
     component => 'asset',
     asset     => 'list',
     utils     => 'extend Now',
@@ -11,8 +11,7 @@ use Contentity::Class
         PREPARE_METHOD_FORMAT => 'prepare_%s_list',
     };
 
-our $CACHE   = { };
-our $TTL     = { seconds => 30 };       # should be in LFH::Config
+our $CACHE = { };
 
 
 #-----------------------------------------------------------------------------
@@ -45,7 +44,7 @@ sub asset_config {
 
 sub prepare_method {
     my ($self, $name) = @_;
-    my $method = sprintf($self->PREPARE_METHODS_FORMAT, $name);
+    my $method = sprintf($self->PREPARE_METHOD_FORMAT, $name);
     my $code   = $self->can($method) || return $self->decline_msg( invalid => "list prepare method", $method );
     return $self->$code($name);
 }
@@ -64,7 +63,7 @@ sub prepare_asset {
 sub cache_store {
     my ($self, $name, $list) = @_;
     my $ttl = $self->config('cache_ttl') || return $list;
-    my $expiry = Now->adjust( $ttl || $TTL );
+    my $expiry = Now->adjust($ttl);
     $self->debug("$$ caching $name with expiry at $expiry") if DEBUG;
     $CACHE->{ $name } = [ $list, $expiry ];
     return $list;
@@ -117,20 +116,36 @@ sub load_table {
     );
 }
 
-
 sub table_records {
     my $self       = shift;
     my $table_name = shift || return $self->error_msg( missing => 'table' );
     my $records    = shift || return $self->error_msg( missing => "$table_name records" );
-    my $name_field = shift || 'name';
-    my $id_field   = shift || 'id';
 
     $self->debug("$$ constructing $table_name list") if DEBUG;
+
+    return $self->records_data($records, @_);
+}
+
+sub records_field {
+    my $self    = shift;
+    my $records = shift || return; $self->error_msg( missing => 'records' );
+    my $field   = shift || 'name';
+    return [
+        map { $_->$field }
+        @$records
+    ];
+}
+
+sub records_data {
+    my $self        = shift;
+    my $records     = shift || return $self->error_msg( missing => 'records' );
+    my $name_field  = shift || 'name';
+    my $value_field = shift || 'id';
 
     return [
         map {{
             name  => $_->$name_field,
-            value => $_->$id_field,
+            value => $_->$value_field,
         }}
         @$records
     ];
