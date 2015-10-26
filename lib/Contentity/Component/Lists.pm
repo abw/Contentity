@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     component => 'asset',
     asset     => 'list',
-    utils     => 'extend Now',
+    utils     => 'extend id_safe Now',
     constant  => {
         SINGLETONS            => 0,
         PREPARE_METHOD_FORMAT => 'prepare_%s_list',
@@ -44,7 +44,7 @@ sub asset_config {
 
 sub prepare_method {
     my ($self, $name) = @_;
-    my $method = sprintf($self->PREPARE_METHOD_FORMAT, $name);
+    my $method = sprintf($self->PREPARE_METHOD_FORMAT, id_safe($name));
     my $code   = $self->can($method) || return $self->decline_msg( invalid => "list prepare method", $method );
     return $self->$code($name);
 }
