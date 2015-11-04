@@ -151,6 +151,21 @@ sub records_data {
     ];
 }
 
+sub rows_data {
+    my $self        = shift;
+    my $records     = shift || return $self->error_msg( missing => 'records' );
+    my $name_field  = shift || 'name';
+    my $value_field = shift || 'id';
+
+    return [
+        map {{
+            name  => $_->{ $name_field },
+            value => $_->{ $value_field },
+        }}
+        @$records
+    ];
+}
+
 
 
 1;
