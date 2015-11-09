@@ -34,6 +34,8 @@ sub init {
         } @$fields,
     };
 
+    $self->debug_data( field_set_fields => $self->{ field } ) if DEBUG;
+
     return $self;
 }
 
@@ -55,6 +57,19 @@ sub field {
     };
 
 }
+
+sub register {
+    my ($self, $registry) = @_;
+    my $name   = $self->name;
+    my $fields = $self->fields;
+    $registry->{ $name } = $self if $name;
+
+    # Invite all fields (and field sets) to register their name
+    foreach my $f (@$fields) {
+        $f->register($registry);
+    }
+}
+
 
 sub values {
     my ($self, $values) = self_params(@_);

@@ -70,6 +70,8 @@ sub init_fields {
     foreach my $f (@$fields) {
         $f->register($field);
     }
+
+    $self->debug_data( form_fields => $field ) if DEBUG;
 }
 
 sub init_values {
