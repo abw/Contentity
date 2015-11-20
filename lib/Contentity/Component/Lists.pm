@@ -34,6 +34,8 @@ sub asset_config {
          || $self->prepare_method($name)
          || return;
 
+    $list = $self->expand_list($list);
+
     # save the list in the cache
     $self->cache_store($name, $list);
 
@@ -165,6 +167,30 @@ sub rows_data {
         @$records
     ];
 }
+
+sub expand_list {
+    my ($self, $list) = @_;
+    return [
+        map {
+            ref $_
+                ? $_
+                : {
+                    name => $_, value => $_
+                }
+        }
+        @$list
+    ];
+}
+
+sub list_has_value {
+    my ($self, $list_name, $value) = @_;
+    my $list = $self->list($list_name) || return;
+    for my $item (@$list) {
+        return 1 if $value eq $item->{ value };
+    }
+    return 0;
+}
+
 
 
 
