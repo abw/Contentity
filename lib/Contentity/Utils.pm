@@ -16,7 +16,7 @@ use Contentity::Class
     base      => 'Badger::Utils',
     constants => 'ARRAY PKG HASH DELIMITER BLANK SPACE
                   :timestamp :date_formats',
-    codecs    => 'html',
+    codecs    => 'html json',
     exports   => {
         any => q{
             Colour Path
@@ -35,6 +35,9 @@ use Contentity::Class
             cmd generate_id
             error_html_to_ansi
             TS TIMESTAMP Timestamp Now
+            encode_html decode_html
+            encode_json decode_json
+
         }
     };
 use Contentity::Colour  'Colour';
