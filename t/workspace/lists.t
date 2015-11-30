@@ -14,7 +14,7 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 2,
+    tests => 6,
     debug => 'Contentity::Component::Lists',
     args  => \@ARGV;
 
