@@ -197,6 +197,14 @@ sub some_params {
     return $clean;
 }
 
+sub uploads {
+    shift->request->uploads->as_hashref;
+}
+
+sub upload {
+    shift->request->upload(@_);
+}
+
 
 #-----------------------------------------------------------------------------
 # Context data
