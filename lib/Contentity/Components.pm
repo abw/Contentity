@@ -16,10 +16,15 @@ sub type_args {
     if ($params->{ component }) {
         $type = $params->{ component };
         $self->debug(
-            $params->{ component }, 
+            $params->{ component },
             " component set type to '$type' from component configuration option"
         ) if DEBUG;
     }
+
+    # convert slashed to dots to avoid problems with file systems AND
+    # regular expressions (long story...)
+    $type =~ s[/][.]g;
+    $self->debug("TYPE: $type") if DEBUG;
 
     return ($type, $params);
 }
