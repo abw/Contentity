@@ -281,7 +281,7 @@ sub work {
         # TODO: get timeout from job or use default, set alarm
         my $job;
         if ($job = $self->job($ticket)) {
-            $self->log( info => "worker process $$ starting job $ticket");
+            $self->log( info => "worker process $$ starting job $ticket" );
             $job->dispatch($self);
             $self->log( info => "worker process $$ finished job $ticket" );
         }
