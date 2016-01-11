@@ -1,0 +1,2 @@
+logfile: logs/job_server.log
+testing: Hello World
