@@ -83,7 +83,7 @@ sub host {
 
 =head1 NAME
 
-Cog::Job::Client - client for talking to backend jobs server
+Contentity::Component::Job::Client - client for talking to backend jobs server
 
 =head1 SYNOPSIS
 
