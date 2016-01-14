@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     import    => 'class',
     base      => 'Contentity::Base',
-    utils     => 'self_params blessed split_to_list ucwords',
+    utils     => 'self_params blessed split_to_list tprintf ucwords extend truelike',
     constants => 'ARRAY HASH',
     mutators  => 'pages_before pages_after',
     accessors => 'table ident rows query params args
@@ -45,6 +45,16 @@ our @DISPLAY_ARGS = qw(
 sub init {
     my ($self, $config) = @_;
 
+    # Use the table reference to access the workspace to fetch default config
+    my $table    = $config->{ table };
+    my $defaults = $table
+                 ? $table->workspace->config('search_results')
+                 : { };
+
+    # merge default and config into a single hash
+    $config = extend({ }, $defaults, $config);
+
+    # copy everything in $config into $self
     @$self{ keys %$config } = values %$config;
 
 #   my $records = $self->{ records } ||= [ ];    #  TODO
@@ -74,6 +84,9 @@ sub init {
     # default display options
     $self->{ pages_before } ||= 2;
     $self->{ pages_after  } ||= 2;
+
+    # expand are the button items that need expand via TT
+    $self->{ expand } = split_to_list( $config->{ expand } );
 
     return $self;
 }
@@ -145,44 +158,38 @@ sub buttons {
 
 sub paging_buttons {
     my ($self, $params) = self_params(@_);
-    my $start = $self->start_page;
-    my $end   = $self->end_page;
-    my $width = $end - $start;
-    my $psize = $self->{ page_size };
-    #my $extra = $self->{ pages_before } + $self->{ pages_after } - $width;
-    #my $view  = $self->view;
-    my @buttons;
+    my $start  = $self->start_page;
+    my $end    = $self->end_page;
+    my $width  = $end - $start;
+    my $psize  = $self->{ page_size };
+    my (@buttons, $button);
 
     # if we're not on the first page then we can go back to the first page
     if ($self->{ less }) {
         my $prev_from = $self->{ from } - $psize;
         my $prev_to   = $self->{ from } - 1;
         my $prev_p    = $self->{ page_no } - 1;
-        #push(
-        #    @buttons,
-        #    {
-        #        first   => 1,
-        #        prev    => 1,
-        #        from    => 1,
-        #        to      => $psize,
-        #        text    => 1,
-        #        page_no => 1,
-        #        icon    => 'backward',
-        #        params  => { page_no => 1 },
-        #    }
-        #);
-        push(
-            @buttons,
-            {
-                prev    => 1,
-                from    => $prev_from,
-                to      => $prev_to,
-                page_no => $prev_p,
-                text    => $prev_p,
-                icon    => 'backward',
-                params  => { page_no => $prev_p },
-            }
-        );
+        push(@buttons, $button)
+            if $button = $self->button(
+                first_page => {
+                    from_item => 1,
+                    to_item   => $psize,
+                    page_no   => 1,
+                    params    => { page_no => 1 },
+                }
+            );
+
+        push(@buttons, $button)
+            if $button = $self->button(
+                previous_page => {
+                    prev      => 1,
+                    from_item => $prev_from,
+                    to_item   => $prev_to,
+                    page_no   => $prev_p,
+                    text      => $prev_p,
+                    params    => { page_no => $prev_p },
+                }
+            );
     }
 
     foreach my $p ($start..$end) {
@@ -191,17 +198,17 @@ sub paging_buttons {
         my $warm      = $p == $self->{ page_no };
         $page_to = $self->{ total } if $page_to > $self->{ total };
 
-        push(
-            @buttons,
-            {
-                page_no => $p,
-                from    => $page_from,
-                to      => $page_to,
-                text    => $p,
-                warm    => $warm,
-                params  => { page_no => $p },
-            },
-        );
+        push(@buttons, $button)
+            if $button = $self->button(
+                page_no => {
+                    page_no   => $p,
+                    from_item => $page_from,
+                    to_item   => $page_to,
+                    text      => $p,
+                    warm      => $warm,
+                    params    => { page_no => $p },
+                }
+            );
     }
 
     # if we're not on the last page then we can go forward
@@ -213,35 +220,57 @@ sub paging_buttons {
         my $last_from = $last_page * $psize + 1;
         my $last_to   = $self->{ total };
         $next_to = $self->{ total } if $next_to > $self->{ total };
-        push(
-            @buttons,
-            {
-                next    => 1,
-                from    => $next_from,
-                to      => $next_to,
-                text    => $next_page,
-                icon    => 'forward',
-                page_no => $next_page,
-                params  => { page_no => $next_page },
-            }
-        );
-        #push(
-        #    @buttons,
-        #        last => 1,
-        #        next => 1,
-        #        from    => $last_from,
-        #        to      => $last_to,
-        #        text    => $last_page,
-        #        icon    => 'forward',
-        #        page_no => $last_page,
-        #        params  => { page_no => $last_page },
-        #    }
-        #);
+        push(@buttons, $button)
+            if $button = $self->button(
+                next_page => {
+                    next      => 1,
+                    from_item => $next_from,
+                    to_item   => $next_to,
+                    text      => $next_page,
+                    page_no   => $next_page,
+                    params    => { page_no => $next_page },
+                }
+            );
+        push(@buttons, $button)
+            if $button = $self->button(
+                last_page => {
+                    from_item => $last_from,
+                    to_item   => $last_to,
+                    text      => $last_page,
+                    page_no   => $last_page,
+                    params    => { page_no => $last_page },
+                }
+            );
     }
 
-    $self->debug("buttons: ", $self->dump_data(\@buttons)) if DEBUG;
+    $self->debug_data( buttons => \@buttons ) if DEBUG;
 
     return \@buttons;
+}
+
+sub button {
+    my ($self, $name, $spec) = @_;
+    my $buttons = $self->{ button_types };
+    my $config  = extend(
+        { },
+        $buttons->{ $name },
+        $spec
+    );
+
+    # The 'active' option must be set to a true value.  This allows
+    # workspaces (e.g. site, portfolios, etc) to redefine their own set
+    # of buttons that they do/won't want.
+    return undef
+        unless truelike $config->{ active };
+
+    # The 'expand' option specifies those items that contain
+    # template fragments that we must expand via tprintf()
+    foreach my $item (@{ $self->{ expand } }) {
+        my $template = $config->{ $item } || next;
+        $config->{ $item } = tprintf($template, $config);
+    }
+
+    return $config;
 }
 
 
@@ -375,7 +404,7 @@ sub set_columns {
         push(@$sane, $spec);
     }
 
-    $self->debug_data( columns => $sane ) if DEBUG or 1;
+    $self->debug_data( columns => $sane ) if DEBUG;
 
     return $sane;
 }
