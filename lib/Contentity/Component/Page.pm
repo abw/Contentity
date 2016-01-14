@@ -55,7 +55,8 @@ sub menu {
 }
 
 sub under {
-  # this doesn't work very well.
+    # this doesn't work very well due to the vagarities of how page URIs
+    # can be specified: e.g. / vs /index vs /index.html
     my ($self, $path) = @_;
     my $result;
 

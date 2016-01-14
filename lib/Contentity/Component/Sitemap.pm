@@ -81,7 +81,7 @@ sub page {
         $page, @parents
     );
 
-    $data->{ uri }   = $matched_uri;
+    $data->{ uri } ||= $matched_uri;
     $data->{ url } ||= $matched_uri;
 
     $self->debug_data("merged page data for $uri", $data) if DEBUG;
@@ -98,13 +98,26 @@ sub page_metadata {
     my $uri   = shift || return $self->error_msg( missing => 'uri' );
     my $bare  = $uri; $bare =~ s/\.(\w+)$//;        # try name as requested and also without .extension
     my $pages = $self->pages;
-    my $page  = $pages->{ $uri } || $pages->{ $bare };
+    my @tries = ($uri);
+    my $page;
 
-    $self->debug_data("page $uri", $page) if DEBUG;
+    # We first look for an exact match, e.g. for 'foo.html'
+    # As a fallback we try the bar 'foo' without the extension
+    # HANG ON A SECOND - we already handle this in path_walk_up() when
+    # called from the page() method above, so it's probably redundant.
+    # But I'm going to leave it here until I've checked that nothing
+    # else is calling it directly
+    push(@tries, $bare)
+        if $bare && $bare ne $uri;
 
-    if (truelike $page) {
-        $page->{ uri } ||= $uri;
-        return $page;
+    for my $try (@tries) {
+        $page = $pages->{ $try };
+        $self->debug_data("page $uri => ", $page || '<undef>') if DEBUG;
+
+        if (truelike $page) {
+            $page->{ uri } ||= $try;
+            return $page;
+        }
     }
 
     return $self->decline_msg( invalid => page => $uri );
