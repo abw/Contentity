@@ -29,7 +29,7 @@ use Contentity::Class
             datestamp today format_date date_range
             parse_time canonical_time format_time
             ordinal ordinate commas trim ucwords
-            snake_up snake_down xformat
+            snake_up snake_down xformat tprintf
             find_program prompt confirm floor
             red green blue cyan magenta yellow black white grey dark bold
             cmd generate_id
@@ -42,6 +42,10 @@ use Contentity::Class
     };
 use Contentity::Colour  'Colour';
 use Contentity::Path    'Path';
+use Contentity::Template;
+
+our $TPRINTF_MODULE = 'Contentity::Template';
+our $TPRINTF_ENGINE;
 
 
 #-----------------------------------------------------------------------------
@@ -598,6 +602,13 @@ sub xformat {
     $format =~ s[<(\w+)>][$params->{$1}//"<$1>"]ge;
     return $format;
 };
+
+sub tprintf {
+    my $template = shift;
+    my $params   = params(@_);
+    my $engine   = $TPRINTF_ENGINE ||= $TPRINTF_MODULE->new( INTERPOLATE => 1 );
+    return $engine->render(\$template, $params);
+}
 
 
 #-----------------------------------------------------------------------------
