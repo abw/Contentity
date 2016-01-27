@@ -187,6 +187,15 @@ sub content {
     return $content;
 }
 
+sub set_response_headers {
+    my ($self, $headers) = self_params(@_);
+    extend($self->headers, $headers);
+    # if we've already created a response we must add the headers to it
+    if ($self->{ response }) {
+        $self->debug_data( "adding headers to existing response" => $headers ) if DEBUG or 1;
+        $self->{ response }->headers($headers);
+    }
+}
 
 #-----------------------------------------------------------------------------
 # Cookies and Sessions
@@ -317,6 +326,17 @@ sub logout_user {
     $self->debug("deleted login credentials from session\n") if DEBUG;
 
     return $self;
+}
+
+sub xauth_user {
+    my $self    = shift;
+    my $user    = shift;
+    my $session = $self->session;
+    my $login   = $session->new_login($user)
+        || return $self->decline_msg( invalid => key => $session->reason );
+    $self->{ user  } = $user;
+    $self->{ login } = $login;
+    return $user;
 }
 
 sub login {
