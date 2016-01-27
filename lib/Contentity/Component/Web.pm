@@ -408,6 +408,10 @@ sub type_content_response {
     );
 }
 
+sub set_response_headers {
+    shift->context->set_response_headers(@_);
+}
+
 #-----------------------------------------------------------------------------
 # Slightly higher level wrappers which account for the client wanting HTML or
 # JSON where appropriate.
@@ -491,7 +495,7 @@ sub send_json_success {
 
 sub send_json_success_msg {
     my $self = shift;
-    my $data = pop;         # last argument assumed to be data hash
+    my $data = pop if ref $_[-1];         # last argument assumed to be data hash
     return $self->send_json_success(
         $self->message(@_), $data
     );
