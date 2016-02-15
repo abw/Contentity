@@ -18,7 +18,7 @@ use Contentity::Class
         redirect_login => 'Please login to access that page',
     },
     constant => {
-        URL       => 'Badger::URL',
+        URL_CLASS => 'Badger::URL',
         EXCEPTION => 'Badger::Exception',
         LOGIN_URL => 'login',
     };
@@ -268,13 +268,13 @@ sub url {
         $self->debug("url lookup: $name") if DEBUG;
 
         if ($url = $self->{ urls }->{ $name }) {
-            $url = $self->URL->new($url);
+            $url = $self->URL_CLASS->new($url);
             $self->debug("pre-defined URL mapping: $name => ", $url || "<NOT FOUND>") if DEBUG;
         }
         elsif ($name =~ m[^(\w+:)?/]) {
             # if it's absolute (e.g. something like "/foo..." or "http://...")
             # then we return it as it is
-            $url = $self->URL->new($name);
+            $url = $self->URL_CLASS->new($name);
             $self->debug("absolute URL: $name => $url\n") if DEBUG;
         }
         # TODO: elsif $site->url(...)     # site-wide URL
@@ -316,7 +316,7 @@ sub app_url {
         $self->debug("CURRENT URL: $uri") if DEBUG;
     }
 
-    my $url = $self->URL->new($uri);
+    my $url = $self->URL_CLASS->new($uri);
     $self->add_url_params($url, @_) if @_;
     $self->debug("app_url: $url") if DEBUG;
     return $url;
@@ -463,9 +463,11 @@ sub send_jsonp {
 
 
 sub send_json_error {
-    my $self  = shift;
-    my $error = $self->json_error_message(@_);
+    my $self   = shift;
+    my $error  = $self->json_error_message(shift);
+    my $params = _params(@_);
     return $self->send_json(
+        %$params,
         status => ERROR,
         error  => $error,
     );
@@ -495,17 +497,18 @@ sub send_json_success {
 
 sub send_json_success_msg {
     my $self = shift;
-    my $data = pop if ref $_[-1];         # last argument assumed to be data hash
-    return $self->send_json_success(
-        $self->message(@_), $data
-    );
+    my $data = pop if ref $_[-1];         # last argument assumed to be data hash...
+    my @args = $self->message(@_);
+    push(@args, $data) if $data;
+    return $self->send_json_success(@args);
 }
 
 sub send_json_error_msg {
     my $self = shift;
-    return $self->send_json_error(
-        $self->message(@_)
-    );
+    my $data = pop if ref $_[-1];         # last argument assumed to be data hash
+    my @args = $self->message(@_);
+    push(@args, $data) if $data;
+    return $self->send_json_error(@args);
 }
 
 

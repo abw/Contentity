@@ -189,12 +189,12 @@ sub content {
 
 sub set_response_headers {
     my ($self, $headers) = self_params(@_);
-    extend($self->headers, $headers);
     # if we've already created a response we must add the headers to it
     if ($self->{ response }) {
-        $self->debug_data( "adding headers to existing response" => $headers ) if DEBUG or 1;
+        $self->debug_data( "adding headers to existing response ($self->{ response })" => $headers ) if DEBUG;
         $self->{ response }->headers($headers);
     }
+    extend($self->headers, $headers);
 }
 
 #-----------------------------------------------------------------------------
@@ -211,7 +211,9 @@ sub set_cookie {
     my ($self, $name, $value) = @_;
     # TODO: handle case where $value is a hash ref and has an 'expires'
     # value like '3 hours' which we need to convert to an epoch time
-    return $self->response->cookies->{ $name } = {
+    my $response = $self->response;
+    $self->debug("setting cookie on response ($response)") if DEBUG;
+    return $response->cookies->{ $name } = {
         value => $value,
         path  => SLASH,
     };
