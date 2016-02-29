@@ -9,7 +9,7 @@ use Contentity::Class
     base        => 'Contentity::Component',
     accessors   => 'request base path url status headers',
     mutators    => 'content_type',
-    utils       => 'self_params is_object weaken extend Path URL blessed',
+    utils       => 'self_params is_object weaken extend Path URL blessed Now',
     constants   => 'HASH ARRAY BLANK SLASH :http_accept',
     alias       => {
         output  => \&content,
@@ -208,19 +208,24 @@ sub get_cookie {
 }
 
 sub set_cookie {
-    my ($self, $name, $value) = @_;
-    # TODO: handle case where $value is a hash ref and has an 'expires'
-    # value like '3 hours' which we need to convert to an epoch time
+    my ($self, $name, $value, $expires) = @_;
     my $response = $self->response;
-    $self->debug("setting cookie on response ($response)") if DEBUG;
-    return $response->cookies->{ $name } = {
+    my $cookie   = {
         value => $value,
         path  => SLASH,
     };
+    if ($expires) {
+        # $expires can bet set to a value like '30 hours' which we need
+        # to convert to an epoch time
+        $cookie->{ expires } = Now->adjust($expires);
+        $self->debug("setting cookie to expire: $expires") if DEBUG;
+    }
+    $self->debug_data("setting cookie on response", $cookie) if DEBUG;
+    return $response->cookies->{ $name } = $cookie;
 }
 
 sub session_cookie {
-    my $self    = shift;
+    my $self = shift;
     return $self->workspace->config( session => 'cookie' )
         || $self->error_msg( missing => 'session cookie' );
 }
@@ -296,7 +301,7 @@ sub login_user {
         : $self->model->users->login_user($params)
             || return $self->decline($self->model->users->reason);
 
-    my $login = $self->session->new_login($user) || return;
+    my $login = $self->session->new_login($user, $params) || return;
 
     # if the user is pending we can activate their account
     $user->activate
@@ -304,6 +309,11 @@ sub login_user {
 
     $self->{ user  } = $user;
     $self->{ login } = $login;
+
+    #if ($params->{ remember_me }) {
+    #    $self->debug("remembering....") if DEBUG or 1;
+    #    $self->set_session_key_expiry($self->remember_me_time)
+    #}
 
     return $user;
 }
