@@ -344,6 +344,7 @@ sub xauth_user {
     my $self    = shift;
     my $user    = shift;
     my $session = $self->session;
+    # TODO: read expires from user login
     my $login   = $session->new_login($user)
         || return $self->decline_msg( invalid => key => $session->reason );
     $self->{ user  } = $user;

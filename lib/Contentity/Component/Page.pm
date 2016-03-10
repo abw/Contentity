@@ -26,8 +26,10 @@ sub filename {
 
 sub title {
     my $self = shift;
-    return $self->{ data }->{ title }
-      //   $self->{ data }->{ name  };
+    return @_
+        ?  $self->set( title => @_ )
+        :  $self->get('title')
+        // $self->get('name');  # title defaults to name
 }
 
 sub sitemap {
