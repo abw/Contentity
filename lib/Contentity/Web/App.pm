@@ -25,7 +25,9 @@ use Contentity::Class
         ROUTE_FORMAT    => '%s_route',
         ROUTER          => 'Contentity::Router',
         MATCHED_ROUTE   => 'Route',
+        # extra debugging flags for various parts of the code
         DEBUG_ROUTER    => 0,
+        DEBUG_ACCESS    => 0,
     },
     alias => {
         _params => \&Contentity::Utils::params,
@@ -250,18 +252,18 @@ sub dispatch_method {
 
         $self->debug(
             "access for ", $self->uri, " is: $self->{ access }"
-        ) if DEBUG;
+        ) if DEBUG or DEBUG_ACCESS;
 
         $self->debug_data(
             "user roles for $self->{ realm } realm: ",
             $roles,
-        ) if DEBUG;
+        ) if DEBUG or DEBUG_ACCESS;
 
         if ($self->{ access }->evaluate($roles)) {
-            $self->debug("this user can access this page") if DEBUG;
+            $self->debug("this user can access this page") if DEBUG or DEBUG_ACCESS;
         }
         else {
-            $self->debug("this user CANNOT access this page") if DEBUG;
+            $self->debug("this user CANNOT access this page") if DEBUG or DEBUG_ACCESS;
             if ($self->login) {
                 return $self->send_forbidden("You cannot access that page.");
             }
@@ -271,7 +273,7 @@ sub dispatch_method {
         }
     }
     else {
-        $self->debug("No access rules for app") if DEBUG;
+        $self->debug("No access rules for app") if DEBUG or DEBUG_ACCESS;
     }
 
     return $self->$method;
