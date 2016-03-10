@@ -117,10 +117,17 @@ sub databases {
 sub database {
     my $self = shift;
     my $name = shift
-        || $self->config('database')
+        || $self->database_name
         || return $self->error_msg( missing => 'database' );
     $self->debug_data( database => $name ) if DEBUG;
     $self->databases->database($name);
+}
+
+sub database_name {
+    my $self = shift;
+    return  $self->{ database_name }
+        ||= $self->config('database_name')
+        ||  $self->config('database');
 }
 
 sub model {

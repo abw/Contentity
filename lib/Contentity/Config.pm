@@ -12,6 +12,7 @@ use Contentity::Class
     constant    => {
         # caching options
         CACHE_MANAGER => 'Contentity::Cache',
+        DEBUG_HEAD    => 0,
     },
     messages  => {
         no_config_file => "Ignored missing configuration file for %s workspace: %s",
@@ -153,7 +154,7 @@ sub head {
         //  $self->parent_fetch($name);
 
     # store undefined value to avoid repeated false lookups
-    $data->{ $name } = $item if ! $item;
+    $data->{ $name } = $item if ! defined $item;
 
     return $item
 }
