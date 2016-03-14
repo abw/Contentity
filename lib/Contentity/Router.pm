@@ -15,6 +15,7 @@ use Contentity::Class
         MATCH_STATIC  => qr/^([\w\-\.]+)$/,
         MATCH_PLACE   => qr/^(:\w+)$/,
         MATCH_ANGLE   => qr/^<(.*)>$/,
+        MATCH_PREFIX  => qr/^([\w\-\.]+):(.*)$/,
     },
     messages => {
         invalid_route    => 'Invalid route specified: %s',
@@ -23,10 +24,11 @@ use Contentity::Class
     };
 
 our $TYPES = {
-    int  => \&matcher_int,
-    word => \&matcher_word,
-    text => \&matcher_text,
-    path => \&matcher_path,
+    int    => \&matcher_int,
+    word   => \&matcher_word,
+    text   => \&matcher_text,
+    path   => \&matcher_path,
+    prefix => \&matcher_prefix,
 };
 our $DEFAULT_TYPE = 'text';
 our $INDENT_WIDTH = 2;
@@ -234,6 +236,18 @@ sub add_route_parts {
             $endpoint
         );
     }
+    elsif ($head =~ MATCH_PREFIX) {
+        # Additional hackage to support a :something placeholder with a
+        # prefix, e.g. shops-to-let-in-:town
+        $self->debug("prefixed placeholder: $1 | $2 | $head") if DEBUG;
+
+        return $self->add_dynamic_route(
+            $route,
+            $2, $parts,
+            $endpoint,
+            $1         # NEW - prefix
+        );
+    }
 
     return $self->error_msg( invalid_fragment => $head, $route );
 }
@@ -258,13 +272,16 @@ sub add_static_route {
 }
 
 sub add_dynamic_route {
-    my ($self, $route, $head, $tail, $endpoint) = @_;
+    my ($self, $route, $head, $tail, $endpoint, $prefix) = @_;
 
     # $head can be 'foo' or ':foo', both of which are implicitly text types
     # 'text:foo', or an explicitly typed route part, e.g. int:foo
-    my @parts = split(':', $1, 2);
+    my @parts = split(':', $head, 2);
     my ($type, $name) = @parts == 2 ? @parts : (text => @parts);
     $type ||= $DEFAULT_TYPE;
+
+    # NEW: type is hard set to 'prefix' if there is a prefix to match
+    $type = 'prefix' if $prefix;
 
     # The $type must have a basic matcher function defined in $TYPES
     my $matcher = $TYPES->{ $type }
@@ -276,16 +293,24 @@ sub add_dynamic_route {
     # type:name identifier for it to accommodate differences in syntax, e.g.
     # /user/:id/info, /user/text:id/edit and /user/<text:id>/ban will all use
     # the same intermediate text:id component.
-    my $canon   = "$type:$name";
+    my $pfxid   = $prefix || '-';
+    my $canon   = "$pfxid:$type:$name";
     my $subset  = $self->{ matchers }->{ $canon };
+
+    $self->debug_data( canon => $canon ) if DEBUG;
+
+    # escape any regex metacharacters in prefix string so we can
+    # embed it directly into a larger regex
+    $prefix = quotemeta $prefix
+        if length $prefix;
 
     # We don't already have a route set for this component so create one
     if (! $subset) {
-        $self->debug("creating new subset router for [$head]") if DEBUG;
+        $self->debug("creating new subset router for [$prefix][$head]") if DEBUG;
         $subset = $self->{ matchers }->{ $canon } = $self->new_route_set;
         push(
             @{ $self->{ dynamic } },
-            [ $type, $name, $matcher, $subset ]
+            [ $type, $name, $matcher, $subset, $prefix ]
         );
     }
 
@@ -301,6 +326,7 @@ sub add_dynamic_route {
         return $subset->add_endpoint($endpoint);
     }
 }
+
 
 sub add_endpoint {
     my ($self, $endpoint) = @_;
@@ -345,7 +371,7 @@ sub match {
     my $path = Path(@_);
     my $todo = $path->todo;
     my $data = { };
-    my (@matched, $part, $route, $type, $name, $dynamic, $matcher, $subset);
+    my (@matched, $part, $route, $type, $name, $dynamic, $matcher, $subset, $prefix);
 
     $self->debug(
         "matching path: $path => ",
@@ -378,9 +404,10 @@ sub match {
         }
 
         foreach $dynamic (@{ $self->{ dynamic } }) {
-            ($type, $name, $matcher, $subset) = @$dynamic;
+            ($type, $name, $matcher, $subset, $prefix) = @$dynamic;
+            $prefix ||= '';
 
-            if ($self->$matcher($name, $path, $data)) {
+            if ($self->$matcher($name, $path, $data, $prefix)) {
                 $self->debug(
                     "dynamic dynamic part ($route) [$part]\n",
                     "selected route subset: ", $self->dump_data($subset)
@@ -487,6 +514,19 @@ sub matcher_path {
     my ($self, $name, $path, $params) = @_;
     $params->{ $name } = $path->take_all;
     return $params;
+}
+
+sub matcher_prefix {
+    my ($self, $name, $path, $params, $prefix_re) = @_;
+
+    if ($path->next =~ /^${prefix_re}[^\/]+$/) {
+        my $match = $path->take_next;
+        my $value = $match;
+        $value =~ s/^$prefix_re//;
+        $params->{ $name } = $value;
+        $self->debug("prefix match [$match] set [$name] to [$value]") if DEBUG;
+        return $params;
+    }
 }
 
 

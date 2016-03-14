@@ -14,10 +14,11 @@ use Badger
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 39,
+    tests => 43,
     debug => 'Contentity::Router',
     args  => \@ARGV;
 
+use Contentity;
 use Contentity::Router;
 use constant ROUTER => 'Contentity::Router';
 
@@ -234,6 +235,27 @@ is( $match->{ data }->{ app }, 'content', 'matched content app' );
 
 #print $router->reason, "\n";
 #Contentity->debug_data( data =>)
+
+
+#-----------------------------------------------------------------------------
+# Routes with placeholders embedded in static text
+#-----------------------------------------------------------------------------
+
+$router = ROUTER->new(
+    routes => {
+        'shops-to-let-in-:place' => {
+            message => 'Hello World!'
+        }
+    }
+);
+ok( $router, "created router with embedded fragment");
+$match = $router->match("shops-to-let-in-guildford");
+ok( $match, "matched shops-to-let-in-guildford");
+my $data = $match->{ data };
+is( $data->{ place }, 'guildford', 'place is set to guildford' );
+is( $data->{ message }, 'Hello World!', 'also got other route metadata' );
+
+Contentity->debug_data( match => $match ) if DEBUG;
 
 __END__
 # TODO
