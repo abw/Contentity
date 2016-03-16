@@ -310,6 +310,11 @@ sub login_user {
     $self->{ user  } = $user;
     $self->{ login } = $login;
 
+    if (DEBUG) {
+        $self->debug("login_user() set user to #", $user->id);
+        $self->debug("login_user() set login to #", $login->id);
+    }
+
     #if ($params->{ remember_me }) {
     #    $self->debug("remembering....") if DEBUG or 1;
     #    $self->set_session_key_expiry($self->remember_me_time)
