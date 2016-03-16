@@ -1,6 +1,6 @@
 package Contentity::Form::Field::Autocomplete;
 
-use Cog::Class
+use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Form::Field::Text';
