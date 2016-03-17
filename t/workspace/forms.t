@@ -8,15 +8,13 @@
 #
 #========================================================================
 
-#use lib '/Users/abw/projects/badger/lib';
 use Badger
     lib        => 'lib ../../lib',
     Filesystem => 'Bin',
     Debug      => [import => ':all'];
 
 use Badger::Test
-    tests => 5,
-#    debug => 'Contentity::Workspace Contentity::Component::Forms',
+    tests => 7,
     debug => 'Contentity::Config',
     args  => \@ARGV;
 
@@ -27,7 +25,7 @@ use Contentity::Project;
 #-----------------------------------------------------------------------------
 
 my $root    = Bin->dir( test_files => projects => 'alpha' );
-my $project = Contentity::Project->new( 
+my $project = Contentity::Project->new(
     root    => $root,
     schemas => {
         forms => {
@@ -47,3 +45,12 @@ is( $forms1, $forms2, 'got same forms reference' );
 
 my $form = $project->form( 'wibble', message => 'Frusset Pouch' );
 ok( $form, "got wibble form: $form" );
+
+#-----------------------------------------------------------------------------
+# get fields
+#-----------------------------------------------------------------------------
+
+my $fields = $project->form_fields;
+ok( $fields, "got form fields" );
+my $field = $fields->field( date => { name => 'test' } );
+ok( $field, "got date field: $field" );
