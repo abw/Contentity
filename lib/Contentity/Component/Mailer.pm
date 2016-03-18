@@ -3,10 +3,12 @@ package Contentity::Component::Mailer;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
+    import    => 'class',
     base      => 'Contentity::Component',
     constants => 'DEFAULT DOT',
-    #utils     => 'self_params params extend',
+    utils     => 'self_params params extend split_to_list',
     codec     => 'utf8',
+    accessors => 'formats content_types',
     constant  => {
         HTML_CONTENT_TYPE => 'text/html; charset="UTF-8"',
     },
@@ -18,13 +20,26 @@ use Contentity::Class
 
 our $FORMATS = {
     default  => 'text',
-    map { $_ => $_ }
-    qw( text html3 html5 )
+    text     => 'text',
+    html     => 'html html5 html3',
+    html3    => 'html3 html',
+    html5    => 'html5 html3 html',
 };
+
+our $CONTENT_TYPES = {
+    default  => 'text/plain; charset="UTF-8"',
+    text     => 'text/plain; charset="UTF-8"',
+    html     => 'text/html; charset="UTF-8"',
+    html3    => 'text/html; charset="UTF-8"',
+    html5    => 'text/html; charset="UTF-8"',
+};
+
 
 sub init_component {
     my ($self, $config) = @_;
     $self->init_mailer($config);
+    $self->{ formats       } = class->hash_vars( FORMATS => $config->{ formats } );
+    $self->{ content_types } = class->hash_vars( CONTENT_TYPES => $config->{ content_types } );
     return $self;
 }
 
@@ -34,17 +49,53 @@ sub init_mailer {
 
 sub send_email {
     my ($self, $params) = self_params(@_);
-    #my $type   = $params->{ type } || DEFAULT;
-    #my $types  = $self->hub->config->mail_types;
-    #my $config = extend({ }, $types->{ $type }, $params);
-    #$self->send($config);
-    $self->send($params);
+
+    # set the config items as defaults
+    extend($params, $self->config);
+
+    $self->debug_data( extended_config => $params ) if DEBUG;
+
+    # the force_send_to option is used for testing to avoid sending mail
+    # to real customer
+    my $force = $self->config('force_send_to');
+    if ($force) {
+        $self->force_send_to($params, $force);
+    }
+
+    # process any template to generate message
+    $params->{ message } = $self->process_template($params->{ template }, $params)
+        if $params->{ template };
+
+    return $self->send($params);
 }
 
 sub send {
     shift->not_implemented('in base class');
 }
 
+sub force_send_to {
+    my ($self, $params, $force) = @_;
+    my $title = $self->config('force_send_subject') || '%s (TEST)';
+
+    # for test
+    $self->debug("force_send_to: $force") if DEBUG;
+    $params->{ to } = $force;
+    $params->{ subject } = sprintf($title, $params->{ subject } || '(no subject)');
+
+    return $params;
+}
+
+sub format {
+    my $self   = shift;
+    my $format = shift || DEFAULT;
+    return $self->formats->{ $format };
+}
+
+sub content_type {
+    my $self = shift;
+    my $type = shift || DEFAULT;
+    return $self->content_types->{ $type };
+}
 
 sub process_template {
     my $self      = shift;
@@ -69,20 +120,28 @@ sub template_filename {
     my $params    = params(@_);
     my $templates = $self->templates;
     my $format    = $params->{ format } || DEFAULT;
-    my $filename  = $template;
-    my $found;
+    my $flist     = $self->format($format);
+    my $formats   = split_to_list($flist);
+    my ($filename, $found);
 
-    if ($format) {
+    # try to find a template with each format as the file extension in
+    # turn, failing that try no extension at all
+    for $format (@$formats, '') {
+        $self->debug("trying format '$format' for '$template' email template") if DEBUG;
         # check it's a valid format and apply any mapping (none currently)
         # NOTE: may be better to silently ignore in case of invalid format
-        return $self->error_msg( invalid => format => $format )
-            unless $format = $FORMATS->{ lc $format };
+        if ($format) {
+            return $self->error_msg( invalid => format => $format )
+                unless $format = $FORMATS->{ lc $format };
+        }
 
-        $filename = join(DOT, $template, $format);
+        $filename = $format
+            ? join(DOT, $template, $format)
+            : $template;
 
         # look for filename with extension and fall back if not found
         eval {
-            $templates->template($filename)
+            $found = $templates->template_path($filename);
         };
         if ($@) {
             my $error = $@;
@@ -98,16 +157,21 @@ sub template_filename {
                 die $error;
             }
         }
+        elsif ($found) {
+            $params->{ format_used } = $format;
+            return $filename;
+        }
     }
 
-    return $filename;
+    return $self->decline_msg("Template not found: $template");
 }
 
 
 sub templates {
     my $self = shift;
     return $self->{ templates }
-        || $self->error_msg('no_templates');
+        ||= $self->workspace->renderer('email')
+        ||  $self->error_msg('no_templates');
 }
 
 

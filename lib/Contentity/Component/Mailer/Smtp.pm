@@ -1,14 +1,19 @@
 package Contentity::Component::Mailer::Smtp;
 
+use Mail::Sender;
 use Contentity::Class
     version    => 0.01,
     debug      => 0,
     base       => 'Contentity::Component::Mailer',
     utils      => 'extend self_params',
     accessors  => 'mailhost',
+    constants  => 'DEFAULT',
     constant   => {
         SENDER   => 'Mail::Sender',
         AUTHTYPE => 'LOGIN',
+    },
+    messages  => {
+        missing_param => 'No %s specified for email message',
     };
 
 our $DEFAULTS = {
@@ -64,24 +69,21 @@ sub generate_authenticator {
 
 sub send {
     my ($self, $args) = self_params(@_);
-    my $html = $args->{ format } && $args->{ format } =~ /^html/i;
+    my $format = $args->{ format } || DEFAULT;
 
     # add defaults parameter to args
     $args->{ smtp       }   = $self->{ mailhost };
     $args->{ from       } ||= $self->{ from };
     $args->{ encoding   } ||= $self->{ encoding };
 
-    # process any template to generate message
-    $args->{ message } = $self->process_template($args->{ template }, $args)
-        if $args->{ template };
-
     # check incoming args have got what we need
-    $self->check_params( send => $args );
+    $self->check_params($args);
 
     # add extra params for HTML email
-    if ($html) {
-        $self->debug("sending as HTML\n---------------\n$args->{ message }") if DEBUG;
-        $args->{ ctype } = $self->HTML_CONTENT_TYPE;
+    my $ctype = $self->content_type($format);
+    if ($ctype) {
+        $self->debug("adding content-type ($ctype) for $format ($format)") if DEBUG;
+        $args->{ ctype } = $ctype;
     }
 
     $self->debug(
@@ -90,9 +92,11 @@ sub send {
     ) if DEBUG;
 
     if ($args->{ testing }) {
-        $self->debug("NOT sending email (testing mode )  ", $self->dump_data($args));
-        return $args;
+        $self->debug("NOT sending email (testing mode)  ", $self->dump_data($args));
+        return "Mail NOT sent to $args->{ to } (testing mode)";
     }
+
+    $self->debug_data( send => $args ) if DEBUG;
 
     eval {
         my $sender = SENDER->new({
@@ -114,6 +118,15 @@ sub send {
     return $@
         ? $self->error_msg( mail_fail => $args->{ to }, $@ )
         : "Mail sent to $args->{ to }";
+}
+
+
+sub check_params {
+    my ($self, $params) = @_;
+    for (qw(from to subject message)) {
+        return $self->error_msg( missing_param => $_ )
+            unless $params->{ $_ };
+    }
 }
 
 1;
