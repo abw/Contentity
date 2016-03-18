@@ -244,7 +244,7 @@ sub TYPE {
 }
 
 sub workspace {
-    shift->form->workspace;
+    shift->factory->workspace;
 }
 
 #-----------------------------------------------------------------------------
