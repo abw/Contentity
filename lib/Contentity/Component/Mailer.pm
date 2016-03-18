@@ -1,14 +1,11 @@
 package Contentity::Component::Mailer;
 
-#use Mail::Sender;
 use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Component',
-    #accessors => 'hub mailhost',
-    #constants => 'HASH DOT DEFAULT',
+    constants => 'DEFAULT DOT',
     #utils     => 'self_params params extend',
-    #config    => 'hub! templates!',
     codec     => 'utf8',
     constant  => {
         HTML_CONTENT_TYPE => 'text/html; charset="UTF-8"',
@@ -27,8 +24,12 @@ our $FORMATS = {
 
 sub init_component {
     my ($self, $config) = @_;
-    $self->{ templates } = $config->{ templates };
+    $self->init_mailer($config);
     return $self;
+}
+
+sub init_mailer {
+    # stub for subclasses
 }
 
 sub send_email {
@@ -116,24 +117,14 @@ __END__
 
 =head1 NAME
 
-LFH::Mailer - base class messenger module for sending email
-
-=head1 SYNOPSIS
-
-    use LFH;
-
-    LFH->mailer->send({
-        to      => 'abw@badgerpower.com',
-        from    => 'admin@badgerpower.com',
-        subject => 'Yo Badger, whazzup',
-        message => 'Hey there Mr Badger... etc...',
-    });
+Contentity::Component::Mailer - base class messenger module for sending email
 
 =head1 DESCRIPTION
 
 This module is a base class for other modules used to send Email.
 
-See L<LFH::Messenger::SMTP> and L<LFH::Messenger::Sendmail> for examples.
+See L<Contentity::Component::Mailer::SMTP> for an example of a concrete
+subclass.
 
 =head1 METHODS
 
@@ -149,20 +140,11 @@ Andy Wardley E<lt>abw@wardley.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2009-2013 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2009-2016 Andy Wardley.  All Rights Reserved.
 
 =head1 SEE ALSO
 
-L<LFH::Messenger::SMTP>,
-L<LFH::Messenger::Sendmail>,
-L<LFH>, L<LFH::Hub>, L<LFH::Base>, L<Badger::Base> and L<Mail::Sender>.
+L<Contentity::Component::Mailer::SMTP>,
+L<Contentity::Component>, L<Badger::Base>;
 
 =cut
-
-# Local Variables:
-# mode: Perl
-# perl-indent-level: 4
-# indent-tabs-mode: nil
-# End:
-#
-# vim: expandtab shiftwidth=4:
