@@ -7,7 +7,8 @@ use Contentity::Class
     utils     => 'join_uri resolve_uri split_to_list',
     constants => ':components :deployment SLASH HASH STATIC DYNAMIC VHOST_FILE',
     messages  => {
-        no_resource_dir => "Ignoring resources entry for %s - directory does not exist: %s\n",
+        no_resource_dir  => "Ignoring resources entry for %s - directory does not exist: %s\n",
+        no_resource_file => "Ignoring resources entry for %s - file does not exist: %s\n",
     };
 
 
@@ -328,7 +329,10 @@ sub fix_resources {
 
         if ($file) {
             my $f = $resource->{ file } = $workspace->file($file);
-            next unless $f->exists;
+            unless ($f->exists) {
+                $self->warn_msg( no_resource_file => $urn, $f->definitive );
+                next;
+            }
         }
         elsif ($dir) {
             my $d = $resource->{ directory } = $workspace->dir($dir);
