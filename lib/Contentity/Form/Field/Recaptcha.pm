@@ -2,7 +2,7 @@ package Contentity::Form::Field::Recaptcha;
 
 use Contentity::Class::Form::Field
     version  => 0.02,
-    debug    => 1,
+    debug    => 0,
     display  => 'recaptcha',
     config   => 'validate_url|class:VALIDATE_URL!',
     utils    => 'self_params',
