@@ -20,6 +20,10 @@ our $DEFAULTS = {
     encoding => 'quoted-printable',
 };
 
+# Stop Mail::Sender from adding its own X-Mailer
+*Mail::Sender::SITE_HEADERS = \"X-Sender: Completely Group Mail Server";
+$Mail::Sender::NO_X_MAILER = 1;
+
 
 #-----------------------------------------------------------------------------
 # Initialisation
@@ -66,8 +70,7 @@ sub generate_authenticator {
 # Mailing
 #-----------------------------------------------------------------------------
 
-
-sub send {
+sub _send_email {
     my ($self, $args) = self_params(@_);
     my $format = $args->{ format } || DEFAULT;
 

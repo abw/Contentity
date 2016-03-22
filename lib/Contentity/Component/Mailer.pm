@@ -47,7 +47,7 @@ sub init_mailer {
     # stub for subclasses
 }
 
-sub send_email {
+sub send {
     my ($self, $params) = self_params(@_);
 
     # set the config items as defaults
@@ -63,24 +63,50 @@ sub send_email {
     }
 
     # process any template to generate message
-    $params->{ message } = $self->process_template($params->{ template }, $params)
-        if $params->{ template };
+    my $template = $params->{ template };
+    if ($template) {
+        # Fuckety.  We can't us 'to' as a template variable because
+        # it's a reserved word (e.g. for a in 1 to 10).  Hence this
+        # ugly hack to provide an alias for it
+        $params->{ send_to } = $params->{ to };
 
-    return $self->send($params);
+        $self->debug("processing template: $template") if DEBUG;
+        $params->{ message } = $self->process_template($template, $params);
+    }
+
+    return $self->_send_email($params);
 }
 
-sub send {
+sub _send_email {
+    # At one point we had a public method called send_email() and a
+    # private transport-specific send() method.  That was great in theory
+    # except that I inadvertently called the send() method instead of
+    # send_email() in the invite code because I forgot which method was
+    # which.  If I can make a mistake like that mere days after writing
+    # the send_email() and send() methods (and making a mental note to
+    # always call send_email() instead of send()) then it suggests that
+    # the naming scheme was flawed from the outset (or that I shouldn't
+    # be allowed near a computer).  So I changed it.  The short and
+    # obvious send() method is now the correct one to call.  There is
+    # no send_email() method, only this underscore-prefixed version
+    # which follows the Perl convention of indicating it's a private
+    # method.
     shift->not_implemented('in base class');
 }
 
 sub force_send_to {
     my ($self, $params, $force) = @_;
-    my $title = $self->config('force_send_subject') || '%s (TEST)';
+    my $titfmt = $self->config('force_send_subject') || '%s (TEST)';
 
-    # for test
     $self->debug("force_send_to: $force") if DEBUG;
-    $params->{ to } = $force;
-    $params->{ subject } = sprintf($title, $params->{ subject } || '(no subject)');
+
+    # templates can use these to add test header indicating redirection
+    $params->{ force_send_to } = $force;
+    $params->{ originally_to } = $params->{ to };
+
+    # set new recipient and tweak the subject line
+    $params->{ to      } = $force;
+    $params->{ subject } = sprintf($titfmt, $params->{ subject } || '(no subject)');
 
     return $params;
 }
@@ -102,7 +128,8 @@ sub process_template {
     my $template  = shift;
     my $params    = params(@_);
     my $templates = $self->templates;
-    my $filename  = $self->template_filename($template, $params);
+    my $filename  = $self->template_filename($template, $params)
+        || return $self->error_msg( invalid => 'email template' => $template );
     my $output    = '';
 
     $templates->process($filename, $params, \$output)
@@ -163,7 +190,7 @@ sub template_filename {
         }
     }
 
-    return $self->decline_msg("Template not found: $template");
+    return $self->decline("Template not found: $template");
 }
 
 
