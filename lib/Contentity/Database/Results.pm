@@ -88,6 +88,7 @@ sub init {
     # expand are the button items that need expand via TT
     $self->{ expand } = split_to_list( $config->{ expand } );
 
+    $self->debug("page_size: $self->{ page_size }") if DEBUG or 1;
     return $self;
 }
 
@@ -175,7 +176,10 @@ sub paging_buttons {
                     from_item => 1,
                     to_item   => $psize,
                     page_no   => 1,
-                    params    => { page_no => 1 },
+                    params    => {
+                        page_no   => 1,
+                        page_size => $psize,
+                    },
                 }
             );
 
@@ -186,8 +190,12 @@ sub paging_buttons {
                     from_item => $prev_from,
                     to_item   => $prev_to,
                     page_no   => $prev_p,
+                    page_size => $psize,
                     text      => $prev_p,
-                    params    => { page_no => $prev_p },
+                    params    => {
+                        page_no   => $prev_p,
+                        page_size => $psize,
+                    },
                 }
             );
     }
@@ -206,7 +214,10 @@ sub paging_buttons {
                     to_item   => $page_to,
                     text      => $p,
                     warm      => $warm,
-                    params    => { page_no => $p },
+                    params    => {
+                        page_no   => $p,
+                        page_size => $psize,
+                    },
                 }
             );
     }
@@ -228,7 +239,10 @@ sub paging_buttons {
                     to_item   => $next_to,
                     text      => $next_page,
                     page_no   => $next_page,
-                    params    => { page_no => $next_page },
+                    params    => {
+                        page_no   => $next_page,
+                        page_size => $psize,
+                    },
                 }
             );
         push(@buttons, $button)
@@ -238,7 +252,10 @@ sub paging_buttons {
                     to_item   => $last_to,
                     text      => $last_page,
                     page_no   => $last_page,
-                    params    => { page_no => $last_page },
+                    params    => {
+                        page_no   => $last_page,
+                        page_size => $psize,
+                    },
                 }
             );
     }
