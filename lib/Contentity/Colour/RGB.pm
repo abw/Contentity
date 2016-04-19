@@ -176,7 +176,7 @@ sub hex {
         return $self->parse(@_)
             || $self->error_msg( bad_param => hex => $_[0] );
     }
-    return sprintf("%02x%02x%02x", @$self);
+    return sprintf("%02x%02x%02x", @{$self}[0..2]);
 }
 
 sub HEX {
