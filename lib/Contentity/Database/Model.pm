@@ -74,6 +74,7 @@ sub load_table {
 
     local $config->{ engine } = $self->engine;
     local $config->{ model  } = $self;
+    local $config->{ hub    } = $self->workspace;
     local $config->{ name } ||= $name;
 
     $self->debug_data("creating $module with config: ", $config) if DEBUG;
