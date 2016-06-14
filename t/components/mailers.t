@@ -41,4 +41,37 @@ ok( $mailers, "got a mailers factor: $mailers" );
 my $smtp = $mailers->mailer('smtp');
 ok( $smtp, "got smtp mailer" );
 is( ref $smtp, 'Contentity::Component::Mailer::Smtp', "SMTP mailer is $smtp" );
-is( $smtp->mailhost, 'testing1.wardley.org', 'got correct mailhost' );
+#is( $smtp->mailhost, 'testing1.wardley.org', 'got correct mailhost' );
+
+my $test_mailer = $mailers->mailer('abw_test');
+ok( $test_mailer, "got test mailer" );
+
+my $text = $test_mailer->send(
+    to      => 'abw@wardley.org',
+    from    => 'abw@wardley.org',
+    subject => 'email test',
+    format  => 'text',
+    message => 'Hello World!',
+    testing => 1,
+);
+print "TEXT result: $text\n";
+
+my $html = $test_mailer->send(
+    to      => 'abw@wardley.org',
+    from    => 'abw@wardley.org',
+    subject => 'email test',
+    format  => 'html',
+    message => '<i>Hello World!</i>',
+    testing => 1,
+);
+print "HTML result: html\n";
+
+my $mixed = $test_mailer->send(
+    to           => 'abw@wardley.org',
+    from         => 'abw@wardley.org',
+    subject      => 'email test',
+    format       => 'text html',
+    text_message => 'Hello World!',
+    html_message => '<i>Hello World!</i>',
+);
+print "mixed result: html\n";
