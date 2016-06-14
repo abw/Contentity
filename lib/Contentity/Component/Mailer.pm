@@ -10,7 +10,7 @@ use Contentity::Class
     codec     => 'utf8',
     accessors => 'formats content_types',
     constant  => {
-        HTML_CONTENT_TYPE => 'text/html; charset="UTF-8"',
+        # HTML_CONTENT_TYPE => 'text/html; charset="UTF-8"',
     },
     messages  => {
         mail_fail     => 'Failed to send email to %s: %s',
@@ -62,19 +62,56 @@ sub send {
         $self->force_send_to($params, $force);
     }
 
+    my $format  = $params->{ format } || $self->{ formats }->{ default };
+    my $formats = split_to_list($format);
+
+    if (@$formats > 1) {
+        # multipart message can be specified by setting the format to
+        # have multiple values, e.g. format => 'text html'
+        my $multipart = $params->{ multipart } = [ ];
+
+        # we create a copy of the params for each multipart format
+        for my $f (@$formats) {
+            my $part = {
+                %$params,
+                format => $f
+            };
+            delete $part->{ multipart };
+
+            # copy the format specific message, e.g. html_message into
+            # the message for this part
+            $part->{ message } ||= delete $part->{"${f}_message"};
+
+            # expand any template to generate the message
+            $self->expand_template($part);
+
+            # push it onto the multipart list
+            push(@$multipart, $part);
+
+            $self->debug_data( multipart => $part ) if DEBUG or 1;
+        }
+        return $self->_send_multipart($params);
+    }
+    else {
+        return $self->_send_email($params);
+    }
+}
+
+sub expand_template {
+    my ($self, $params) = @_;
+
     # process any template to generate message
     my $template = $params->{ template };
     if ($template) {
         # Fuckety.  We can't us 'to' as a template variable because
         # it's a reserved word (e.g. for a in 1 to 10).  Hence this
         # ugly hack to provide an alias for it
-        $params->{ send_to } = $params->{ to };
+        local $params->{ send_to } = $params->{ to };
 
         $self->debug("processing template: $template") if DEBUG;
         $params->{ message } = $self->process_template($template, $params);
     }
-
-    return $self->_send_email($params);
+    return $params;
 }
 
 sub _send_email {
@@ -91,6 +128,10 @@ sub _send_email {
     # no send_email() method, only this underscore-prefixed version
     # which follows the Perl convention of indicating it's a private
     # method.
+    shift->not_implemented('in base class');
+}
+
+sub _send_multipart {
     shift->not_implemented('in base class');
 }
 
