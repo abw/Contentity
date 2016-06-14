@@ -27,6 +27,9 @@ sub init {
     $self->{ model } = $config->{ model }
         || return $self->error_msg( missing => 'model' );
 
+    $self->{ hub } = $self->{ model }->workspace;
+    $self->debug("Table hub: ", $self->hub) if DEBUG;
+
     # Bother.  Badger::Database::Table is already storing a list of column
     # names in $self->{ columns }
     my $schema = { %$config };
