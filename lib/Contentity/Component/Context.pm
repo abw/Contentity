@@ -265,13 +265,20 @@ sub load_session {
         $self->debug("loaded existing session: #$session->{ id }:$skey\n") if DEBUG;
     }
     else {
-        $session = $sessions->insert( ip_address => $self->request->address );
+        $session = $sessions->insert( $self->session_params );
         $skey    = $session->cookie;
         $self->set_session_key($skey);
         $self->debug("created new session: #$session->{ id }:$skey") if DEBUG;
     }
 
     return $session;
+}
+
+sub session_params {
+    my $self = shift;
+    return {
+        ip_address => $self->request->address,
+    };
 }
 
 
