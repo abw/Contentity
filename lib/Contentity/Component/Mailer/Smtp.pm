@@ -3,7 +3,7 @@ package Contentity::Component::Mailer::Smtp;
 use Mail::Sender;
 use Contentity::Class
     version    => 0.01,
-    debug      => 1,
+    debug      => 0,
     base       => 'Contentity::Component::Mailer',
     utils      => 'extend self_params',
     accessors  => 'mailhost',

@@ -12,4 +12,4 @@ abw_test:
   # This flag stops any email from being sent and instead prints
   # a debugging message to STDERR showing all the parameters that
   # would have been used to send the email.
-  #testing:            1
+  testing:            1

@@ -88,7 +88,7 @@ sub send {
             # push it onto the multipart list
             push(@$multipart, $part);
 
-            $self->debug_data( multipart => $part ) if DEBUG or 1;
+            $self->debug_data( multipart => $part ) if DEBUG;
         }
         return $self->_send_multipart($params);
     }
