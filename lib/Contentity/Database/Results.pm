@@ -88,7 +88,7 @@ sub init {
     # expand are the button items that need expand via TT
     $self->{ expand } = split_to_list( $config->{ expand } );
 
-    $self->debug("page_size: $self->{ page_size }") if DEBUG or 1;
+    $self->debug("page_size: $self->{ page_size }") if DEBUG;
     return $self;
 }
 
