@@ -93,6 +93,9 @@ sub send {
         return $self->_send_multipart($params);
     }
     else {
+        # expand any template to generate the message
+        $self->expand_template($params);
+
         return $self->_send_email($params);
     }
 }
