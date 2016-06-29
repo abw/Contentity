@@ -109,7 +109,13 @@ sub search_params {
         $self->debug_data( ignore => $ignore );
     }
 
-    while (($name, $value) = each %$params) {
+    # we don't want to iterate over the original $params in case the
+    # original gets updated, triggering a warning: Use of each() on
+    # hash after insertion without resetting hash iterator results in
+    # undefined behavior
+    my $copy = { %$params };
+
+    while (($name, $value) = each %$copy) {
         next
             if $ignore->{ $name };
         next
