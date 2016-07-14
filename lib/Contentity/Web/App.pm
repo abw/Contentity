@@ -363,18 +363,32 @@ sub template_data {
 #-----------------------------------------------------------------------------
 
 sub form {
+    # default is to return a form that has been pre-populated with values
+    # from the request params.
+    shift->prepared_form(@_);
+}
+
+sub blank_form {
     my $self = shift;
     my $uri  = $self->form_path(@_);
     my $form = $self->workspace->form($uri);
+
+    # save the form in the context for templates to access
+    $self->set( form => $form );
+
+    return $form;
+}
+
+sub prepared_form {
+    my $self = shift;
+    my $uri  = $self->form_path(@_);
+    my $form = $self->blank_form(@_);
 
     # prime the form with the application request parameters
     $form->params($self->params);
 
     # default the action to be the form URI relative to current app
     $form->default_action( $self->url($uri) );
-
-    # save the form in the context for templates to access
-    $self->set( form => $form );
 
     return $form;
 }
