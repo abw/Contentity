@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Component',
     accessors => 'assets singletons',
-    utils     => 'extend params plural is_object',
+    utils     => 'extend params plural is_object truelike',
     constant  => {
         ASSET      => undef,
         ASSETS     => undef,
@@ -74,9 +74,14 @@ sub lookup_asset {
         || return;
 
     # Maybe store this instance in the cache?
-    $cache->{ $name } = $asset
-        if $self->cache_asset($name, $asset);
-
+    my $cache_flag = $self->cache_asset($name, $asset);
+    if ($cache_flag) {
+        $cache->{ $name } = $asset;
+        $self->debug("caching assest (flag: $cache_flag)") if DEBUG;
+    }
+    else {
+        $self->debug("Not caching asset (flag: $cache_flag)") if DEBUG;
+    }
     return $asset;
 }
 
@@ -121,7 +126,7 @@ sub prepare_asset {
 
 sub cache_asset {
     my ($self, $name, $asset) = @_;
-    my $single = $asset->singleton
+    my $single = truelike($asset->singleton)
         if is_object(COMPONENT, $asset);
 
     # Each component can be declared as a singleton via a scheme definition,
@@ -137,13 +142,14 @@ sub cache_asset {
 
     # Default behaviour is to depend on singletons config option, subclasses
     # may modify this to test each asset to determine if it should be cached
+    my $singles = truelike $self->singletons;
     $self->debug(
         "using default singletons rule for $name which says they ",
-        $self->singletons ? "are" : "are not",
+        $singles ? "are" : "are not",
         " singletons"
     ) if DEBUG;
 
-    return $self->singletons;
+    return $singles;
 }
 
 
