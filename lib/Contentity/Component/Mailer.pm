@@ -154,6 +154,7 @@ sub force_send_to {
     for my $w (@$wlist) {
         if ($to eq $w) {
             $self->debug("matched address on whitelist: $to") if DEBUG;
+            $params->{ force_send_to } = 0;
             return;
         }
     }
