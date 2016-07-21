@@ -141,8 +141,22 @@ sub _send_multipart {
 sub force_send_to {
     my ($self, $params, $force) = @_;
     my $titfmt = $self->config('force_send_subject') || '%s (TEST)';
+    my $wlist  = $self->config('whitelist') || [ ];
+    my $to     = $params->{ to };
 
-    $self->debug("force_send_to: $force") if DEBUG;
+    if ($to =~ /<(.*?)>/) {
+        $self->debug("extracted email address ($1) from 'to' line: $to") if DEBUG;
+        $to = $1;
+    }
+
+    $self->debug("force_send_to: $force (originally: $to)") if DEBUG;
+
+    for my $w (@$wlist) {
+        if ($to eq $w) {
+            $self->debug("matched address on whitelist: $to") if DEBUG;
+            return;
+        }
+    }
 
     # templates can use these to add test header indicating redirection
     $params->{ force_send_to } = $force;
