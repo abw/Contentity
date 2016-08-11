@@ -82,7 +82,8 @@ sub _send_email {
     $self->check_params($args);
 
     if ($args->{ testing }) {
-        $self->debug("NOT sending email (testing mode)  ", $self->dump_data($args));
+        $self->debug("NOT sending email (testing mode)  ", $self->dump_data($args))
+            unless $args->{ test_quietly };
         return "Mail NOT sent to $args->{ to } (testing mode)";
     }
 
