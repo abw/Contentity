@@ -40,7 +40,7 @@ sub handle_error {
     $apache->status(SERVER_ERROR);
     $apache->print(
       '<html><head><title>Application Error</title></head><body>',
-      "An uncaught error occurred: ", @_,
+      "An uncaught error occurred: <pre>", @_, "</pre>",
       '</body></html>',
     );
     return;
