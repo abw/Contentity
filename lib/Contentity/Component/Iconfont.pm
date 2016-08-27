@@ -5,7 +5,7 @@ use Contentity::Class
     version   => 0.04,
     debug     => 0,
     base      => 'Contentity::Component',
-    utils     => 'green cyan red',
+    utils     => 'green cyan red yellow',
     accessors => 'verbose glyphs icons data',
     constant  => {
         ENGINE     => 'Contentity::Template',
