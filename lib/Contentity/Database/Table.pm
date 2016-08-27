@@ -13,6 +13,7 @@ use Contentity::Class
     constant  => {
         RECORD  => 'Contentity::Database::Record',
         RESULTS => 'Contentity::Database::Results',
+        SEARCH  => 'Contentity::Database::Search',
     };
 
 our $QUERIES = {
@@ -149,6 +150,61 @@ sub subclass_record {
     return defined $result
         ? $result
         : $self->error_msg( new_record => $module, $module->error );
+}
+
+#-----------------------------------------------------------------------------
+# Meta-methods for common query patterns
+# e.g. $table->query_keys_rows( query_name => 'arg1 arg2 etc', @args );
+#-----------------------------------------------------------------------------
+
+sub query_keys_count {
+    my ($self, $query, $keys, @args) = @_;
+    ($self, @args) = self_keys( $keys => $self, @args );
+    return $self->query($query)->column(@args)->[0];
+}
+
+sub query_keys_rows {
+    my ($self, $query, $keys, @args) = @_;
+    ($self, @args) = self_keys( $keys => $self, @args );
+    return $self->rows( $query => @args );
+}
+
+sub query_keys_records {
+    my $self = shift;
+    return $self->records( $self->query_keys_rows(@_) );
+}
+
+sub query_keys_row {
+    my ($self, $query, $keys, @args) = @_;
+    ($self, @args) = self_keys( $keys => $self, @args );
+    return $self->row( $query => @args );
+}
+
+sub query_keys_record {
+    my $self = shift;
+    my $row  = $self->query_keys_row(@_) || return;
+    return $self->record($row);
+}
+
+#-----------------------------------------------------------------------------
+# Search methods
+#-----------------------------------------------------------------------------
+
+sub search {
+    my ($self, $params) = self_params(@_);
+    my $rclass = $self->SEARCH;
+    my $config = $self->{ spec }->{ search } || { };
+
+    $config = { %$config };
+    $config->{ columns } ||= $self->fields;
+    $self->debug_data( "search config" => $config ) if DEBUG or 1;
+    $self->debug_data( "search params" => $params ) if DEBUG or 1;
+
+    my $search = $self->prepare_query_module($rclass, $config);
+    $self->debug("got search: $search") if DEBUG;
+
+    return $search->results(%$params);
+    #return $rclass->new($params);
 }
 
 #-----------------------------------------------------------------------------
