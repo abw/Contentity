@@ -5,7 +5,7 @@ use Badger::Class
     version   => 0.01,
     debug     => 0,
     uber      => 'Badger::Class',
-    hooks     => 'constructor component asset assets status autolook',
+    hooks     => 'constructor component asset assets status record table autolook',
     utils     => 'is_object split_to_list camel_case blessed',
     constants => 'CODE',
     constant  => {
@@ -112,7 +112,17 @@ sub option_methods {
     return $self;
 }
 
+#-----------------------------------------------------------------------------
+# hooks to set RECORD and TABLE constants
+#-----------------------------------------------------------------------------
 
+sub record {
+    shift->constant( RECORD => shift );
+}
+
+sub table {
+    shift->constant( TABLE => shift );
+}
 
 #-----------------------------------------------------------------------------
 # autolook()
