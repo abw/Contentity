@@ -1,6 +1,6 @@
 package Contentity::Database::Search;
 
-use Cog::Class
+use Contentity::Class
     version     => 0.01,
     debug       => 0,
     base        => 'Badger::Database::Query::Select Contentity::Base',
@@ -51,12 +51,14 @@ sub init {
 
     $self->SUPER::init($config);
 
-    my $search  = $class->hash_vars(SEARCH_PARAMS);
-    my $columns = $self->{ columns };
+    my $search  = $class->hash_vars(SEARCH_PARAMS, $config->{ search_params });
+    my $columns = $self->{ columns } || { };
+    $self->debug_data( columns => $columns ) if DEBUG;
+    #$self->debug_data( table_columns => $table->columns ) if DEBUG or 1;
 
     $self->{ search      } = { %$columns, %$search };
-    $self->{ relations   } = $class->hash_vars(RELATIONS);
-    $self->{ sort_orders } = $class->hash_vars(SORT_ORDERS);
+    $self->{ relations   } = $class->hash_vars(RELATIONS, $config->{ relations });
+    $self->{ sort_orders } = $class->hash_vars(SORT_ORDERS, $config->{ sort_orders });
     $self->{ table       } = $table;
     $self->{ idents      } = [ '#' . $class->id ];    # '#' sorts first
 
