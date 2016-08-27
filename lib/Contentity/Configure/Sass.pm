@@ -2,7 +2,7 @@ package Contentity::Configure::Sass;
 
 use Contentity::Class
     version => 0.01,
-    debug   => 1,
+    debug   => 0,
     base    => 'Contentity::Configure::App';
 
 sub run {
@@ -13,9 +13,9 @@ sub run {
 
     $self->debug("RUN") if DEBUG;
 
-    $self->prompt_expr([
-        [ selected => "Pre-building SASS:\n" ],
-    ]);
+    #$self->prompt_expr([
+    #    [ selected => "Pre-building SASS:\n" ],
+    #]);
 
     $self->prompt_expr([
         [ selected => "Building SASS:\n" ],

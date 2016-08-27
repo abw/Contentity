@@ -69,11 +69,27 @@ sub build {
     # sass --load-path DIR --load-path DIR SRC_DIR:DEST_DIR
     my @libopts = map { ('--load-path' => $_) } @$libdirs;
     my $srcdest = join(':', $srcdirs->[0], $outdir);
-    my @cmd = ($program, @libopts, $srcdest);
+    my @opts;
 
-    push(@cmd, $watch ? '--watch' : '--update');
+    if ($self->watch) {
+        push(@opts, '--watch');
+    }
+    elsif ($self->force) {
+        push(@opts, '--force', '--update');
+    }
+    else {
+        push(@opts, '--update');
+    }
 
+    if ($self->min) {
+        push(@opts, '--style', 'compressed');
+    }
+
+    push(@opts, '--sourcemap=none');
+
+    my @cmd = ($program, @libopts, @opts, $srcdest);
     $self->debug("SASS COMMAND: ", join(' ', @cmd)) if DEBUG;
+
     cmd(@cmd);
 }
 
@@ -83,6 +99,14 @@ sub verbose {
 
 sub quiet {
     shift->config->{ quiet };
+}
+
+sub force {
+    shift->config->{ force };
+}
+
+sub min {
+    shift->config->{ min };
 }
 
 sub sass {
