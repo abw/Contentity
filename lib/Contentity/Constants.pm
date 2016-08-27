@@ -43,6 +43,8 @@ use Badger::Class
         TEXT_HTML           => 'text/html',
         TEXT_PLAIN          => 'text/plain',
         CHARSET_UTF8        => 'charset=utf-8',
+        MYSQL_WILDCARD      => '%',
+
 
         # virtual host files
         VHOST_FILE          => 'vhost.conf',
@@ -86,7 +88,7 @@ use Badger::Class
         @content_types,
     },
     exports  => {
-        any  => 'COMPONENT MIDDLEWARE',
+        any  => 'COMPONENT MIDDLEWARE MYSQL_WILDCARD',
         tags => {
             status          => \@status,
             components      => \@components,
