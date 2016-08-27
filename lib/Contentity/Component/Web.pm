@@ -223,8 +223,42 @@ sub data {
 }
 
 sub json_data {
-    # this is for backward/foward compatibility
-    shift->data;
+    my $self = shift;
+    my $data = $self->data;
+    my $json = { %$data };
+
+    for my $key (keys %$json) {
+        my $value = $json->{ $key };
+
+        if (blessed $value) {
+            my $method;
+
+            # look for a json() or data() method
+            for my $name (qw( json data )) {
+                $method = $value->can($name);
+                if ($method) {
+                    $self->debug("Calling $name() method to expand $value") if DEBUG or 1;
+                    $json->{ $key } = $value->$method;
+                }
+                last;
+            }
+
+            if (! $method) {
+                if (textlike $value) {
+                    # has stringification method
+                    $self->debug("Stringifying blessed object '$key' ($value) in JSON data") if DEBUG or 1;
+                    $json->{ $key } = "$value";
+                }
+                else {
+                    # otherwise it must go
+                    $self->debug("Deleting blessed object '$key' ($value) from JSON data - no json() or data() method to call");
+                    delete $json->{ $key };
+                }
+            }
+        }
+    }
+
+    return $json;
 }
 
 #-----------------------------------------------------------------------------
@@ -511,6 +545,10 @@ sub send_json_error_msg {
     return $self->send_json_error(@args);
 }
 
+sub send_json_data {
+    my $self = shift;
+    $self->send_json( $self->json_data );
+}
 
 sub send_redirect {
     shift->redirect_response(@_);
