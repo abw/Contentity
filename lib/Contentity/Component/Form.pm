@@ -113,7 +113,7 @@ sub reset {
 
 sub values {
     my $self   = shift;
-    my $params = shift || { };
+    my $params = shift || $self->params;
     my $fields = $self->{ fields };
     my @values;
 
@@ -125,7 +125,6 @@ sub values {
     my $extra = $self->{ extra_params } || return $values;
 
     $extra = split_to_list($extra);
-
     $self->debug("extra params for form: ", $self->dump_data($extra)) if DEBUG;
 
     foreach my $p (@$extra) {
@@ -141,7 +140,7 @@ sub values {
 
 sub field_values {
     my $self   = shift;
-    my $params = shift || { };
+    my $params = shift || $self->params;
     my $fields = $self->{ field };
     my $extra  = $self->{ extra_params };
     my $values = {
