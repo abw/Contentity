@@ -20,6 +20,7 @@ use Contentity::Class
         bad_method  => 'Invalid method "%s" specified for "%s"',
     },
     constant  => {
+        RENDERER        => 'webapp',
         MAX_PATH_LENGTH => 8,
         ACTION_FORMAT   => '%s_action',
         ROUTE_FORMAT    => '%s_route',

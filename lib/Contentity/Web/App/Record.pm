@@ -4,7 +4,7 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Web::App',
-    utils     => 'plural';
+    utils     => 'plural self_params';
 
 # default redirect locations
 our $URLS = {
@@ -61,7 +61,7 @@ sub record {
     my $self = shift;
     return @_
         ? $self->set_record(@_)
-        : $self->get_record;
+        : ($self->get_record || $self->load_record);
 }
 
 sub get_record {
