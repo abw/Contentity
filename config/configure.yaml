@@ -92,8 +92,8 @@ items:
                     damaging live data.
     items:
       - type:       section
-        name:       default
-        title:      Default Database
+        name:       example
+        title:      Example Database
         about:      Enter the connection details for the database.
         items:
           - name:       name
@@ -126,6 +126,10 @@ items:
             title:      Script directory
             default:    bin/database
             mandatory:  1
+          # this option is a flag for Contentity::Configure::App to
+          # select this database as the default one: databases.default
+          - name:       is_default
+            fixed:      1
       - type:       section
         name:       test
         title:      Test Database
