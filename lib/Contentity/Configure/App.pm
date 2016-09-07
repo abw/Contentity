@@ -378,11 +378,21 @@ sub prompt_instructions {
 
 sub option_prompt {
     my ($self, $name, $option) = @_;
+    my $path    = $option->{ path      };
+    my $fixed   = $option->{ fixed     };
+
+    # fixed value is pre-set
+    if (defined $fixed) {
+        $self->debug_data("fixed value ($fixed) for ", $path) if DEBUG;
+        $self->set($path, $fixed);
+        return;
+    }
+
+    # if prompt is defined but false then we do nothing else
     return if defined $option->{ prompt } && ! $option->{ prompt };
 
     my $cmdargs = $option->{ cmdargs   } || '';
     my $title   = $option->{ title     } || '';
-    my $path    = $option->{ path      };
     my $default = $option->{ default   };
     my $list    = $option->{ list      };
     my $prepare = $option->{ prepare   };
@@ -461,6 +471,31 @@ sub init_workspace {
 # This is handled by a workspace component, Contentity::Component::Scaffold
 #-----------------------------------------------------------------------------
 
+sub pre_scaffold {
+    my $self = shift;
+    my $data = $self->{ data };
+    my $dbs  = $data->{ databases };
+    my $def;
+
+    # Bit of a hack to detect a database that has the is_default flag
+    # and set an alias to it from databases.default.
+    # This is to simplify the database scaffold scripts so they know
+    # which database to use if one hasn't been explicitly stated.
+    if ($dbs) {
+        $self->debug_data( databases => $dbs ) if DEBUG;
+        while (my ($key, $value) = each %$dbs) {
+            if ($value->{ is_default }) {
+                $self->debug("$value->{ name } is the default database") if DEBUG;
+                $def = $value;
+                last;
+            }
+        }
+        if ($def) {
+            $dbs->{ default } = $def;
+        }
+    }
+}
+
 sub scaffold {
     my $self     = shift;
     my $space    = $self->workspace;
@@ -478,6 +513,7 @@ sub run {
     # TMP
     if ($self->script) {
         $self->run_script;
+        $self->pre_scaffold;
         $self->scaffold if $self->config('scaffold');
         $self->save_data_file;
     }
