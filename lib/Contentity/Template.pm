@@ -11,7 +11,7 @@ use Contentity::Class
                   ucwords snake_up snake_down
                   H html_attrs data_attrs',
     codecs    => 'html json',
-    constants => 'ARRAY';
+    constants => 'ARRAY TRUE FALSE';
 
 our $OPTIONS = {
     ANYCASE        => 1,
@@ -58,6 +58,14 @@ our $LIST_VMETHODS = {
     class_attr    => \&class_attr
 };
 
+our $VARIABLES = {
+    True    => TRUE,
+    true    => TRUE,
+    'TRUE'  => TRUE,
+    False   => FALSE,
+    false   => FALSE,
+    'FALSE' => FALSE,
+};
 
 #-----------------------------------------------------------------------------
 # Initialisation methods
