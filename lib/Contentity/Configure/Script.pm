@@ -101,7 +101,7 @@ sub init_section {
 
     local $self->{ sections } = [@$stack, $frame];
     local $self->{ sectpath } = [
-        grep { defined && $_ } 
+        grep { defined && $_ }
         map  { $_->{ urn }   }
         @{ $self->{ sections } },
     ];
@@ -191,7 +191,7 @@ sub dont_prompt {
 
     # a defined but falselike prompt value (e.g. 0, false, etc) indicates
     # we shouldn't prompt for this item
-    return defined   $item->{ prompt } 
+    return defined   $item->{ prompt }
         && falselike $item->{ prompt };
 }
 
