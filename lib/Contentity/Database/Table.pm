@@ -9,14 +9,38 @@ use Contentity::Class
     accessors => 'spec singular plural about',
     utils     => 'split_to_list self_params',
     autolook  => 'autolook_query',
-    constants => 'DOT ARRAY HASH',
+    constants => 'DOT ARRAY HASH MYSQL_WILDCARD',
     constant  => {
         RECORD  => 'Contentity::Database::Record',
         RESULTS => 'Contentity::Database::Results',
         SEARCH  => 'Contentity::Database::Search',
     };
 
+our $FRAGMENTS = {
+    select_rows  => 'SELECT <tcolumns> FROM <table>',
+    row_compare  => '<table>.name',      # subclasses may need to redefine this
+    group_by     => ' ',
+    row_order    => ' ',
+};
+
 our $QUERIES = {
+    all_rows => q{
+        <select_rows>
+        <group_by>
+        <row_order>
+    },
+    any_rows => q{
+        <select_rows>
+        WHERE       <row_compare> = ?
+        <group_by>
+        <row_order>
+    },
+    any_rows_like => q{
+        <select_rows>
+        WHERE       <row_compare> like ?
+        <group_by>
+        <row_order>
+    },
     found_rows      => 'SELECT FOUND_ROWS() AS count',
 };
 
@@ -187,6 +211,64 @@ sub query_keys_record {
 }
 
 #-----------------------------------------------------------------------------
+# Hook methods - provide default functionality for things like autocomplete.
+# Subclasses can redefine these to do something different if necessary.
+#-----------------------------------------------------------------------------
+
+sub autocomplete {
+    shift->all_rows(@_);
+}
+
+#-----------------------------------------------------------------------------
+# Generic row lookup used for things like autocomplete.  See POD docs below.
+#-----------------------------------------------------------------------------
+
+sub all_rows {
+    my ($self, $params) = self_params(@_);
+    $self->all_rows_query(
+        any_rows => any_rows_like => all_rows => $params
+    );
+}
+
+sub all_rows_query {
+    my ($self, $exact, $like, $all, $params) = @_;
+    my $value;
+
+    if ($value = $params->{ name }) {
+        return $self->rows($exact, $value);
+    }
+    elsif ($value = $params->{ starting }) {
+        return $self->rows($like, $self->wildcard_starting($value));
+    }
+    elsif ($value = $params->{ containing }) {
+        return $self->rows($like, $self->wildcard_containing($value));
+    }
+    elsif ($all) {
+        return $self->rows($all);
+    }
+}
+
+sub wildcard_starting {
+    my ($self, $value) = @_;
+    return $value . MYSQL_WILDCARD;
+}
+
+sub wildcard_containing {
+    my ($self, $value) = @_;
+    return MYSQL_WILDCARD . $value . MYSQL_WILDCARD;
+}
+
+sub wildcard_multi {
+    my ($self, $value) = @_;
+    for ($value) {
+        s/^\s+//;   # remove leading whitespace
+        s/\s+$//g;   # remove trailing whitespace
+        s/\s+/%/g;   # collapse multiple whitespace into '%'
+    }
+    return MYSQL_WILDCARD . $value . MYSQL_WILDCARD;
+}
+
+#-----------------------------------------------------------------------------
 # Search methods
 #-----------------------------------------------------------------------------
 
@@ -325,3 +407,45 @@ sub autolook_query {
 }
 
 1;
+
+
+=head1 NAME
+
+Contentity::Database::Table - base class for database table modules
+
+=head1 DESCRIPTION
+
+This is a base class for all Contentity database table modules.
+
+=head1 METHODS
+
+=head2 all_rows($params)
+
+Generic row lookup used for things like autocomplete.  The params can specify
+a C<name> for an exact match, or C<starting> or C<containing> for wildcard
+matches.
+
+=head2 all_rows_query($any_rows, $any_rows_like, $all_rows, $params)
+
+This method backs onto L<all_rows()> to do the work.  It expects three query
+names (or SQL fragments) that respectively: fetch any rows with an exact name
+match ($any_rows, e.g. SELECT ... WHERE name=?), fetch all rows with a wildcard
+match ($any_rows_like, e.g. SELECT ... WHERE name LIKE ?) and fetch all rows
+($all_rows, e.g. SELECT ...)
+
+The fourth argument should be a hash reference of parameters. If a C<name>
+parameter is specified then it uses the <$any_rows> query for an exact match.
+If C<starting> or C<containing> is specified then it uses the C<$any_rows_like>.
+The parameter provided is then modified by adding a C<%> at the end for
+matches starting with a string (e.g. C<Kings%>) and additionally at the
+beginning for matches containing a string (e.g. C<%Kings%>)
+
+=head1 AUTHOR
+
+Andy Wardley E<lt>abw@wardley.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (C) 2008-2016 Andy Wardley.  All Rights Reserved.
+
+=cut
