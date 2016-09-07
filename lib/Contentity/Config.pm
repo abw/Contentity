@@ -7,7 +7,7 @@ use Contentity::Class
     import    => 'class',
     base      => 'Badger::Config::Filesystem Contentity::Base',
     utils     => 'truelike falselike extend merge split_to_list blessed Filter',
-    accessors => 'parent',
+    mutators  => 'parent',
     constants => 'HASH ARRAY TRUE FALSE',
     constant    => {
         # caching options
