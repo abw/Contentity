@@ -110,7 +110,6 @@ sub post_init_workspace {
     return $self;
 }
 
-
 sub init_data_files {
     my ($self, $config) = shift;
     my $file = $self->WORKSPACE_FILE || $self->type;
@@ -125,7 +124,6 @@ sub init_data_files {
     $self->debug_data( files => $files ) if DEBUG;
     $self->config->import_data_files($files);
 }
-
 
 sub component_factory {
     my $self = shift;
@@ -152,6 +150,21 @@ sub init_factory {
         class($factory)->load;
         return $factory->new($fconfig);
     }
+}
+
+
+sub attach {
+    my ($self, $parent) = @_;
+
+    $self->debug("attaching to new parent") if DEBUG;
+
+    # This method is for when we want to attack a workspace to a parent
+    # AFTER initialisation, e.g. when bootstrapping via bin/configure.
+    $self->{ parent } = $parent;
+
+    # we have to update the config object to have a parent reference to
+    # the parent's config
+    $self->config->parent($parent->config);
 }
 
 
