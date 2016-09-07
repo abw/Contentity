@@ -23,17 +23,17 @@ items:
                     We need to know where you're installing this.  In most cases, this will
                     be the current working directory so you can just accept the default.
 
-                    If you're building on top of the basic contentity installation then
-                    you'll need to specify the path to that.
+                    If you're building on top of the basic contentity installation (or some
+                    other project) then you'll need to specify the path to that as the parent.
 
     items:
       - name:       root
         option:     root
         title:      Project root directory
         mandatory:  1
-      - name:       contentity
-        option:     contentity
-        title:      Contentity root directory
+      - name:       parent
+        option:     parent
+        title:      Parent root directory
 
   -
     name:           domains
@@ -92,9 +92,9 @@ items:
                     damaging live data.
     items:
       - type:       section
-        name:       example
-        title:      Example
-        about:      Enter the connection details for the example database.
+        name:       default
+        title:      Default Database
+        about:      Enter the connection details for the database.
         items:
           - name:       name
             option:     db_name
