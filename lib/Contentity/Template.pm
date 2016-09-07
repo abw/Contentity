@@ -79,11 +79,15 @@ sub new {
         $config
     ) if DEBUG;
 
+    my $klass = class($class);
+
     $config = extend(
         { },
-        class($class)->hash_vars('OPTIONS'),
+        $klass->hash_vars('OPTIONS'),
         $config
     );
+
+    $config->{ VARIABLES } = $klass->hash_vars('VARIABLES');
 
     $class->debug_data( tt_config => $config ) if DEBUG;
 
