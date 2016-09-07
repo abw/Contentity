@@ -442,6 +442,16 @@ sub init_workspace {
         quiet => 1,     # may not have a workspace.yaml or project.yaml
     );
     $self->{ workspace } = $space;
+
+    my $rent = $config->{ data }->{ parent };
+    if ($rent) {
+        my $base = $self->WORKSPACE->new(
+            root => $rent,
+        );
+        $self->debug("attaching to parent: $rent => $base") if DEBUG;
+        $space->attach($base);
+    }
+    return $space;
 }
 
 
@@ -510,22 +520,30 @@ sub help {
         $self->help_instructions
     );
 
-    $self->prompt_entry(
-        $self->help_options
-    );
+    if ($self->script) {
+        $self->help_script_options;
+    }
+    else {
+        $self->prompt_entry(
+            $self->help_options
+        );
+    }
 
     exit;
 }
 
+sub help_script_option {
+    my ($self, $option, $default) = @_;
+    my $script = $self->script || return $default;
+    return $script->$option || $default;
+}
+
 sub help_title {
-    return 'Contentity Command Line Application';
+    shift->help_script_option( title => "Contentity Command Line Application" );
 }
 
 sub help_about {
-    return <<EOF;
-This is the stub help for a Contentity command line application.
-It looks like the author neglected to update this text.
-EOF
+    shift->help_script_option( about => "" );
 }
 
 sub help_instructions {
