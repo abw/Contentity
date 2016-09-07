@@ -1,0 +1,160 @@
+workspace_dirs:
+    -
+        directory:     site
+        uri:           site
+        type:          site
+
+session:
+  cookie: contentity_session_id
+
+schemas:
+  apps:
+    cache:          1 day
+    merge:          true
+    tree_type:      none
+    singleton:      true
+
+  assets:
+    cache:          1 day
+    merge:          true
+    singleton:      true
+
+  cache:
+    cache:          1 hour
+    singleton:      true
+    copy:           true
+
+  colours:
+    merge:          true
+    cache:          5 minutes
+
+  content_types:
+    cache:          1 day
+    merge:          true
+    singleton:      true
+
+  context:
+    cache:          1 day
+
+  databases:
+    singleton:      true
+    inherit:        true
+    merge:          true
+    tree_type:      none
+
+  data_files:
+    cache:          1 day
+    copy:           true
+
+  dirs:
+    cache:          1 day
+    copy:           true
+
+  domains:
+    singleton:      true
+    inherit:        false
+    cache:          2 days
+
+  extensions:
+    cache:          1 day
+    merge:          true
+
+  # The component that loads and creates forms
+  forms:
+    #singleton:      true
+    tree_type:      none
+    cache:          1 day
+
+  # The component to represent a form
+  form:
+    singleton:      false
+
+  # The factory that creates form field objects
+  form_fields:
+    singleton:      true
+    cache:          1 day
+
+  image_formats:
+    cache:          1 day
+    merge:          true
+    singleton:      true
+
+  locations:
+    tree_type:      uri
+    merge:          true
+
+  mailers:
+    tree_type:      uri
+    merge:          true
+    cache:          1 day
+
+  menus:
+    tree_type:      join
+    merge:          true
+    cache:          1 day
+
+  pages:
+    tree_type:      uri
+    uri_paths:      absolute
+    merge:          true
+    cache:          1 hour
+
+  project:
+    cache:          1 day
+
+  resources:
+    inherit:        false
+
+  resource_types:
+    cache:          1 day
+    merge:          true
+    singleton:      true
+
+  rgb:
+    merge:          true
+    cache:          5 minutes
+
+  routes:
+    tree_type:      uri
+    merge:          true
+    singleton:      true
+    cache:          1 day
+
+  session:
+    cache:          1 day
+    copy:           true
+
+  site:
+    singleton:      true
+    cache:          1 day
+
+  sitemap:
+    singleton:      true
+    merge:          true
+    cache:          1 day
+
+  skin:
+    singleton:      true
+
+  styles:
+    merge:          true
+    tree_type:      nest
+    cache:          5 minutes
+
+  templates:
+    merge:          true
+    cache:          1 day
+    singleton:      true
+    copy:           true
+
+  urls:
+    merge:          true
+    cache:          5 minutes
+
+  workspace:
+    cache:          1 day
+
+  workspaces:
+    merge:          true
+    cache:          1 day
+    singleton:      true
