@@ -1,0 +1,31 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to restore the [% database.name %] database.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+[% process warning
+         + database/config
+%]
+
+#---------------------------------------------------------------------------
+# check we got a backup file specified as a command line argument
+#---------------------------------------------------------------------------
+
+if [[ "$#" -lt 1 ]]; then
+    echo "usage: $0 <filename>  (in database/backup)"
+    exit 1
+fi
+
+
+%% process database/password
+
+#---------------------------------------------------------------------------
+# restore database
+#---------------------------------------------------------------------------
+
+FILE=[% Project.root %]/database/backup/${1}
+
+echo "Restoring $DATABASE from $FILE"
+
+gunzip -c $FILE | $MYSQL -u $MYSQL_USER -h $HOSTNAME -P $PORT $MYSQL_PASS_OPT $DATABASE

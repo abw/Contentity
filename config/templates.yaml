@@ -1,0 +1,144 @@
+#=============================================================================
+# templates.yaml
+#
+# This configuration file contains definitions for various different template
+# engines that we use in the web site and related code.  It is loaded
+# and used by the Contentity::Component::Templates module which is then
+# responsible for using the various configuration options to construct one
+# or more template engines for rendering different template types.
+#
+# Andy Wardley <abw@wardley.org> March 2014, updated March and December 2015
+#=============================================================================
+
+#-----------------------------------------------------------------------------
+# common
+#
+# These template definitions are shared by most other templating engines
+#-----------------------------------------------------------------------------
+
+common:
+    # The module we use to render templates
+    engine:         Contentity::Template
+
+    # We resolve all template directories relative to a workspace.  We assume
+    # that the workspace will have a 'templates' directory or provide a
+    # mapping in config/dirs.yaml that maps it somewhere else.  So a 'library'
+    # template directory would be resolve via a call to the workspace as
+    # $workspace->dir('templates', 'library') which might return something like
+    # <ROOT>/templates/library
+    templates_dir:  templates
+
+    # Any additional directories which should be added to the template path
+    # for source templates to include library templates from.  These are
+    # relative to a workspace's templates directory
+    library_dir:    library
+    library_up:     true
+
+    # These configuration template(s) are processed before each page template
+    # to setup any configuration variable or perform other pre-processing
+    config:         site/config
+
+    # After a page template is processed, the content is injected into a wrapper
+    # template, typically to add HTML headers, footers, page layout and so on.
+    # The master/wrapper template takes care of that for most web pages.
+    wrapper:        site/wrapper
+
+
+#-----------------------------------------------------------------------------
+# Webapp templates are used by web applications that perform some back-end
+# processing and then render a page template to display the result to the
+# user.  e.g. display a form, accept submission of the form, perform a database
+# search, display the results.  Nearly all of the pages on the site are
+# handled by webapps of one kind or another.  A webapp is bound to an external
+# URL, e.g. /auth and may have many actions , e.g. /auth/login, /auth/register,
+# etc., each of which may render any one of a number of templates with
+# different internal URIs, e.g. auth/register/form.html,
+# auth/register/confirm.html, etc.  These templates should be located in
+# templates/webapp in the current workspace or one of its parent workspaces.
+#-----------------------------------------------------------------------------
+
+webapp:
+    # inherit all the common definitions above: engine, library_dir, etc
+    base:           common
+
+    # Directory containing webapp page templates
+    source_dir:     webapp
+
+    # webapp page templates can also be inherited from parent workspace(s)
+    source_up:      true
+
+    # auto-add extensions onto template names
+    extensions:     html
+
+
+#-----------------------------------------------------------------------------
+# The content engine is a special kind of webapp that doesn't do any back-end
+# processing.  Its only purpose is to dynamically render a page template on
+# request.  Mapping is more-or-less direct from URL to template URI.  For
+# example, accessing the /marketing/about_us.html URL will (assuming there
+# isn't a more specific webapp bound to /marketing) end up being routed to
+# the general content webapp which will render the /marketing/about_us.html
+# template in the templates/content directory of the current workspace or
+# one of its parents.
+#-----------------------------------------------------------------------------
+
+content:
+    base:           common
+    source_dir:     content
+    source_up:      true
+
+
+#-----------------------------------------------------------------------------
+# Static page templates for a site.  Typically this consists of CSS and JS files
+# which we generate dynamically during development and then pre-render before
+# pushing them into production.  They get saved as files in the 'static'
+# directory (output_dir), but note that this is relative to the workspace
+# root directory rather than the workspace templates directory (used for
+# source_dir and library_dir).
+#-----------------------------------------------------------------------------
+
+static:
+    base:           common
+    source_dir:     static
+    output_dir:     static
+
+#-----------------------------------------------------------------------------
+# The 'dynamic' engine has similar configuration as the 'static' one. It's
+# used during development so that a URL like /dynamic/css/example.css can
+# return a dynamically generated version of the /css/example.css static file
+# which would be used in production.  It's implemented as a special case of
+# the content webapp.
+#-----------------------------------------------------------------------------
+
+dynamic:
+    base:           static
+
+
+#-----------------------------------------------------------------------------
+# The 'scaffold' template engine is used to create various configuration files
+# and other bits and pieces when either a project, site, or other workspace
+# is configured, e.g. via bin/configure or bin/site/configure.  Scaffolding
+# templates have their own directory ('scaffold' instead of 'templates').
+# For the source templates we currently have an ugly hack in the
+# Contentity::Component::Templates module that injects the workspace type
+# (project, site, portfolio, etc) into the source_dir definition.  We also
+# set the output_dir to be the workspace directory ('.').
+#-----------------------------------------------------------------------------
+
+scaffold:
+    templates_dir:  scaffold
+    source_dir:     project
+    source_up:      true
+    library_dir:    library
+    library_up:     true
+    output_dir:     '.'
+
+
+#-----------------------------------------------------------------------------
+# Sass
+#-----------------------------------------------------------------------------
+
+sass:
+    source_dir:     sass/pages
+    library_dir:    sass/library
+    output_dir:     static/css

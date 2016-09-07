@@ -1,0 +1,34 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to backup the [% database.name %] database.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+[% process warning
+         + database/config
+         + database/password
+%]
+
+#---------------------------------------------------------------------------
+# backup database
+#---------------------------------------------------------------------------
+
+if [ -z "$1" ]
+then
+    NAME=""
+else
+    NAME="_$1"
+fi
+
+DATE=`date '+%Y%m%d-%H%M%S'`
+DB_DIR=[% Project.root %]/database/backup
+DB_FILE="${DATABASE}_${DATE}${NAME}.sql.gz"
+DB_PATH="${DB_DIR}/${DB_FILE}"
+DB_INFO="${DB_DIR}/${DATABASE}_latest.txt"
+
+echo "Backing up $DATABASE database to $DB_FILE"
+
+$MYSQL_DUMP -u $MYSQL_USER -h $HOSTNAME -P $PORT $MYSQL_PASS_OPT \
+  $DATABASE | gzip > $DB_PATH
+
+echo $DB_FILE > $DB_INFO

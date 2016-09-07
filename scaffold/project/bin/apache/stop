@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Trivial script to stop the apache web server.
+#
+# Written by Andy Wardley October 2008
+#
+[% PROCESS warning %]
+
+sudo [% apache.apachectl %] stop

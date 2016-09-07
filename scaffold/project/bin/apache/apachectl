@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Trivial script to call the apachectl script.
+#
+# Written by Andy Wardley October 2008, updated May 2013
+#
+[% PROCESS warning %]
+
+sudo [% apache.apachectl %] $@

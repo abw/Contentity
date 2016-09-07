@@ -1,0 +1,7 @@
+#-----------------------------------------------------------------------------
+# Aliases to static resource locations defined in the config/resources.yaml
+# files for the current and any parent workspaces.
+#-----------------------------------------------------------------------------
+%% for resource in Space.resource_list
+Alias        [% resource.url | format("%-26s") %] [% resource.location %]
+%% end

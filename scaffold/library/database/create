@@ -1,0 +1,45 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to create the [% database.name %] database.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+[% process warning
+         + database/config
+         + database/password
+%]
+
+#---------------------------------------------------------------------------
+# create database
+#---------------------------------------------------------------------------
+
+echo Creating MySQL database: $DATABASE
+
+$MYSQL_ADMIN  -u $MYSQL_USER -h$HOSTNAME -P$PORT $MYSQL_PASS_OPT create $DATABASE
+
+
+#---------------------------------------------------------------------------
+# grant user access
+#---------------------------------------------------------------------------
+
+echo "Granting access to user $USERNAME"
+
+$MYSQL -u $MYSQL_USER -h$HOSTNAME -P$PORT $MYSQL_PASS_OPT \
+  --default-character-set=utf8 mysql <<EOF || exit
+
+GRANT SELECT, INSERT, UPDATE, DELETE, INDEX,
+      ALTER, CREATE, DROP, REFERENCES
+      ON $DATABASE.* TO $USERNAME@$HOSTNAME IDENTIFIED BY '$PASSWORD';
+
+EOF
+
+%% if schema
+#---------------------------------------------------------------------------
+# define schema
+#---------------------------------------------------------------------------
+
+echo Defining schema for database: $DATABASE
+
+$MYSQL -u $USERNAME -h$HOSTNAME -P$PORT -p$PASSWORD \
+  $DATABASE < $SCHEMA || exit
+%% end

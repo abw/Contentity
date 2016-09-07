@@ -1,0 +1,15 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to run MySQL shell connected to the [% database.name %] database.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+[% process warning
+         + database/config
+%]
+
+#---------------------------------------------------------------------------
+# connect to the database
+#---------------------------------------------------------------------------
+
+$MYSQL --prompt="$DATABASE > " -u $USERNAME -h $HOSTNAME -P $PORT -p$PASSWORD $@ $DATABASE

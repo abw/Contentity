@@ -1,0 +1,29 @@
+#---------------------------------------------------------------------------
+# Database configuration
+#---------------------------------------------------------------------------
+%% default database = databases.default
+
+# location of mysql and mysqladmin programs
+MYSQL=[% mysql.mysql %]
+MYSQL_ADMIN=[% mysql.mysqladmin %]
+MYSQL_DUMP=[% mysql.mysqldump %]
+
+# username and password for MySQL root user required to create database.
+MYSQL_USER="[% mysql.username %]"
+MYSQL_PASS="[% mysql.password %]"
+
+# application-specific database name and login details
+DATABASE="[% database.name %][% db_suffix %]"
+USERNAME="[% database.username %]"
+PASSWORD="[% database.password %]"
+HOSTNAME="[% database.hostname %]"
+PORT="[% database.port %]"
+BINDIR="[% Project.dir(database.bin_dir) %]"
+
+# location of schema definition and MySQL script to populate database
+SCHEMA="[% Project.root  %]/database/schema"
+POPULATE="[% Project.root %]/database/populate"
+
+RED="\033[1;31m"
+YELLOW="\033[0;33m"
+CLEAR="\033[0m"

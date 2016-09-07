@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# Trivial script to reload the apache web server.
+#
+# Written by Andy Wardley October 2008.
+#
+[% PROCESS warning %]
+
+sudo [% apache.apachectl %] graceful
+

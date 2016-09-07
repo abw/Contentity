@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------
+# Definitions and functions for restoring backups
+#---------------------------------------------------------------------------
+set -e
+
+TOP_DIR=[% Project.root %]
+DB_DIR=${TOP_DIR}/database/backup
+
+# The backup process creates a [% database.id %]_latest.txt file
+# containing the file name of the latest backup.
+LATEST=[% database.id %]_latest.txt
+
+function latest {
+    cat ${DB_DIR}/${LATEST}
+}

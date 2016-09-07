@@ -1,0 +1,10 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to destroy the [% database.name %] database and then build it.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+%% process warning
+
+[% Project.dir(database.bin_dir) %]/destroy $@ && \
+[% Project.dir(database.bin_dir) %]/build

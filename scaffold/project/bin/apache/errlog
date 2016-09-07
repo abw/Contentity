@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Trivial script to tail the apache error log.
+#
+# Written by Andy Wardley October 2008, updated May 2013
+#
+[% PROCESS warning -%]
+
+tail -f [% Project.dirs.log %]/error_log

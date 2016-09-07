@@ -1,0 +1,19 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to populate the [% database.name %] database with initial data.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+[% process warning
+         + database/config
+%]
+
+#---------------------------------------------------------------------------
+# populate database
+#---------------------------------------------------------------------------
+
+echo Populating $DATABASE
+
+$MYSQL -u $USERNAME -h $HOSTNAME -P $PORT -p$PASSWORD \
+    $DATABASE < $POPULATE
+

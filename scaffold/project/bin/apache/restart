@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# Trivial script to restart the apache web server.  Note that
+# we do an explicit 'apachectl stop', wait a bit, and then 
+# 'apachectl start' rather than 'apachectl restart'.  This ensures
+# that any Perl modules get reload.  
+#
+# Written by Andy Wardley October 2008, updated May 2013.
+#
+[% PROCESS warning %]
+
+sudo [% apache.apachectl %] stop
+sleep 2
+sudo [% apache.apachectl %] start

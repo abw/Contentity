@@ -1,0 +1,12 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to restore the latest backup of the [% database.name %] database.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+[% process warning
+         + database/latest
+%]
+
+LATEST_BACKUP=$(latest $LATEST)
+[% Project.dir(database.bin_dir) %]/restore $LATEST_BACKUP

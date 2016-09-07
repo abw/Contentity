@@ -1,0 +1,20 @@
+[%  locations = Site.try.locations;
+    return unless locations;
+    has_content = 0;
+    for pair in locations;
+      app     = pair.value;
+      app.url = pair.key;
+      if app.url == '/' and app.app == 'content';
+        next if  no_content;
+        has_content = app;
+      else;
+        include  apache/app_location;
+      end;
+      "\n";
+    end;
+
+    # do this last
+    if has_content;
+        include apache/content_location app=has_content;
+    end;
+-%]

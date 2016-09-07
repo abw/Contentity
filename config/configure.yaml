@@ -1,0 +1,263 @@
+#-----------------------------------------------------------------------------
+# This is a sample configure.yaml which can be used to drive the bin/configure
+# script.  Copy into your own project as config/configure.yaml along with the
+# bin/configure script.  Then run bin/configure to configure the project.
+#-----------------------------------------------------------------------------
+
+items:
+  - type:           section
+    title:          Web Site Configuration
+    instructions:   1
+    about:          |
+                    This script is used to perform the initial configuration of the web site.
+                    It prompts you to confirm a number of configuration values and then processes the
+                    templates in the 'scaffold/project' directory to generate various project files.
+                    Note that this overwrites any existing files so you may want to do a dry run
+                    (-n option) first to check what it's going to do.
+
+                    Run with the help option (-h or --help) to see all command line options.
+
+  - type:           section
+    title:          Project Configuration
+    about:          |
+                    We need to know where you're installing this.  In most cases, this will
+                    be the current working directory so you can just accept the default.
+
+                    If you're building on top of the basic contentity installation then
+                    you'll need to specify the path to that.
+
+    items:
+      - name:       root
+        option:     root
+        title:      Project root directory
+        mandatory:  1
+      - name:       contentity
+        option:     contentity
+        title:      Contentity root directory
+
+  -
+    name:           domains
+    title:          Domain Names
+    list:           domain
+    default:
+      - yoursite.yourdomain.com
+    about:          |
+                    Enter one or more domain names for this server.
+
+                    The DNS should be configured to allow wildcard matches for the domain.
+                    For example, *.local.wardley.org resolves to 127.0.0.0.
+
+  - type:           section
+    name:           apache
+    title:          Apache Web Server
+    about:          |
+                    We need some details about the Apache web server.
+
+    items:
+      - name:       ip_address
+        option:     ip_address
+        title:      IP address
+        default:    127.0.0.1
+      - name:       port
+        option:     port
+        title:      Apache port
+        default:    80
+      - name:       apachectl
+        option:     apachectl
+        title:      Apache control script
+        default:    program:apachectl
+      - name:       version
+        option:     apache_version
+        title:      Apache Version
+        default:    2.2
+        comment:    |
+                    Apache version 2.4 upwards requires some additional directives in
+                    the configuration files.  Enter the major (first) and minor (second)
+                    version number.  You can omit the revision (third) number.
+                    e.g. 2.2 or 2.4
+
+  - type:           section
+    name:           databases
+    title:          Databases
+    about:          |
+                    Enter the connection details for the database.
+
+                    If you have existing databases then enter the details here. Otherwise
+                    enter the details of the database you would like to have. This script
+                    will then create a bin/database/build script which you can run to create
+                    the database and populate it with basic information.
+
+                    In addition to the main database we can also generate a sacrifical test
+                    database for running automated test scripts against without fear of
+                    damaging live data.
+    items:
+      - type:       section
+        name:       example
+        title:      Example
+        about:      Enter the connection details for the example database.
+        items:
+          - name:       name
+            option:     db_name
+            title:      Database name
+            default:    example
+            mandatory:  1
+          - name:       username
+            option:     db_user
+            title:      Database username
+            default:    example_user
+            mandatory:  1
+          - name:       password
+            option:     db_pass
+            title:      Database password
+            default:    example_password
+            mandatory:  1
+          - name:       hostname
+            option:     db_pass
+            title:      Database hostname
+            default:    localhost
+            mandatory:  1
+          - name:       port
+            option:     db_port
+            title:      Database port
+            default:    3306
+            mandatory:  1
+          - name:       bin_dir
+            option:     db_bin_dir
+            title:      Script directory
+            default:    bin/database
+            mandatory:  1
+      - type:       section
+        name:       test
+        title:      Test Database
+        about:      Enter the connection details for the test database.
+        items:
+          - name:       name
+            option:     test_db_name
+            title:      Database name
+            default:    example_test
+            mandatory:  1
+          - name:       username
+            option:     test_db_user
+            title:      Database username
+            default:    example_test_user
+            mandatory:  1
+          - name:       password
+            option:     test_db_pass
+            title:      Database password
+            default:    example_test_password
+            mandatory:  1
+          - name:       hostname
+            option:     test_db_pass
+            title:      Database hostname
+            default:    localhost
+            mandatory:  1
+          - name:       port
+            option:     test_db_port
+            title:      Database port
+            default:    3306
+            mandatory:  1
+          - name:       bin_dir
+            option:     test_db_bin_dir
+            title:      Script directory
+            default:    bin/testdb
+            mandatory:  1
+
+  - type:           section
+    name:           mysql
+    title:          MySQL Administration
+    items:
+      - name:       mysql
+        option:     mysql
+        title:      Path to mysql program
+        default:    program:mysql
+      - name:       mysqladmin
+        option:     mysqladmin
+        title:      Path to mysqladmin program
+        default:    program:mysqladmin
+      - name:       mysqldump
+        option:     mysqldump
+        title:      Path to mysqldump program
+        default:    program:mysqldump
+      - name:       username
+        option:     mysql_username
+        title:      MySQL root user
+        default:    root
+      - name:       password
+        option:     mysql_password
+        title:      MySQL root password
+        comment:    |
+                    You should only specify the mysql root password in development
+                    environments that are safely secured behind firewalls.  It
+                    will end up being embedded in scripts and other files that
+                    may compromise the safety of the database.  It's better to
+                    leave it blank.  In which case any scripts that require it
+                    will prompt the user to enter it as necessary.
+
+  - type:           section
+    title:          External Programs
+    name:           program
+    about:          |
+                    We need to ask you where some external programs are located.
+                    Some of these are only required if you're using the relevant
+                    extensions (e.g. sass, fontforge)
+    items:
+      - name:       perl
+        option:     perl
+        title:      Path to perl
+        default:    program:perl
+        mandatory:  1
+      - name:       rotatelogs
+        option:     rotatelogs
+        title:      RotateLogs Apache extension for rotating log files
+        default:    program:rotatelogs
+        mandatory:  0
+      - name:       sass
+        option:     sass
+        title:      The 'sass' command
+        default:    program:sass
+        mandatory:  0
+      - name:       fontforge
+        option:     sass
+        title:      The 'fontforge' command
+        default:    program:fontforge
+        mandatory:  0
+      - name:       ttree
+        option:     ttree
+        title:      The 'ttree' command
+        default:    program:ttree
+        mandatory:  0
+
+  - type:           section
+    title:          Other Options
+    prompt:         0
+    items:
+      - name:       yes
+        option:     yes
+        short:      y
+        title:      Accept all defaults
+        is_flag:    1
+        is_config:  1
+      - name:       nothing
+        option:     nothing
+        short:      n
+        title:      Do nothing (dry run)
+        is_flag:    1
+        is_config:  1
+      - name:       verbose
+        option:     verbose
+        short:      v
+        title:      Verbose mode
+        is_flag:    1
+        is_config:  1
+      - name:       quiet
+        option:     quiet
+        short:      q
+        title:      Quiet mode
+        is_flag:    1
+        is_config:  1
+      - name:       help
+        option:     help
+        short:      h
+        title:      This help
+        is_flag:    1
+        is_config:  1

@@ -1,0 +1,11 @@
+<Directory [% resource.location %]>
+#   SetHandler      default-handler
+    Order           allow,deny
+    Allow           from all
+    Options         Indexes FollowSymLinks
+%%  if apache.version >= 2.4
+    Require all granted
+%%  end
+</Directory>
+
+%%# comment to add a blank line

@@ -1,0 +1,6 @@
+#-----------------------------------------------------------------------------
+# Static resource locations defined in config/resources.yaml
+#-----------------------------------------------------------------------------
+%%  for resource in Space.resource_list
+%%    include apache/resource_location;
+%%  end

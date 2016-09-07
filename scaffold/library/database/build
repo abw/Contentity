@@ -1,0 +1,10 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to build the [% database.name %] database and populate it with data.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+%% process warning
+
+[% Project.dir(database.bin_dir) %]/create && \
+[% Project.dir(database.bin_dir) %]/populate

@@ -1,0 +1,5 @@
+%% domains = Project.domains
+ServerName      [% domains.name %]
+%% for alias in domains.aliases
+ServerAlias     [% alias %]
+%% end

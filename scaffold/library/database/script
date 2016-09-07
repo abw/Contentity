@@ -1,0 +1,20 @@
+#!/bin/bash
+#------------------------------------------------------------------------
+# Script to run a SQL script against the [% database.name %] database.
+#
+# Written by Andy Wardley July 2008 - March 2015
+#------------------------------------------------------------------------
+[% process warning
+         + database/config
+%]
+
+#---------------------------------------------------------------------------
+# connect to the database and submit the query
+#---------------------------------------------------------------------------
+
+if [[ "$#" -lt 1 ]]; then
+    echo "usage: $0 SQL QUERY"
+    exit 1
+fi
+
+$MYSQL -u $USERNAME -h $HOSTNAME -P $PORT -p$PASSWORD $DATABASE < $1

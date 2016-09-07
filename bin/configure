@@ -1,0 +1,53 @@
+#!/usr/bin/env perl
+#----------------------------------------------------------------------------
+# SAMPLE CONFIGURATION SCRIPT.  YOU SHOULD COPY IT INTO YOUR OWN PROJECT
+#----------------------------------------------------------------------------
+# Perl script to generate the configuration files and build scripts for the
+# web site.
+#
+# It uses Contentity::Configure along with a script defined in the
+# config/configure.yaml file to prompts the user to enter some
+# configuration values.  It then processes all the template files in
+# the scaffold/project directory.  Any template components defined in
+# the scaffold/library are also accessible from within the page templates
+# (e.g. to INCLUDE the 'warning' template component).
+#
+# The output files are written to the corresponding location
+# under the project root, e.g. scaffold/project/bin/database/create is
+# processed and written to bin/database/create
+#
+# Written by Andy Wardley <abw@wardley.org>, January 2012 then updated
+# on numerous occasions over the years for different projects.
+#----------------------------------------------------------------------------
+
+use Badger
+    lib   => '../perl/lib',
+    Utils => 'Bin';
+
+use Contentity::Configure::App;
+use Contentity::Workspace::Web;
+
+# grok the root directory and some other directories relative to it
+my $root = Bin->parent;
+
+my $wspace = Contentity::Workspace::Web->new(
+    root  => $root,
+    type  => 'project',
+    quiet => 1,     # may not have a workspace.yaml or project.yaml
+);
+
+my $data = {
+    root   => $root->absolute,
+    script => 'bin/configure',
+};
+
+Contentity::Configure::App->new(
+    directory   => $root,
+    script      => 'config/configure.yaml',
+    data_file   => 'config/server.yaml',
+    data        => $data,
+    args        => \@ARGV,
+    progress    => 1,
+    scaffold    => 1,
+    workspace   => $wspace,
+)->run;
