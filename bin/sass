@@ -1,0 +1,27 @@
+#!/usr/local/bin/cogperl
+#
+# Perl script to build CSS from SASS sources.
+#
+# Written by Andy Wardley http://wardley.org/
+#
+# March 2015, updated September 2016
+#
+
+use Badger
+    lib   => '../perl/lib',
+    Utils => 'Bin';
+
+use Contentity::Workspace::Web;
+use Contentity::Configure::Sass;
+my $root = Bin->parent;
+$|=1;
+
+Contentity::Configure::Sass->new(
+    root        => $root,
+    workspace   => Contentity::Workspace::Web->new( root => $root, quiet => 1 ),
+    script      => 'config/sass.yaml',
+    args        => \@ARGV,
+    data        => {
+        script => 'bin/sass',
+    },
+)->run;

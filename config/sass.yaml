@@ -1,0 +1,74 @@
+items:
+  - type:           section
+    title:          SASS Builder
+    instructions:   1
+    about:          |
+                    This script is used to build CSS files from SASS sources.
+
+                    You can specify workspace URIs as command line arguments or select them
+                    from the list presented.
+
+                    Run with the help option (-h or --help) to see all command line options.
+  - type:           section
+    title:          General Options
+    prompt:         0
+    items:
+      - name:       force
+        option:     force
+        short:      f
+        title:      Force SASS to rebuild
+        is_flag:    1
+        is_config:  1
+      - name:       min
+        option:     min
+        short:      m
+        title:      Minify output.
+        is_flag:    1
+        is_config:  1
+      - name:       watch
+        option:     watch
+        short:      w
+        title:      Watch for changes.
+        is_flag:    1
+        is_config:  1
+      - name:       all
+        option:     all
+        short:      a
+        title:      Build all sites
+        is_flag:    1
+        is_config:  1
+      - name:       type
+        option:     type
+        short:      t
+        title:      Workspace type
+        mandatory:  0
+      - name:       yes
+        option:     yes
+        short:      y
+        title:      Accept all defaults
+        is_flag:    1
+        is_config:  1
+      - name:       nothing
+        option:     nothing
+        short:      n
+        title:      Do nothing (dry run)
+        is_flag:    1
+        is_config:  1
+      - name:       verbose
+        option:     verbose
+        short:      v
+        title:      Verbose mode
+        is_flag:    1
+        is_config:  1
+      - name:       quiet
+        option:     quiet
+        short:      q
+        title:      Quiet mode
+        is_flag:    1
+        is_config:  1
+      - name:       help
+        option:     help
+        short:      h
+        title:      This help
+        is_flag:    1
+        is_config:  1
