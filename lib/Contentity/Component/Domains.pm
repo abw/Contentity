@@ -13,7 +13,7 @@ sub init_component {
     my ($self, $config) = @_;
 
     $self->debug_data(
-        "Domains component init_component(): ", 
+        "Domains component init_component(): ",
         $config
     ) if DEBUG;
 
@@ -45,7 +45,7 @@ sub init_domains {
     my $space   = $self->workspace;
     my $sdoms   = $space->server_domains;
     my $names   = $space->names;
-    
+
     return $self->error_msg( invalid => domains => "$domains (not a list)" )
         unless ref $domains eq ARRAY;
 
@@ -62,7 +62,10 @@ sub init_domains {
         $domain =~ s/^\*\.//;
 
         foreach my $name (@$names) {
-            push(@$domains, $name.DOT.$domain);
+            my $dom = $domain;
+            $dom = $name.DOT.$domain
+                unless $domain =~ /^$name\./;
+            push(@$domains, $dom);
         }
     }
 
@@ -127,7 +130,7 @@ sub domain {
     my $domains = $self->domains;
 
     $self->debug(
-        "looking for domain [$name] in ", 
+        "looking for domain [$name] in ",
         $self->dump_data($domains)
     ) if DEBUG;
 
@@ -141,7 +144,7 @@ sub site_domains {
     my $sites = $self->sites;
 
     $self->debug(
-        "looking for site [$name] in ", 
+        "looking for site [$name] in ",
         $self->dump_data($sites)
     ) if DEBUG;
 
