@@ -112,7 +112,7 @@ items:
             default:    example_password
             mandatory:  1
           - name:       hostname
-            option:     db_pass
+            option:     db_host
             title:      Database hostname
             default:    localhost
             mandatory:  1
@@ -151,7 +151,7 @@ items:
             default:    example_test_password
             mandatory:  1
           - name:       hostname
-            option:     test_db_pass
+            option:     test_db_host
             title:      Database hostname
             default:    localhost
             mandatory:  1
