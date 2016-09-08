@@ -24,8 +24,7 @@ sub run {
     $self->debug("site:$site") if DEBUG;
     $self->debug("project:$project") if DEBUG;
 
-    #$site->sass_builder($config)->build;
-    $site->component('builder.sass')->build;
+    $site->component('builder.sass', $config)->build;
 }
 
 
