@@ -1,0 +1,23 @@
+[% IF program.fontforge -%]
+#![% program.fontforge %]
+#
+# Fontforge script to invert a font.
+#
+# Written by Andy Wardley 2012, updated April 2014
+#
+[% INCLUDE warning -%]
+
+Open($1)
+SelectAll()
+Generate($1:r + ".eot")
+Generate($1:r + ".ttf")
+Generate($1:r + ".woff")
+Generate($1:r + ".svgz")
+
+[% ELSE -%]
+
+echo "No path defined to fontforge program"
+echo "Install FontForge then run bin/configure to set the fontforge path"
+exit;
+
+[% END %]

@@ -1,0 +1,15 @@
+---
+# WARNING: This file is generated automatically by the bin/icons/build script
+# Do not make any changes to this file that you want to be preserved!
+#
+# Note we strip any fa-prefix and snake_down the names, e.g. from foo-bar to
+# foo_bar.  This is so we can reference icons in CSS files as icons.foo_bar.
+# But when we generate CSS we snake_up the names again, e.g. to icon-foo-bar
+#
+
+[% FOREACH glyph IN glyphs;
+     NEXT UNLESS glyph.name and glyph.hex -%]
+[% glyph.name %]:
+  content:   [% glyph.hex %]
+  source:    [% glyph.source or 'unknown' %]
+[% END %]

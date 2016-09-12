@@ -1,0 +1,10 @@
+This directory contains files used to generate the font used for icons.
+Run the bin/icons/build script from the top-level project directory.
+
+This extracts the glyphs from the Font Awesome 4 source font into the 
+glyphs directory, adds in any additional icons in the custom directory,
+creates a new SVG font combining them all in the work directory, then 
+converts the SVG font to .ttf, .woff, etc.  The font files are then 
+copied into the ../resources/fonts directory.
+
+
