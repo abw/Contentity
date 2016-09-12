@@ -1,0 +1,32 @@
+#!/usr/bin/env perl
+#
+# Perl script to rebuilt the icons font.
+#
+# It extracts the fontawesome 4 icons, merges in the custom icoons,
+# generates new font files and writes the config/icons.yaml file.
+#
+# Written by Andy Wardley http://wardley.org/
+#
+# March 2013, updated April 2014, April 2015.  Refactored to be a
+# component in September 2016
+#
+use Badger
+    lib     => '../../perl/lib',
+    Utils   => 'Bin',
+    Debug   => ':all',
+    Rainbow => [ANSI => 'red green yellow cyan'];
+
+use Contentity::Project;
+
+my $project = Contentity::Project->new(
+    root => Bin->parent(1)
+);
+
+my $builder = $project->component(
+    font_builder => {
+        font_name     => $project->uri,
+        custom_source => 'abw',
+    }
+);
+
+$builder->build;
