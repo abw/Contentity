@@ -87,7 +87,9 @@ sub new {
         $config
     );
 
-    $config->{ VARIABLES } = $klass->hash_vars('VARIABLES');
+    $config->{ VARIABLES } = $klass->hash_vars(
+        VARIABLES => $config->{ VARIABLES }
+    );
 
     $class->debug_data( tt_config => $config ) if DEBUG;
 
