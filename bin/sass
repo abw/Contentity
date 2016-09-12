@@ -11,14 +11,14 @@ use Badger
     lib   => '../perl/lib',
     Utils => 'Bin';
 
-use Contentity::Workspace::Web;
+use Contentity::Project;
 use Contentity::Configure::Sass;
 my $root = Bin->parent;
 $|=1;
 
 Contentity::Configure::Sass->new(
     root        => $root,
-    workspace   => Contentity::Workspace::Web->new( root => $root, quiet => 1 ),
+    workspace   => Contentity::Project->new( root => $root ),
     script      => 'config/sass.yaml',
     args        => \@ARGV,
     data        => {

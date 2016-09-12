@@ -142,3 +142,9 @@ sass:
     source_dir:     sass/pages
     library_dir:    sass/library
     output_dir:     static/css
+
+sassprep:
+    base:           common
+    source_dir:     sassprep
+    output_dir:     templates/sass/library
+    wrapper:        wrapper/sass

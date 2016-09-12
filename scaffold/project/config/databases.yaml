@@ -1,0 +1,16 @@
+[% PROCESS warning | trim %]
+
+[% FOREACH dbname IN databases.keys.sort;
+     database = databases.$dbname
+-%]
+# [% database.about %]
+[% dbname %]:
+    database:       [% database.name     %]
+    username:       [% database.username %]
+    password:       [% database.password %]
+    host:           [% database.hostname %]
+    port:           [% database.port     %]
+    ident:          [% database.schema   %]
+    engine:         [% database.engine or 'mysql'  %]
+
+[% END %]

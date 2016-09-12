@@ -13,9 +13,18 @@ sub run {
 
     $self->debug("RUN") if DEBUG;
 
-    #$self->prompt_expr([
-    #    [ selected => "Pre-building SASS:\n" ],
-    #]);
+    if ($config->{ sass }) {
+        $self->prompt_expr([
+            [ selected => "Skipping pre-processing (-s/--sass option specified)\n" ],
+        ]);
+    }
+    else {
+        # do the pre-sass build
+        $self->prompt_expr([
+            [ selected => "Pre-building SASS (use -s/--sass option to skip this step):\n" ],
+        ]);
+        $site->builder( renderer => 'sassprep' )->build;
+    }
 
     $self->prompt_expr([
         [ selected => "Building SASS:\n" ],
