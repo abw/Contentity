@@ -1,0 +1,327 @@
+#-----------------------------------------------------------------------------
+# content_types.yaml
+#
+# This file contains mappings for content types.  These are used in both the
+# request and response phases.
+#
+# Here's an annotated example:
+#
+#   json:
+#     # The preferred content-type.  This is what we send out
+#     content_type: application/json
+#
+#     # The default character set
+#     charset:      utf-8
+#
+#     # Other content types that a browser might say they accept
+#     accept:
+#                 - text/json
+#                 - text/x-json
+#
+# In the request it is used for content negotiation.  The browser can send an
+# Accept: header to indicate that it's expecting a particular content type,
+# e.g.
+#
+#    Accept: text/json,application/json
+#
+# A web application can call the accept($type) method to test if the general
+# class of content type is acceptable and act according.  e.g.
+#
+#   if ($self->accept('json')) {
+#       return $self->send_json($data);
+#   }
+#
+# The method will return true if the Accept: header contains any of the main
+# json content type (application/json) or one of the 'accept' types
+# (text/json or text/x-json).
+#
+# In the response phase, a web application can set the response type using
+# the general (short) name (e.g. json) and the content type listed will
+# be used, e.g. application/json when sending json.
+#
+#   $self->send_response(
+#       type    => 'json',
+#       content => $json,
+#   );
+#
+# Resources also use this data to determine the content type of a file from
+# its extension.  For example, a brochure is uploaded with a .pdf extension.
+# From the entry below for pdf, we determine it has a media_type of 'document'.
+# The entry in resource_types.yaml for 'brochure' include 'document' in the
+# list of valid media_types, so the upload can proceed.
+#-----------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------
+# This is a wildcard entry for "accept: *" headers
+#-----------------------------------------------------------------------------
+
+any:
+    accept:
+                - '*'
+                - '*/*'
+                - '*.*'
+
+
+#-----------------------------------------------------------------------------
+# The main content types that we generate from templates or server statically
+#-----------------------------------------------------------------------------
+
+html:
+    content_type: text/html
+    charset:      utf-8
+    icon:         globe
+  # wrapper:      html
+
+css:
+    content_type: text/css
+    charset:      utf-8
+  # wrapper:      css
+
+js:
+    content_type: text/javascript
+    charset:      utf-8
+  # wrapper:      js
+
+json:
+    content_type: application/json
+    charset:      utf-8
+    accept:
+                - text/json
+                - text/x-json
+
+xml:
+    content_type: application/xml
+    charset:      utf-8
+  # wrapper:      xml
+    accept:
+                - text/xml
+
+
+#-----------------------------------------------------------------------------
+# Image formats
+#-----------------------------------------------------------------------------
+
+# resource media_type values
+# - document
+# - flash
+# - image
+# - vector
+
+gif:
+    content_type: image/gif
+    media_type:   image
+    icon:         picture
+
+ico:
+    content_type: image/vnd.microsoft.icon
+    icon:         picture
+
+jpeg:
+    urn:          jpg
+    content_type: image/jpeg
+    media_type:   image
+    icon:         picture
+
+jpg:
+    content_type: image/jpeg
+    media_type:   image
+    icon:         picture
+
+png:
+    content_type: image/png
+    media_type:   image
+    icon:         picture
+
+tif:
+    urn:          tiff
+    content_type: image/tiff
+    icon:         picture
+
+tiff:
+    content_type: image/tiff
+    icon:         picture
+
+
+#-----------------------------------------------------------------------------
+# Document format
+#-----------------------------------------------------------------------------
+
+pdf:
+    content_type: application/pdf
+    media_type:   document
+    icon:         pdf
+
+
+
+#-----------------------------------------------------------------------------
+# Font and vector graphic file types
+#-----------------------------------------------------------------------------
+
+eot:
+    content_type: application/vnd.ms-fontobject
+    icon:         font
+
+svg:
+    content_type: image/svg+xml
+    media_type:   vector
+    icon:         pencil
+
+svgz:
+    content_type: image/svg+xml
+    icon:         pencil
+
+ttf:
+    content_type: application/octet-stream
+    icon:         font
+
+
+woff:
+    content_type: application/octet-stream
+    icon:         font
+
+
+#-----------------------------------------------------------------------------
+# Other text-based file types.
+#-----------------------------------------------------------------------------
+
+log:
+    content_type: text/plain
+    charset:      utf-8
+
+text:
+    content_type: text/plain
+    charset:      utf-8
+
+txt:
+    content_type: text/plain
+    charset:      utf-8
+
+yaml:
+    content_type: text/yaml
+    charset:      utf-8
+
+yml:
+    content_type: text/yaml
+    charset:      utf-8
+
+
+#-----------------------------------------------------------------------------
+# Various other binary file types
+#-----------------------------------------------------------------------------
+
+ai:
+    content_type: application/postscript
+
+avi:
+    content_type: video/x-msvideo
+
+crt:
+    content_type: application/x-x509-ca-cert
+
+csv:
+    content_type: text/csv
+
+der:
+    content_type: application/x-x509-ca-cert
+
+doc:
+    content_type: application/msword
+
+dot:
+    content_type: application/msword
+
+dtd:
+    content_type: application/xml-dtd
+
+gz:
+    content_type: application/x-gzip
+
+m4v:
+    content_type: video/mp4
+
+midi:
+    content_type: audio/midi
+
+mov:
+    content_type: video/quicktime
+
+mp3:
+    content_type: audio/mpeg
+
+mp4:
+    content_type: video/mp4
+
+mp4v:
+    content_type: video/mp4
+
+mpeg:
+    content_type: video/mpeg
+
+mpg:
+    content_type: video/mpeg
+
+odp:
+    content_type: application/vnd.oasis.opendocument.presentation
+
+ods:
+    content_type: application/vnd.oasis.opendocument.spreadsheet
+
+odt:
+    content_type: application/vnd.oasis.opendocument.text
+
+ogg:
+    content_type: application/ogg
+
+ogv:
+    content_type: video/ogg
+
+pgp:
+    content_type: application/pgp-encrypted
+
+pps:
+    content_type: application/vnd.ms-powerpoint
+
+ppt:
+    content_type: application/vnd.ms-powerpoint
+
+ps:
+    content_type: application/postscript
+
+psd:
+    content_type: image/vnd.adobe.photoshop
+
+qt:
+    content_type: video/quicktime
+
+rdf:
+    content_type: application/rdf+xml
+
+rss:
+    content_type: application/rss+xml
+
+swf:
+    content_type: application/x-shockwave-flash
+
+tar:
+    content_type: application/x-tar
+
+vcf:
+    content_type: text/x-vcard
+
+vcs:
+    content_type: text/x-vcalendar
+
+wav:
+    content_type: audio/x-wav
+
+wmv:
+    content_type: video/x-ms-wmv
+
+xhtml:
+    content_type: application/xhtml+xml
+
+xls:
+    content_type: application/vnd.ms-excel
+
+zip:
+    content_type: application/zip

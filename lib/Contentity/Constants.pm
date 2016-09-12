@@ -12,7 +12,7 @@ BEGIN {
         SCAFFOLD SITEMAP SKIN STYLES TEMPLATES URLS
     );
     @status = qw(
-        ACTIVE INACTIVE SUCCESS ERROR
+        ACTIVE INACTIVE PENDING LOCKED EXPIRED SUCCESS ERROR
     );
     @mutate = qw(
         STATIC DYNAMIC
@@ -61,6 +61,10 @@ use Badger::Class
         MEDIUM_DATE         => '<ord> %B %Y',
         LONG_DATE           => '%A <ord> %B %Y',
 
+        # Regular expressions to match various strings
+        MATCH_EMAIL        => qr/^[\w\-\+\=\.\']{1,64}@[a-zA-Z0-9\-\.]{5,128}$/,
+        EMAIL_ADDRESS_LINE_FORMAT=> '%s <%s>',
+
         # Colour values
         RED_SLOT            => 0,
         GREEN_SLOT          => 1,
@@ -79,6 +83,11 @@ use Badger::Class
         NOT_FOUND           => 404,
         SERVER_ERROR        => 500,
 
+        # user types
+        LOGIN_USER_TYPE     => 'login',
+        SYSTEM_USER_TYPE    => 'system',
+
+
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
         @components,
@@ -88,7 +97,7 @@ use Badger::Class
         @content_types,
     },
     exports  => {
-        any  => 'COMPONENT MIDDLEWARE MYSQL_WILDCARD',
+        any  => 'COMPONENT MIDDLEWARE MYSQL_WILDCARD MATCH_EMAIL EMAIL_ADDRESS_LINE_FORMAT',
         tags => {
             status          => \@status,
             components      => \@components,
@@ -104,6 +113,7 @@ use Badger::Class
             http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
             http_status     => 'OK FORBIDDEN NOT_FOUND SERVER_ERROR',
             http_methods    => 'GET POST DELETE',
+            user_types      => 'LOGIN_USER_TYPE SYSTEM_USER_TYPE',
         },
     };
 

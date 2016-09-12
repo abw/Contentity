@@ -1,0 +1,5 @@
+# This file provides a simple mapping to the modules that we use for handling
+# Apache requests.  Web apps are handled by 'app'.  We also have logging
+# handlers handled by the 'log' module
+app: Contentity::Web::Handler::Apache2::App
+log: Contentity::Web::Handler::Apache2::Log
