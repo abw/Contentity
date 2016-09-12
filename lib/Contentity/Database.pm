@@ -14,6 +14,14 @@ use Contentity::Class
         AUTOGEN    => '_autogen',
     };
 
+our $QUERIES = {
+    db_table_names => q{
+        SHOW TABLES
+    },
+    db_table_schema => q{
+        DESCRIBE ?
+    },
+};
 
 sub init_component {
     my ($self, $config) = @_;
@@ -87,6 +95,21 @@ sub table_names {
 sub table_config {
     shift->model->table_config;
 }
+
+sub extractor {
+    my $self = shift;
+    require Contentity::Database::Extractor;
+    return  Contentity::Database::Extractor->new(
+        database => $self
+    );
+}
+
+sub db_table_names {
+    shift->query('db_table_names')->column;
+}
+
+
+
 
 
 1;
