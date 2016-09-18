@@ -4,7 +4,7 @@ use Contentity::Web::Response;
 use Contentity::Class
     version   => 0.02,
     debug     => 0,
-    base      => 'Plack::Request Contentity::Base',
+    base      => 'Plack::Request::WithEncoding Contentity::Base',
     constant    => {
         RESPONSE_MODULE => 'Contentity::Web::Response',
     };
