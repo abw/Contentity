@@ -218,6 +218,10 @@ sub set {
     shift->context->set(@_);
 }
 
+sub unset {
+    shift->context->unset(@_);
+}
+
 sub data {
     shift->context->data(@_);
 }

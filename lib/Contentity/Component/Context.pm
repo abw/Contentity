@@ -99,6 +99,10 @@ sub set {
     return $self;
 }
 
+sub unset {
+    shift->delete_data(@_);
+}
+
 sub delete_data {
     my ($self, $name) = @_;
     return delete $self->{ data }->{ $name };
