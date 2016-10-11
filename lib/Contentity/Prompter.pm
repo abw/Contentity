@@ -23,6 +23,11 @@ use Contentity::Class
 
 
 our $COLOURS = {
+    none       => sub { join('', @_) },
+    red        => \&red,
+    green      => \&green,
+    yellow     => \&yellow,
+    grey       => sub { bold black @_ },
     info       => \&cyan,
     about      => \&cyan,
     action     => sub { bold cyan @_ },
