@@ -267,6 +267,18 @@ sub col_expr {
     return join('', @out);
 }
 
+sub colourise {
+    my $self = shift;
+    my $text = join('', @_);
+    $text =~ s/\[(\w+):(.*?)\]/$self->col($1,$2)/ges;
+    return $text;
+}
+
+sub prompt_colour {
+    my $self = shift;
+    print $self->colourise(@_);
+}
+
 sub prompt_expr {
     my $self = shift;
     print $self->col_expr(@_);
