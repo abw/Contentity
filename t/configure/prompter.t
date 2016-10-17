@@ -16,7 +16,7 @@ use Badger
     Utils  => 'Bin',
     Debug  => [import => ':all'];
 
-use Badger::Test 
+use Badger::Test
     tests => 1,
     debug => 'Contentity::Prompter',
     args  => \@ARGV;
@@ -27,6 +27,10 @@ my $pr = Contentity::Prompter->new;
 ok( $pr, 'created prompter' );
 
 if (DEBUG) {
+    print $pr->colourise(
+        "Hello world this is [red:RED], [green:GREEN] and [blue:some blue text]\n",
+    );
+
     $pr->prompt_about("A message prompt");
     print "\n";
     $pr->prompt_comment("A comment prompt");
@@ -41,4 +45,5 @@ if (DEBUG) {
         comment   => 'Please enter your favourite kind of cheese.',
         options   => ['brie', 'cheddar', 'stilton'],
     );
+
 }
