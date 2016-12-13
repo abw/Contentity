@@ -6,8 +6,10 @@ my %opts = (
     PMLIBDIRS    => [ 'lib' ],
     PREREQ_PM    => {
         Badger   => 0.092,
-        'JSON'     => 2.59,
-        'YAML'     => 0.84,
+        'JSON'   => 2.59,
+        'YAML'   => 0.84,
+        'Mail::Sender' => 0.8,
+        'Plack::Request::WithEncoding' => 0.12,
       # 'IPC::Run' => 0,
     },
     dist         => {
