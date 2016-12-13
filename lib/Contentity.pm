@@ -3,13 +3,12 @@ package Contentity;
 use Badger::Debug ':all';
 use Contentity::Config;
 use Contentity::Class
-#   version    => 0.01,
     debug      => 0,
     base       => 'Badger::Prototype Contentity::Base',
     import     => 'class',
     autolook   => 'autoload_hub';
 
-our $VERSION = 0.12;
+our $VERSION = 0.13;
 our $HUB = 'Contentity::Hub' unless defined $HUB;
 
 
@@ -78,7 +77,7 @@ This implements the basic framework of a web site deployment system.
 
 =head2 Contentity::Base
 
-A base class object from which most other C<Contentity::*> modules are 
+A base class object from which most other C<Contentity::*> modules are
 derived.  It is itself a subclass of L<Badger::Base>.
 
 =head2 Contentity::Cache
@@ -99,7 +98,7 @@ Defines various constants used by the Contentity system.
 =head2 Contentity::Configure
 
 A module for running configuration scripts that prompt the user to answer
-various questions, typically when configuring a new web site or virtual 
+various questions, typically when configuring a new web site or virtual
 host.
 
 =head2 Contentity::Metadata
@@ -110,15 +109,15 @@ encoded in either JSON or YAML formats.
 
 =head2 Contentity::Router
 
-An advanced module for matching URLs to pre-defined routes. 
+An advanced module for matching URLs to pre-defined routes.
 
 =head2 Contentity::Workspace
 
 A workspace is used to represent the root directory of a web site or other
-project.  The precise location may vary from one machine to another.  There 
-could also be multiple copies of a site on the same machine, e.g. for 
+project.  The precise location may vary from one machine to another.  There
+could also be multiple copies of a site on the same machine, e.g. for
 development, staging, testing, production, etc.  To avoid hard-coding paths
-into library and application code we delegate to a workspace object (which 
+into library and application code we delegate to a workspace object (which
 "knows" where its root directory is) to resolve relative filesystem paths.
 
 =head2 Contentity::Utils
