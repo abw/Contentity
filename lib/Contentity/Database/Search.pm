@@ -43,9 +43,13 @@ our $SEARCH_TYPES   = {
 sub init {
     my ($self, $config) = @_;
     my $class = $self->class;
+
+    # Hmmm... this appears to be returning the table name rather than
+    # the table object reference.  Looking at the Badger::Database::Queries
+    # base class module, it's prepare_query_module() is passing the
+    # table object reference as 'queries' not 'table' anyway.
     my $table = $config->{ table }
         || return self->error_msg( missing => 'table reference' );
-
 
     $self->debug("merge search config: ", $self->dump_data($config)) if DEBUG;
 
@@ -66,8 +70,6 @@ sub init {
         $self->debug_data( search => $self->{ search } );
         $self->debug_data( sort => $self->{ order } );
     }
-
-    #$self->debug("table: $table") if DEBUG or 1;
 
     if ($self->{ autojoin }) {
         my $autojoin = split_to_list($self->{ autojoin });
