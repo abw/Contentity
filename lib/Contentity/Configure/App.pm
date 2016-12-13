@@ -359,9 +359,8 @@ class->methods(
         }
     }
     qw(
-        prompt prompt_list prompt_expr prompt_newline prompt_error prompt_colour
+        prompt prompt_list prompt_expr prompt_newline prompt_error
         prompt_title prompt_about prompt_action prompt_comment prompt_entry
-        colourise
     )
 );
 
