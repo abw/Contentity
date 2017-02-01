@@ -16,6 +16,7 @@ use Contentity::Class
     messages  => {
         mandatory_option => "You must enter a value for this configuration option.",
         invalid_option   => "That is not a valid value for this configuration option.",
+        multiple_options => "There is more than one command matching that prefix: %s",
         quitting         => "Exiting program at user request.",
         swearing         => "You are a filthy-mouthed %s-bag.  I'm telling on you!",
         no_help          => "There isn't any help.  Sorry, but you're on your own.",
@@ -226,12 +227,31 @@ sub prompt_check {
         if ($opthash->{ $answer }) {
             return 1;
         }
-        else {
-            $self->random_insult_error;
-            $self->prompt_error( $self->message('invalid_option') );
-            $self->prompt_options($options);
-            return 0;
+
+        if ($params->{ prefix_match }) {
+            my @match;
+            my $ansre = quotemeta $answer;
+
+            # iterate through the list of commands looks for any that start with $prefix
+            foreach my $opt (@$options) {
+                if ($opt =~ /^$ansre/) {
+                    push(@match, $opt);
+                }
+            }
+            if (@match == 1) {
+                return 1;
+            }
+            elsif (@match) {
+                $self->prompt_error(
+                    $self->message( multiple_options => join(', ', @match) )
+                );
+                return 0;
+            }
         }
+        $self->random_insult_error;
+        $self->prompt_error( $self->message('invalid_option') );
+        $self->prompt_options($options);
+        return 0;
     }
     elsif ($checker) {
         return $self->checker($checker)->($answer, $self, $params);
