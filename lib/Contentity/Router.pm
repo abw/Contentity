@@ -302,7 +302,7 @@ sub add_dynamic_route {
     # escape any regex metacharacters in prefix string so we can
     # embed it directly into a larger regex
     $prefix = quotemeta $prefix
-        if length $prefix;
+        if defined $prefix && length $prefix;
 
     # We don't already have a route set for this component so create one
     if (! $subset) {
