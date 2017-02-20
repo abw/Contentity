@@ -8,7 +8,7 @@ DB_DIR=${TOP_DIR}/database/backup
 
 # The backup process creates a [% database.id %]_latest.txt file
 # containing the file name of the latest backup.
-LATEST=[% database.id %]_latest.txt
+LATEST=[% database.id or database.name %]_latest.txt
 
 function latest {
     cat ${DB_DIR}/${LATEST}
