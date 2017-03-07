@@ -383,7 +383,7 @@ sub _demux_rows {
     my ($self, $match, $rows, $output) = @_;
     $self->debug_data("demux rows [$match]", $rows) if DEBUG or 1;
     return [
-        map { [ $_, $self->demux_row($match, $_) ] }
+        map { [ $_, $self->_demux_row($match, $_) ] }
         @$rows
     ];
 }
