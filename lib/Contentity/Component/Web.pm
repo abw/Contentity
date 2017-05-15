@@ -8,7 +8,7 @@ use Contentity::Class
     base      => 'Contentity::Component Contentity::Plack::Component',
     constants => 'BLANK SLASH :status :http_status :content_types',
     accessors => 'env context',
-    utils     => 'blessed extend join_uri resolve_uri strip_hash split_to_list split_to_hash is_object truelike xformat',
+    utils     => 'blessed extend join_uri resolve_uri strip_hash split_to_list split_to_hash is_object truelike xformat textlike',
     codecs    => 'json',
     alias     => {
         _params => \&Contentity::Utils::params,
