@@ -4,6 +4,7 @@ use Contentity::Class::Form::Field
     version  => 0.01,
     debug    => 0,
     base     => 'Contentity::Form::Field::Text',
+    utils    => 'numlike',
     display  => 'number',
     config   => [
         'min',
@@ -32,7 +33,7 @@ sub validate {
 
     if (length $value) {
         return $self->invalid_msg( bad_number => lc $self->{ label } )
-            unless $value =~ /^\d+$/;
+            unless numlike $value;
 
         return $self->invalid_msg( too_small => lc $self->{ label }, $min)
             if $min && $value < $min;
