@@ -27,7 +27,7 @@ our $PREPARE = {
 
 sub validate {
     my $self  = shift;
-    my $value = shift;
+    my $value = $self->prepare(shift);
     my $min   = $self->{ min };
     my $max   = $self->{ max };
 
