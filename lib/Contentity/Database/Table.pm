@@ -7,7 +7,7 @@ use Contentity::Class
     base      => 'Badger::Database::Table Contentity::Database::Component',
     import    => 'class',
     accessors => 'spec singular plural about',
-    utils     => 'split_to_list self_params',
+    utils     => 'split_to_list self_params self_keys',
     autolook  => 'autolook_query',
     constants => 'DOT ARRAY HASH MYSQL_WILDCARD',
     constant  => {
