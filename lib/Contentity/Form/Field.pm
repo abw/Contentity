@@ -6,7 +6,7 @@ use Contentity::Class
     base      => 'Contentity::Base',
     import    => 'bclass',   # use Plan B so class() can be a regular method
     utils     => 'xprintf weaken join_uri',
-    accessors => 'form type disabled mandatory data factory',
+    accessors => 'form type disabled mandatory data factory append prepend',
     mutators  => 'name size label layout placeholder display default class style tabindex n',
     constants => 'ARRAY HASH SPACE',
     constant  => {
@@ -26,6 +26,8 @@ use Contentity::Class
         'default|class:DEFAULT',
         'strict|class:STRICT=1',
         'display|class:DISPLAY|target:type',
+        'prepend|class:PREPEND',
+        'append|class:APPEND',
         'mandatory|class:MANDATORY',
         'disabled=0',
         'n',
