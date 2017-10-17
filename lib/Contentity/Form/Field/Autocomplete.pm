@@ -18,7 +18,7 @@ sub validate {
         "autocomplete validation: [%s=%s] [%s=%s]",
         $self->name, $value,
         $idparam, $idvalue
-    );
+    ) if DEBUG;
 
     $self->id_value($idvalue);
 

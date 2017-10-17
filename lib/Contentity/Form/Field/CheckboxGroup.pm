@@ -61,7 +61,7 @@ sub value {
         # or reference to a list of one or more option values
         my $value = shift || '';
 
-        $self->debug("value: $value");
+        $self->debug("value: $value") if DEBUG;
 
         $value = [ split(DELIMITER, $value) ]
             unless ref $value eq ARRAY;
