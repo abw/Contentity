@@ -140,11 +140,11 @@ sub connect {
 
     # open local socket to listen for job requests
     return ($self->{ socket } = IO::Socket::INET->new(
-		LocalPort 	=> $self->{ port },
-        Type        => SOCK_STREAM,
-        Proto       => 'tcp',
-		Listen 		=> 10,
-	    Reuse       => 1,
+        LocalPort => $self->{ port },
+        Type      => SOCK_STREAM,
+        Proto     => 'tcp',
+        Listen    => 10,
+        Reuse     => 1,
     )) || $self->error("failed to establish local listening socket: $@");
 }
 
@@ -195,6 +195,10 @@ sub request {
 
     chomp($request);
 
+    # hmmm, it appears that chomp() won't remove a single CR if the $/
+    # (aka $INPUT_RECORD_SEPARATOR is set to CRLF
+    $request =~ s/[\n\r]//g;
+
     if ($request =~ /^run:(\w+)\s*$/) {
         my $job  = $1;
         if (@$pending < $self->{ max_pending }) {
@@ -230,7 +234,7 @@ sub request {
     }
     else {
         $client->print("ERROR - invalid request\n");
-        $self->log( warn => 'rejected job request: $request' );
+        $self->log( warn => "rejected job request: $request" );
     }
 
     # we're done with the client socket now
