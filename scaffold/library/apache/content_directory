@@ -1,0 +1,13 @@
+<Directory [% content_dir %]>
+    SetHandler            perl-script
+    PerlSetVar  root      [% Project.root %]
+    PerlSetVar  app       [% app.app %]
+    PerlResponseHandler   [% Project.handlers.app %]
+  # Uncomment the next line if your project has multiple site workspaces
+  # PerlSetVar  workspace [% Site.uri %]
+    Order       allow,deny
+    Allow       from all
+%%  if apache.version >= 2.4
+    Require all granted
+%%  end
+</Directory>
