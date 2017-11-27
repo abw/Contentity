@@ -6,15 +6,10 @@
       app.url = pair.key;
       if app.url == '/' and app.app == 'content';
         next if  no_content;
-        has_content = app;
+        include apache/content_directory;
       else;
         include  apache/app_location;
       end;
       "\n";
-    end;
-
-    # do this last
-    if has_content;
-        include apache/content_location app=has_content;
     end;
 -%]
