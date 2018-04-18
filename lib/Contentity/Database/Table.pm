@@ -7,7 +7,7 @@ use Contentity::Class
     base      => 'Badger::Database::Table Contentity::Database::Component',
     import    => 'class',
     accessors => 'spec singular plural about',
-    utils     => 'split_to_list self_params self_keys',
+    utils     => 'split_to_list self_params self_keys params',
     autolook  => 'autolook_query',
     constants => 'DOT ARRAY HASH MYSQL_WILDCARD',
     constant  => {
@@ -293,6 +293,14 @@ sub search {
 # Results methods
 #-----------------------------------------------------------------------------
 
+sub query_results {
+    my $self   = shift;
+    my $name   = shift;
+    my $params = params(@_);
+    my $query  = $self->query($name);
+    return $query->results(%$params);
+}
+
 sub results {
     my ($self, $params) = self_params(@_);
     my $rclass = $self->RESULTS;
@@ -301,6 +309,10 @@ sub results {
     return $rclass->new($params);
 }
 
+sub search_results {
+    my $self = shift;
+    $self->query_results( search => @_ );
+}
 
 sub found_rows {
     shift->row('found_rows')->{ count };
