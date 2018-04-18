@@ -8,12 +8,23 @@ use Contentity::Class::Form::Field
 
 sub init {
     my ($self, $config) = @_;
+    my $list = $config->{ list };
+
+    if ($list) {
+        $self->debug("found a list specification: $list") if DEBUG;
+        my $factory = $config->{ factory } || return $self->error("No form field factory reference provided to expand '$list' list");
+        my $space   = $factory->workspace;
+        $config->{ options } = $space->list($list)
+            || return $self->error_msg( invalid => list => $list );
+    }
+
     $self = $self->SUPER::init($config);
+
     $self->{ options } = $self->prepare_options($self->{ options })
         if $self->{ options };
+
     return $self;
 }
-
 
 sub options {
     my $self = shift;
