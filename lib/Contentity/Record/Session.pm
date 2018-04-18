@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Database::Record',
     codec     => 'json',
-    utils     => 'self_params extend Now',
+    utils     => 'params self_params extend Now',
     alias     => {
         get   => \&fetch,
         set   => \&set,
@@ -89,7 +89,8 @@ sub delete {
 sub new_login {
     my $self    = shift;
     my $user    = shift || return $self->error_msg( missing => 'user' );
-    my $timeout = shift || 0;
+    my $params  = params(@_);
+    my $timeout = $params->{ timeout } || 0;
     my $logins  = $self->model->logins;
 
     # logout any previous login for this session
@@ -103,6 +104,7 @@ sub new_login {
 
     # create a new login record
     my $login = $logins->insert(
+        %$params,
         user_id    => $user->id,
         session_id => $self->id,
         logged_in  => Now->timestamp,
