@@ -22,8 +22,12 @@ sub validate {
     if (length $value) {
         # if there's a value defined, check it for correctness
         $self->debug("checking [$value] against [$format]") if DEBUG;
-        return $self->invalid_msg('bad_address')
-            unless $value =~ /$format/;
+        if ($value =~ /$format/) {
+            return ($self->{ valid } = 1);
+        }
+        else {
+            return $self->invalid_msg('bad_address')
+        }
     }
     elsif ($self->{ mandatory }) {
         # otherwise barf for mandatory fields
@@ -32,6 +36,7 @@ sub validate {
     else {
         return ($self->{ valid } = 1);
     }
+    # not reached!
 }
 
 
@@ -128,7 +133,7 @@ under the same terms as Perl itself.
 =head1 HISTORY
 
 This module started out life as C<WebKit::Form::Field::Email> in 2001,
-became C<Badger::Web::Form::Field::Email> in 2004 and was moved into the 
+became C<Badger::Web::Form::Field::Email> in 2004 and was moved into the
 C<Contentity> module set in April 2014.
 
 
