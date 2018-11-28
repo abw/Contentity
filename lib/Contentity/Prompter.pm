@@ -181,6 +181,7 @@ sub prompt_list {
     }
 
     if ($list) {
+        $list = split_to_list($list);
         foreach $item (@$list) {
             if ($self->confirm("Keep existing $type '$item'? ", 'y')) {
                 push(@items, $item);
