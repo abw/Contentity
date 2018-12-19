@@ -1,0 +1,16 @@
+# The host and port on which the server runs
+host:     localhost
+port:     4243
+
+# How many workers (processes) to create for the worker pool
+workers:  10
+
+# How many pending jobs can be queued before we start rejecting requests
+pending:  25
+
+# Which module to use to fetch job records from the database
+facade:   Contentity
+
+# Where to save the main log and record of server process ID
+logfile:  logs/job_server.log
+pidfile:  logs/job_server.pid

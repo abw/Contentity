@@ -12,7 +12,7 @@ BEGIN {
         SCAFFOLD SITEMAP SKIN STYLES TEMPLATES URLS
     );
     @status = qw(
-        ACTIVE INACTIVE PENDING LOCKED EXPIRED SUCCESS ERROR
+        ACTIVE INACTIVE PENDING LOCKED EXPIRED SUCCESS ERROR FAILED
     );
     @mutate = qw(
         STATIC DYNAMIC
@@ -79,6 +79,7 @@ use Badger::Class
 
         # response codes
         OK                  => 200,
+        BAD_REQUEST         => 400,
         FORBIDDEN           => 403,
         NOT_FOUND           => 404,
         SERVER_ERROR        => 500,
@@ -87,6 +88,9 @@ use Badger::Class
         LOGIN_USER_TYPE     => 'login',
         SYSTEM_USER_TYPE    => 'system',
 
+        # job server
+        JOB_URI_LENGTH  => 32,
+        JOB_EXPIRY      => '7 days',
 
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
@@ -111,8 +115,9 @@ use Badger::Class
             html            => 'INDEX INDEX_HTML DOT_HTML TEXT_HTML TEXT_PLAIN CHARSET_UTF8',
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
             http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
-            http_status     => 'OK FORBIDDEN NOT_FOUND SERVER_ERROR',
+            http_status     => 'OK BAD_REQUEST FORBIDDEN NOT_FOUND SERVER_ERROR',
             http_methods    => 'GET POST DELETE',
+            jobs            => 'JOB_URI_LENGTH JOB_EXPIRY',
             user_types      => 'LOGIN_USER_TYPE SYSTEM_USER_TYPE',
         },
     };
