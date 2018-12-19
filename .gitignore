@@ -6,8 +6,15 @@ blib/
 pm_to_blib
 bin/apache
 bin/database
+bin/icons/blurt.pe
+bin/icons/centre.pe
+bin/icons/flip.pe
+bin/icons/flipc.pe
 config/server.yaml
+config/databases.yaml
 t/configure/config/config_save.yaml
 t/components/test_files/comps1/logs/
 tmp
+etc
+perl
 .DS_Store
