@@ -4,10 +4,11 @@ use Contentity::Class
     version   => 0.01,
     debug     => 0,
     base      => 'Contentity::Database::Record',
-    utils     => 'Now Timestamp self_params',
+    utils     => 'Now Timestamp self_params extend',
     import    => 'class',
     constants => 'PENDING ACTIVE ACCEPTED CANCELLED EXPIRED FAILED NULL_TIME',
-    accessors => 'reason',
+    accessors => 'reason params_json',
+    codec     => 'json',
     throws    => 'Contentity.invite',
     constant  => {
         SENDER_FORMAT => '%s <%s>',
@@ -21,6 +22,20 @@ use Contentity::Class
 *sent = \&active;
 *activated = \&active;
 
+
+sub init {
+    my ($self, $config) = @_;
+
+    # decode parameters
+    my $params = $config->{ params };
+    $config->{ params_json } = $params;
+    $config->{ params } = decode($params)
+        if $params && ! ref $params;
+
+    return $self->SUPER::init($config);
+}
+
+
 sub send {
     my ($self, $params) = self_params(@_);
     my $space = $self->workspace;
@@ -33,9 +48,13 @@ sub send {
     my $config  = $space->invite_type->{ $self->{ type } };
     my $inviter = $self->inviter;
 
+    # merge any params defined when the invite was created with those
+    # passed as arguments
+    $params = extend({ }, $self->params, $params);
+
     $self->debug_data("invite type [$self->{ type }]", $config) if DEBUG;
 
-    # look for subject and/or template parameters
+    # set defaults for subject and/or template parameters
     $params->{ subject  } ||= $config->{ subject  };
     $params->{ template } ||= $config->{ template };
 

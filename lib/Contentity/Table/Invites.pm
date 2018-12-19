@@ -6,7 +6,8 @@ use Contentity::Class
     base      => 'Contentity::Database::Table',
     throws    => 'Contentity.Invites',
     utils     => 'self_params self_key params md5_hex Now',
-    constants => 'ACTIVE :invites';
+    constants => 'ACTIVE :invites',
+    codec     => 'json';
 
 our $GEN_ID_ATTEMPTS    = 5;
 
@@ -42,6 +43,10 @@ sub create {
     # generate a unique id as a hex MD5 hash
     $params->{ id         }   = $self->generate_id($params);
     $params->{ invited_by } ||= $space->system_user_id;
+
+    # encode any parameters
+    $params->{ params } = encode($params->{ params })
+        if $params->{ params } && ref $params->{ params };
 
     $self->debug_data("Inserting invite record: ", $params) if DEBUG;
 
