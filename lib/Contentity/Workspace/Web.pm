@@ -169,6 +169,51 @@ sub local_server_domain {
 }
 
 #-----------------------------------------------------------------------------
+# Email senders.  Note that the mail_senders() and mail_sender() methods
+# return the basic mailer types, e.g. smtp.
+# Our emailer() method goes via the email component (C::Component::Email)
+# which uses the configuration in config/email.yaml to define different
+# classes of mailer (e.g. live, testing, etc) that define the extra params
+# like mailhost, username, password, etc.
+#-----------------------------------------------------------------------------
+
+sub email {
+    shift->component('email');
+}
+
+sub mailer {
+    shift->email->mailer(@_);
+}
+
+sub mail_senders {
+    shift->component('mailers');
+}
+
+sub mail_sender {
+    shift->mail_senders->mailer(@_);
+}
+
+sub invite_types {
+    my $self  = shift;
+    my $types = $self->{ invite_types }
+            ||= $self->config('invite_types');
+    return @_
+        ? $types->{ $_[0] }
+        : $types;
+}
+
+sub invite_type {
+    my $self  = shift;
+    my $types = $self->invite_types;
+    my $name  = shift || return $types;
+    return $types->{ $name };
+}
+
+sub system_user_id {
+    shift->model->users->system_user_id;
+}
+
+#-----------------------------------------------------------------------------
 # forms
 #-----------------------------------------------------------------------------
 

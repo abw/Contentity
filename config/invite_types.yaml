@@ -1,0 +1,14 @@
+registration:
+  subject:   Registration
+  template:  registration
+  expires:   1 day
+
+recovery:
+  subject:   Password Recovery
+  template:  recovery
+  expires:   1 hour
+
+validation:
+  subject:   Email Validation
+  template:  validation
+  expires:   3 days

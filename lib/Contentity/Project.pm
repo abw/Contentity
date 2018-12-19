@@ -26,8 +26,7 @@ use Contentity::Class
 sub workspace {
     my $self = shift;
     my $uri  = shift;
-    return  $self->{ workspace }->{ $uri }
-        //= $self->load_workspace($uri);
+    return  $self->{ workspace }->{ $uri } //= $self->load_workspace($uri);
 }
 
 sub load_workspace {

@@ -12,7 +12,8 @@ BEGIN {
         SCAFFOLD SITEMAP SKIN STYLES TEMPLATES URLS
     );
     @status = qw(
-        ACTIVE INACTIVE PENDING LOCKED EXPIRED SUCCESS ERROR FAILED
+        ACTIVE INACTIVE PENDING LOCKED EXPIRED SUCCESS ERROR
+        ACCEPTED CANCELLED FAILED
     );
     @mutate = qw(
         STATIC DYNAMIC
@@ -92,6 +93,11 @@ use Badger::Class
         JOB_URI_LENGTH  => 32,
         JOB_EXPIRY      => '7 days',
 
+        # invites
+        INVITE_EXPIRY      => '1 hour',
+        DELETE_OLD_INVITES => '6 months',
+
+
         # map the various constants defined above to lower case equivalents
         map { $_ => lc $_ }
         @components,
@@ -113,6 +119,7 @@ use Badger::Class
             colour_slots    => 'RED_SLOT GREEN_SLOT BLUE_SLOT ALPHA_SLOT HUE_SLOT SAT_SLOT VAL_SLOT SCHEME_SLOT',
             colours         => 'BLACK WHITE',
             html            => 'INDEX INDEX_HTML DOT_HTML TEXT_HTML TEXT_PLAIN CHARSET_UTF8',
+            invites         => 'INVITE_EXPIRY DELETE_OLD_INVITES',
             vhost           => 'VHOST_FILE VHOST_EXTENSION',
             http_accept     => 'HTTP_ACCEPT HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE',
             http_status     => 'OK BAD_REQUEST FORBIDDEN NOT_FOUND SERVER_ERROR',

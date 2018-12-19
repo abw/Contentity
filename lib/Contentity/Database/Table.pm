@@ -7,7 +7,7 @@ use Contentity::Class
     base      => 'Badger::Database::Table Contentity::Database::Component',
     import    => 'class',
     accessors => 'spec singular plural about',
-    utils     => 'split_to_list self_params self_keys params',
+    utils     => 'split_to_list self_params self_keys params module_name',
     autolook  => 'autolook_query',
     constants => 'DOT ARRAY HASH MYSQL_WILDCARD',
     constant  => {
@@ -147,24 +147,31 @@ sub column_schema {
 # Record methods
 #-----------------------------------------------------------------------------
 
-sub subclass_record {
+sub subclass_module {
     my $self = shift;
-    my $key  = shift;
-    my $args = params(@_);
-    my $type = $args->{ $key }     || return $self->error_msg( missing => $key );
-    my $record = $self->{ record } || return $args;
+    my $type = shift;
+    my $base = $self->{ record } || return $self->decline_msg( missing => 'record' );
     $self->{ module } ||= { };
 
     # generate a subclass module name
     my $module = $self->{ module }->{ $type } ||= do {
         # generate subclass name from record base and class argument,
-        # e.g. 'My::Record::Resource' + 'document'
-        #   => 'My::Record::Resource::Document'
-        my $subtype = module_name($record, $type);
-        $self->debug_data( "subtype $subtype for " => $args ) if DEBUG;
+        # e.g. 'Cog::Record::Resource' + 'document'
+        #   => 'Cog::Record::Resource::Document'
+        my $subtype = module_name($base, $type);
+        $self->debug("subclass_module [$base] + [$type] = [$subtype]") if DEBUG;
         class($subtype)->load;
         $subtype;
     };
+    return $module;
+}
+
+sub subclass_record {
+    my $self   = shift;
+    my $key    = shift;
+    my $args   = params(@_);
+    my $type   = $args->{ $key }     || return $self->error_msg( missing => $key );
+    my $module = $self->subclass_module($type) || return $args;
 
     $args->{ _table } = $self;
     $args->{ _model } = $self->{ model };
