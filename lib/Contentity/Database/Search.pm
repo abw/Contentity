@@ -622,6 +622,9 @@ sub results {
     }
 
     my $rows = $self->rows($limit, $offset);
+    # NOTE: we must call this because calling prepare_rows() (which might
+    # make other DB calls and mess this up)
+    my $total = $table->found_rows;
 
     $self->prepare_rows($rows);
 
@@ -634,8 +637,7 @@ sub results {
     return $table->results(
         ident   => $self->ident,
         rows    => $rows,
-#       records => $table->records($rows),      # TODO: make dynamic
-        total   => $table->found_rows,
+        total   => $total,
         limit   => $limit,
         offset  => $offset,
         query   => $self->sql,
