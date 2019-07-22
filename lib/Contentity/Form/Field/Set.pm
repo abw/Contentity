@@ -131,6 +131,14 @@ sub validate {
     return $nfail ? 0 : 1;
 }
 
+sub validation_data {
+    my $self  = shift;
+    my $data  = shift;
+    foreach my $field (@{ $self->{ fields } }) {
+        $field->validation_data($data);
+    }
+}
+
 sub content {
     my ($self, $view) = @_;
     my $output = '';

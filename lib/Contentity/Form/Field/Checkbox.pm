@@ -9,10 +9,10 @@ use Contentity::Class::Form::Field
 
 sub validate {
     my ($self, $value, $params) = @_;
-    $value ||= '';
+    #$value //= '';
     my $mandatory = $self->{ mandatory };
 
-    $self->{ checked } = $value ? 1 : 0;
+    $self->{ checked } = $value; # ? 1 : 0;
 
     if ($mandatory && ! $self->{ checked }) {
         if ($mandatory eq '1') {
@@ -31,7 +31,7 @@ sub value {
 
     if (@_) {
         my $value = shift || 0;
-        $self->{ checked } = $value ? 1 : 0;
+        $self->{ checked } = $value;# ? 1 : 0;
     }
     return $self->{ checked };
 }

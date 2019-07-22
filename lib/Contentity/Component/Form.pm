@@ -319,6 +319,30 @@ sub validate {
     return $nfail ? 0 : 1;
 }
 
+sub validation {
+    my $self  = shift;
+    my $valid = $self->validate(@_);
+    my $data  = {
+        valid          => $valid,
+        fields         => { },
+        values         => { },
+        valid_fields   => [ ],
+        invalid_fields => [ ],
+        errors         => [ ],
+        field_errors   => { },
+    };
+    $self->field_list_validation_data($data, $self->{ valid_fields }),
+    $self->field_list_validation_data($data, $self->{ invalid_fields }),
+    return $data;
+}
+
+sub field_list_validation_data {
+    my ($self, $data, $list) = @_;
+    for my $field (@$list) {
+        $field->validation_data($data);
+    }
+}
+
 sub valid {
     my $self = shift;
     return $self->{ errors } ? 0 : 1;

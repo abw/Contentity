@@ -5,7 +5,7 @@ use Contentity::Class
     debug     => 0,
     base      => 'Contentity::Base',
     import    => 'bclass',   # use Plan B so class() can be a regular method
-    utils     => 'xprintf weaken join_uri',
+    utils     => 'xprintf weaken join_uri extend',
     accessors => 'form type disabled mandatory data factory append prepend',
     mutators  => 'name size label layout placeholder display default class style tabindex n',
     constants => 'ARRAY HASH SPACE',
@@ -29,6 +29,7 @@ use Contentity::Class
         'prepend|class:PREPEND',
         'append|class:APPEND',
         'mandatory|class:MANDATORY',
+        'ignored=0',
         'disabled=0',
         'n',
     ],
@@ -110,7 +111,7 @@ sub validate {
 
 sub prepare {
     my $self  = shift;
-    my $value = join('', grep { defined $_ } @_);
+    my $value = shift; #join('', grep { defined $_ } @_);
     my $class = bclass($self);
 
     # look for any prepare actions defined
@@ -121,7 +122,10 @@ sub prepare {
     $prep = $self->{ prepare } = { map { ($_, 1) } split(/\W+/, $prep) }
         unless ref $prep eq HASH;
 
-    $value = '' unless defined $value;
+    if (! defined $value) {
+        $value = '';
+        $self->{ undefined } = 1;
+    }
 
     # remove any HTML elements that might be used for a Javscript
     # injection attack or other mischief
@@ -187,6 +191,62 @@ sub field_values {
     my $name   = shift || $self->name;
     my $value  = $self->value;      # scalar context
     return ($name, $value);         # aways return 2 item list
+}
+
+sub validation_data {
+    my $self  = shift;
+    my $data  = shift;
+    my $name  = $self->{ name };
+    my $error = $self->{ error };
+    my $value = $self->value;
+    my $field = {
+        name  => $self->{ name  },
+        valid => $self->{ valid },
+    };
+    if (defined $value) {
+        $field->{ value } = $value
+    }
+    if ($error) {
+        $field->{ message } = $error;
+    }
+
+    $data->{ fields }->{ $name } = $field;
+    return $data if $self->{ ignored };
+
+
+    if ($field->{ valid }) {
+        push(@{ $data->{ valid_fields } }, $field);
+
+        # ignore_undef will ignore undefined values, skipping the step
+        # of transferring values to $data->{ values };
+        # ignore_unset will do the same for undefined or unset values
+        # (where length == 0)
+
+        my $undef = $self->{ undefined } || ! defined $value;
+        if ($undef) {
+            return $data
+                if $self->{ ignore_undef }
+                || $self->{ ignore_unset };
+        }
+        elsif (! length $value) {
+            return $data if $self->{ ignore_unset };
+        }
+
+        my @values = $self->field_values;
+        if (@values) {
+            extend($data->{ values }, { @values });
+        }
+
+    }
+    else {
+        push(@{ $data->{ invalid_fields } }, $field);
+        if ($error) {
+            push(@{ $data->{ errors } }, $error);
+            $data->{ field_errors }->{ $name } = $error;
+        }
+    }
+
+    return $data;
 }
 
 sub reset {
