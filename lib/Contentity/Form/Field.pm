@@ -201,6 +201,7 @@ sub validation_data {
     my $value = $self->value;
     my $field = {
         name  => $self->{ name  },
+        label => $self->{ label },
         valid => $self->{ valid },
     };
     if (defined $value) {

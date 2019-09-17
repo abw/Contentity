@@ -31,6 +31,7 @@ sub validate {
     my $remote_ip = $params->{ $REMOTE_IP } || $ENV{ uc $REMOTE_IP };
 
     $self->debug_data( recaptcha_params => $params ) if DEBUG;
+    $self->debug_data( remote_ip => $remote_ip ) if DEBUG;
     $self->debug("workspace: ", $self->workspace ) if DEBUG;
 
     #$self->debug("challenge: $challenge    response: $response") if DEBUG;
@@ -56,6 +57,7 @@ sub validate {
         }
     }
     elsif ($self->{ mandatory }) {
+        $self->debug("No response (no '$RESPONSE' or '$GRESPONSE' parameter)") if DEBUG;
         return $self->invalid_msg( mandatory => $self->{ label } );
     }
 

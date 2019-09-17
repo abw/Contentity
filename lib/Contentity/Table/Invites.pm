@@ -45,8 +45,10 @@ sub create {
     $params->{ invited_by } ||= $space->system_user_id;
 
     # encode any parameters
-    $params->{ params } = encode($params->{ params })
-        if $params->{ params } && ref $params->{ params };
+    my $p = $params->{ params } ||= { };
+    $p->{ lifetime } = $expires;
+    $p->{ expires  } = $params->{ expires };
+    $params->{ params } = encode($p);
 
     $self->debug_data("Inserting invite record: ", $params) if DEBUG;
 

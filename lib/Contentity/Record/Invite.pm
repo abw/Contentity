@@ -60,10 +60,12 @@ sub send {
 
     my $format = $config->{ sender } || SENDER_FORMAT;
 
-    $params->{ to      } = $self->{ email };
-    $params->{ from    } = sprintf($format, $inviter->name, $inviter->email);
-    $params->{ inviter } = $inviter->name;
-    $params->{ invite  } = $self;
+    $params->{ to        } = $self->{ email };
+    $params->{ from      } = sprintf($format, $inviter->name, $inviter->email);
+    $params->{ inviter   } = $inviter->name;
+    $params->{ invite    } = $self;
+    $params->{ invite_id } = $self->id;
+    $params->{ expires   } = $config->{ expires };
 
     $self->debug("testing mode")
         if DEBUG && $params->{ testing };

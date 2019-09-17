@@ -201,7 +201,7 @@ sub expires {
 
 sub schedule {
     my $self = shift;
-    $self->project->job_server_client->schedule($self->id);
+    $self->workspace->project->job_server_client->schedule($self->id);
     return $self;
 }
 
