@@ -27,12 +27,16 @@ sub validate {
     my $self      = shift;
     my $ignore    = $self->prepare(shift);
     my $params    = shift;
-    my $response  = $params->{ $RESPONSE } || $params->{ $GRESPONSE };
+    my $response  = $ignore || $params->{ $RESPONSE } || $params->{ $GRESPONSE };
     my $remote_ip = $params->{ $REMOTE_IP } || $ENV{ uc $REMOTE_IP };
 
-    $self->debug_data( recaptcha_params => $params ) if DEBUG;
-    $self->debug_data( remote_ip => $remote_ip ) if DEBUG;
-    $self->debug("workspace: ", $self->workspace ) if DEBUG;
+    if (DEBUG) {
+        $self->debug_data( recaptcha_prepared => $ignore );
+        $self->debug_data( recaptcha_params => $params );
+        $self->debug_data( remote_ip => $remote_ip );
+        $self->debug_data( response => $response );
+        #$self->debug("workspace: ", $self->workspace ) if DEBUG;
+    }
 
     #$self->debug("challenge: $challenge    response: $response") if DEBUG;
 
