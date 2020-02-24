@@ -212,12 +212,28 @@ sub get_cookie {
 }
 
 sub set_cookie {
-    my ($self, $name, $value, $expires) = @_;
-    my $response = $self->response;
-    my $cookie   = {
-        value => $value,
-        path  => SLASH,
+    my $self  = shift;
+    my $name  = shift;
+    my $value = shift;
+    my ($cookie, $expires);
+
+    if (@_ == 1 && ! ref $_[0]) {
+        # old usage: pass optional expires argument
+        $expires = shift;
+        $cookie  = { value => $value };
+    }
+    else {
+        # new usage: pass a hash reference or multiple named params
+        # $cookie can contain keys such as domain, expires, path,
+        # httponly, secure, max-age.
+        $cookie  = Badger::Utils::params(@_);
+        $expires = $cookie->{ expires };
     };
+    $cookie->{ value } = $value;
+    $cookie->{ path  } ||= SLASH;
+
+    my $response = $self->response;
+
     if ($expires) {
         # $expires can bet set to a value like '30 hours' which we need
         # to convert to an epoch time
@@ -232,6 +248,12 @@ sub session_cookie {
     my $self = shift;
     return $self->workspace->config( session => 'cookie' )
         || $self->error_msg( missing => 'session cookie' );
+}
+
+sub session_cookie_config {
+    my $self = shift;
+    return $self->workspace->config( session => 'cookie_config' );
+    # can return nothing
 }
 
 sub get_session_key {
@@ -271,7 +293,7 @@ sub load_session {
     else {
         $session = $sessions->insert( $self->session_params );
         $skey    = $session->cookie;
-        $self->set_session_key($skey);
+        $self->set_session_key($skey, $self->session_cookie_config);
         $self->debug("created new session: #$session->{ id }:$skey") if DEBUG;
     }
 
