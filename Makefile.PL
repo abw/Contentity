@@ -8,7 +8,7 @@ my %opts = (
         Badger   => 0.092,
         'JSON'   => 2.59,
         'YAML'   => 0.84,
-        'Mail::Sender' => 0.8,
+        'Email::Sender' => 1.3,
         'Plack::Request::WithEncoding' => 0.12,
       # 'IPC::Run' => 0,
     },
