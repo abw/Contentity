@@ -19,7 +19,7 @@ BEGIN {
         STATIC DYNAMIC
     );
     @deployment = qw(
-        DEVELOPMENT PRODUCTION
+        DEVELOPMENT PRODUCTION MAINTENANCE
     );
     @content_types = qw(
         TEXT HTML CSS JS JSON XML

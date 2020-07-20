@@ -641,6 +641,10 @@ sub production {
     shift->deployment(PRODUCTION);
 }
 
+sub maintenance {
+    shift->deployment(MAINTENANCE);
+}
+
 #-----------------------------------------------------------------------------
 # Sites are enable or disabled by creating or removing a symlink from the
 # project etc/vhosts directory to the site's etc/vhost.conf
