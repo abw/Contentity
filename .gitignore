@@ -15,6 +15,6 @@ config/databases.yaml
 t/configure/config/config_save.yaml
 t/components/test_files/comps1/logs/
 tmp
-etc
+/etc
 perl
 .DS_Store
