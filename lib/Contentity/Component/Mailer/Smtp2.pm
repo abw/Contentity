@@ -107,21 +107,27 @@ sub _send_email {
     $self->debug_data( send => $args ) if DEBUG;
 
     eval {
-        my $email = $self->MESSAGE->create(
-            header => [
-                To      => $args->{ to },
-                From    => $args->{ from },
-                Subject => $args->{ subject },
-            ],
-            body => $args->{ message }
-        );
-
+        my $email = $self->generate_email($args);
         sendmail($email, { transport => $self->transport });
     };
 
     return $@
         ? $self->error_msg( mail_fail => $args->{ to }, $@ )
         : "Mail sent to $args->{ to }";
+}
+
+sub generate_email {
+    my ($self, $args) = self_params(@_);
+
+    return $self->MESSAGE->create(
+        header => [
+            To      => $args->{ to },
+            From    => $args->{ from },
+            Subject => $args->{ subject },
+            "Content-Type" => $args->{ ctype } || "text/plain; charset=UTF-8",
+        ],
+        body => $args->{ message },
+    );
 }
 
 sub _send_multipart {
@@ -157,18 +163,6 @@ sub _send_multipart {
         );
         $self->debug("EMAIL: $email") if DEBUG or 1;
 
-#        $sender->Part({
-#            ctype => 'multipart/alternative'
-#        });
-#        for my $part (@$parts) {
-#            $self->prepare_params($part);
-#            $part->{ disposition } = 'NONE';
-#            $self->debug_data( Part => $part ) if DEBUG or 1;
-#            $sender->Part($part)->SendEnc( $part->{ message } );
-#;
-#        }
-#        $sender->EndPart('multipart/alternative');
-#        $sender->Close();
         sendmail($email, { transport => $self->transport });
     };
 
