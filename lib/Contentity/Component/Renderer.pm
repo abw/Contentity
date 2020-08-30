@@ -103,6 +103,17 @@ sub source_files {
         in_dirs => 1,
     };
     my $files = $self->source_vfs->visit($spec)->collect;
+    my $exclude = $self->config->{ exclude_paths };
+
+    if ($exclude) {
+        $exclude = split_to_list($exclude);
+
+        for my $ex (@$exclude) {
+            $self->debug("excluding paths matching: $ex") if DEBUG;
+            my $qmex = quotemeta $ex;
+            $files = [ grep { ! /$qmex/ } @$files ];
+        }
+    }
 
     $self->debug("template source files:\n - ", join("\n - ", @$files)) if DEBUG;
 
