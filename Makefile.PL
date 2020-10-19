@@ -6,6 +6,7 @@ my %opts = (
     PMLIBDIRS    => [ 'lib' ],
     PREREQ_PM    => {
         Badger   => 0.092,
+        Template => 3.000,
         'JSON'   => 2.59,
         'YAML'   => 0.84,
         'Email::Sender' => 1.3,
