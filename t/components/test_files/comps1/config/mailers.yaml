@@ -8,7 +8,7 @@ abw_test:
   username:           abw_test
   password:           atiafnav
   force_send_to:      abw@wardley.org
-  force_send_subject: %s (relax - just testing)
+  force_send_subject: "%s (relax - just testing)"
   # This flag stops any email from being sent and instead prints
   # a debugging message to STDERR showing all the parameters that
   # would have been used to send the email.
