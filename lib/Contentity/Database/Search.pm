@@ -517,6 +517,8 @@ sub expand_fragments {
     my $text  = shift;
     my $frags = params(@_);
 
+    return $text unless defined $text && length $text;
+
     $self->debug(
         "Expanding fragments in template: $text\n",
         " fragments: ", $self->dump_data($frags), "\n",
