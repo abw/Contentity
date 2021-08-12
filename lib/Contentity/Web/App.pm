@@ -264,13 +264,7 @@ sub dispatch_method {
             $self->debug("this user can access this page") if DEBUG or DEBUG_ACCESS;
         }
         else {
-            $self->debug("this user CANNOT access this page") if DEBUG or DEBUG_ACCESS;
-            if ($self->login) {
-                return $self->send_forbidden("You cannot access that page.");
-            }
-            else {
-                return $self->redirect_login;
-            }
+            return $self->access_denied;
         }
     }
     else {
@@ -278,6 +272,17 @@ sub dispatch_method {
     }
 
     return $self->$method;
+}
+
+sub access_denied {
+    my $self = shift;
+    $self->debug("this user CANNOT access this page") if DEBUG or DEBUG_ACCESS;
+    if ($self->login) {
+        return $self->send_forbidden("You cannot access that page.");
+    }
+    else {
+        return $self->redirect_login;
+    }
 }
 
 sub access_roles {
