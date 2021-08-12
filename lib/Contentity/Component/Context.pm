@@ -410,7 +410,9 @@ sub user {
     return $self->{ user }
         if exists $self->{ user };
 
-    return ($self->{ user } = $self->session->user);
+    # set user either from object passed as parameter or from the
+    # session/login user
+    return ($self->{ user } = shift || $self->session->user);
 }
 
 
