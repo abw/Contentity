@@ -80,10 +80,21 @@ sub generate_authenticator {
 sub transport {
     my $self = shift;
     return $self->{ transport }
-        ||= $self->TRANSPORT->new({
-            host => $self->mailhost,
-            $self->{ _authenticator }->(),
-        });
+        ||= $self->new_transport;
+}
+
+sub new_transport {
+    my $self = shift;
+    my $args = { host => $self->mailhost };
+    my $port = $self->config('port');
+    if ($port) {
+        $args->{ port } = $port;
+    }
+    $self->debug_data( smtp2_transport => $args ) if DEBUG;
+    return $self->TRANSPORT->new({
+        %$args,
+        $self->{ _authenticator }->(),
+    });
 }
 
 #-----------------------------------------------------------------------------
