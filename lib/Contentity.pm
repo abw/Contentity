@@ -64,7 +64,7 @@ __END__
 
 =head1 NAME
 
-Contentity
+Contentity - web application framework
 
 =head1 DESCRIPTION
 
@@ -100,12 +100,6 @@ Defines various constants used by the Contentity system.
 A module for running configuration scripts that prompt the user to answer
 various questions, typically when configuring a new web site or virtual
 host.
-
-=head2 Contentity::Metadata
-
-A generic metadata management module.  L<Contentity::Metadata::Filesystem>
-provides an implementation that reads and write metadata to and from files,
-encoded in either JSON or YAML formats.
 
 =head2 Contentity::Router
 

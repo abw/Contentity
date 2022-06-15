@@ -705,5 +705,26 @@ sub project_vhosts_file_exists {
     shift->project_vhosts_file->exists;
 }
 
-
 1;
+
+
+__END__
+
+=head1 NAME
+
+Contentity::Workspace::Web - web application workspace.
+
+=head1 DESCRIPTION
+
+This module is a subclass of L<Contentity::Workspace> specialised
+for web applications.
+
+=head1 AUTHOR
+
+Andy Wardley E<lt>abw@wardley.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (C) 2008-2022 Andy Wardley.  All Rights Reserved.
+
+=cut
