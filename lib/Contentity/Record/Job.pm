@@ -296,9 +296,7 @@ Returns the alphanumerical record ID (a 64 character MD5 hash).
 
 =head2 type()
 
-Returns the job type. This corresponds to a L<Contentity::Record::Job> class,
-e.g. a type of C<user/register> is mapped to the
-L<Contentity::Record::Job::User::Register> module.
+Returns the job type. This corresponds to a L<Contentity::Record::Job> class.
 
 =head2 params()
 

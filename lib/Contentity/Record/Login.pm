@@ -117,10 +117,8 @@ manages the C<login> database table.
 
 =head1 METHODS
 
-The following methods are defined in addition to those inherited from the
-L<Contentity::Record::Base::Hierarchy>, L<Contentity::Database::Record>,
-L<Badger::Database::Record> and L<Badger::Base>
-base classes.
+The following methods are defined in addition to those inherited from
+L<Contentity::Database::Record>.
 
 =head2 id()
 
