@@ -63,18 +63,10 @@ __END__
 
 Contentity::Component::FormFields - factory module for creating fields
 
-=head1 SYNOPSIS
-
-TODO
-
 =head1 DESCRIPTION
 
 This is a factory module for loading and instantiating form field modules. It
 is a subclass of L<Badger::Factory> which provides most of the functionality.
-
-=head1 METHODS
-
-TODO
 
 =head1 AUTHOR
 
