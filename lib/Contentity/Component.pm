@@ -184,7 +184,7 @@ may redefine it to implement custom initialisation functionality.
 The following configuration options can be passed to the L<new()> constructor
 method.  These are usually provided by the
 L<component_config()|Contentity::Workspace/component_config()> method in
-L<Contentity::Workspce>.
+L<Contentity::Workspace>.
 
 =head2 workspace
 

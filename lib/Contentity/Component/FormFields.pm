@@ -89,6 +89,6 @@ under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<Badger::Web::Form>, L<Badger::Factory>.
+L<Contentity::Form::Field>.
 
 =cut

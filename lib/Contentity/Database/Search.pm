@@ -718,3 +718,32 @@ sub dump_values {
 1;
 
 __END__
+
+=head1 NAME
+
+Cog::Database::Search - database search component
+
+=head1 DESCRIPTION
+
+This module implements functionality to dynamically generate a
+database search query based on parameters passed to it (e.g. from
+web request parameters).
+
+It is a specialised subclass of L<Badger::Database::Query::Select>
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2006-2022 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+L<Badger::Database>, L<Badger::Database::Query::Select>
+
+=cut

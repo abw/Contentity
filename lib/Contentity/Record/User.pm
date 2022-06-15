@@ -406,7 +406,7 @@ details.
 =head2 email_addresses()
 
 This method is auto-generated to return a reference to a list of
-L<Contentity::Record::EmailAddress> records representing each email address assigned
+user_email records representing each email address assigned
 to the user.
 
 =head2 email_address($email)

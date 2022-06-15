@@ -70,3 +70,23 @@ sub delete_all_user_jobs {
 
 
 1;
+
+=head1 NAME
+
+Contentity::Table::Jobs - table for jobs to be run by the back-end job server
+
+=head1 DESCRIPTION
+
+This module implements a database table module for jobs to
+be run by the back-end job server.
+
+=head1 AUTHOR
+
+Andy Wardley E<lt>abw@wardley.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (C) 2014-2022 Andy Wardley.  All Rights Reserved.
+
+=cut
+

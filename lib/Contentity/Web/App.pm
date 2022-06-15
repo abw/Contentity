@@ -499,22 +499,24 @@ sub version {
     shift->VERSION;
 }
 
-
-
-
-
-
-
 1;
 
 __END__
+=head1 NAME
 
-==
+Contentity::Web::App - base class module for web applications
 
-sub site {
-    shift->context->site;
-}
+=head1 DESCRIPTION
 
-sub page {
-    shift->context->page;
-}
+This module examines a base class for web applications.
+
+=head1 AUTHOR
+
+Andy Wardley E<lt>abw@wardley.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (C) 2014-2022 Andy Wardley.  All Rights Reserved.
+
+=cut
+

@@ -190,3 +190,28 @@ sub check_params {
 }
 
 1;
+
+
+=head1 NAME
+
+Contentity::Component::Mailer::Smtp - component for sending email via SMTP
+
+=head1 DESCRIPTION
+
+This module is a component for sending email via SMTP.  It has been
+superceded by L<Contentity::Component::Mailer::Smtp2>.
+
+=head1 AUTHOR
+
+Andy Wardley E<lt>abw@wardley.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (C) 2005-2022 Andy Wardley.  All Rights Reserved.
+
+=head1 SEE ALSO
+
+L<Contentity::Component::Mailer>,
+L<Contentity::Component::Mailer::Smtp2>
+
+=cut

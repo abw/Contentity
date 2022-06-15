@@ -141,7 +141,31 @@ sub has_table {
     }
 }
 
-
-
-
 1;
+
+
+=head1 NAME
+
+Cog::Database::Model - database model component
+
+=head1 DESCRIPTION
+
+This is a subclass of L<Badger::Database::Model> with some additional functionality
+for integration into the L<Contentity> framework.
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2006-2022 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+L<Badger::Database::Model>
+
+=cut

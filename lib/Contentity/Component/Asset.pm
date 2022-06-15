@@ -32,8 +32,7 @@ sub init_component {
     $self->{ asset      } = $asset;
     $self->{ assets     } = $assets;
     $self->{ instances  } = { };
-    $self->{ singletons } = $config->{ singletons }
-                        //= $self->SINGLETONS;
+    $self->{ singletons } = $config->{ singletons } //= $self->SINGLETONS;
 
     return $self->init_asset($config);
 }
@@ -153,6 +152,32 @@ sub cache_asset {
 }
 
 
-# TODO: methods to fetch index, all assets, etc.
+1;
+
+=head1 NAME
+
+Contentity::Component::Asset - base class module for asset components
+
+=head1 DESCRIPTION
+
+This module defines a base class for factory components that are assets.
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2014 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+L<Contentity::Component>,
+L<Badger::Factory>.
+
+=cut
 
 1;

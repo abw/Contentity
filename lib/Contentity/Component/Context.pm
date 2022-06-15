@@ -585,124 +585,29 @@ sub model {
 
 1;
 __END__
-==
-#-----------------------------------------------------------------------------
-# Runtime processing options, e.g. 'debug', 'verbose', 'json', etc.
-#-----------------------------------------------------------------------------
+=head1 NAME
 
-sub option {
-    my $self = shift;
-    return  @_ >  1 ? $self->set_option(@_)
-        :   @_ == 1 ? $self->get_option(@_)
-        :             $self->{ options };
-}
+Contentity::Component::Context - web context component
 
-sub get_option {
-    my ($self, $name) = @_;
-    return $self->{ options } ->{ $name };
-}
+=head1 DESCRIPTION
 
-sub set_option {
-    my $self = shift;
-    my $args = @_ && ref $_[0] eq HASH ? shift : { @_ };
-    my $opts = $self->{ options };
+This module defines a context for a web application.
 
-    while (my ($key, $value) = each %$args) {
-        $opts->{ $key } = $value;
-        $self->set($key, $value);       # also set template variable
-    }
+=head1 AUTHOR
 
-    return $self;
-}
+Andy Wardley L<http://wardley.org/>
 
+=head1 COPYRIGHT
 
-#-----------------------------------------------------------------------
-# Session
-#-----------------------------------------------------------------------
+Copyright (C) 2014-2022 Andy Wardley.  All Rights Reserved.
 
-sub session {
-    my $self = shift;
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
-    if (DEBUG) {
-        if ($self->{ session }) {
-            $self->debug("using cached session");
-        }
-        else {
-            $self->debug("creating new session for ", $self->url);
-            $self->debug_callers;
-        }
-    }
+=head1 SEE ALSO
 
-    return  $self->{ session }
-        ||= $self->new_session;
-}
+L<Contentity::Component>
 
-sub new_session {
-    my $self     = shift;
-    my $request  = $self->request;
-    my $sessions = $self->hub->sessions;
-    my $config   = $self->config->session;
-    my $cookie   = $config->{ cookie } || $self->SESSION_COOKIE;
-    my $sid      = $self->cookie($cookie);
-    my ($session, $response);
-
-    if ($sid && ($session = $sessions->fetch($sid->value))) {
-        $self->debug("[SESSION] loaded existing session: $session->{ id }\n") if DEBUG;
-    }
-    else {
-        $sid     = undef;
-        $session = $sessions->create;
-        $self->debug("[SESSION] created new session: $session->{ id }") if DEBUG;
-    }
-
-    if (! $sid) {
-        $self->cookie(
-            name  => $cookie,
-            value => $session->id,
-            %$config,
-        );
-    }
-
-    return $session;
-}
-
-
-#-----------------------------------------------------------------------
-# Access other resource
-#-----------------------------------------------------------------------
-
-sub database {
-    shift->hub->database;
-}
-
-sub model {
-    shift->database->model;
-}
-
-sub cookie {
-    shift->request->cookie(@_);
-}
-
-sub page {
-    shift->data( Page => @_ );
-}
-
-
-#-----------------------------------------------------------------------
-# Cleanup (probably not required, but helps me sleep at night)
-#-----------------------------------------------------------------------
-
-sub DESTROY {
-    my $self = shift;
-    $self->debug("DESTROY context $self") if DEBUG;
-    delete $self->{ apache  };
-    delete $self->{ request };
-}
-
-
-# do this at the end so that any references to 'delete' above are resolved
-# to CORE::delete
-
-*delete = \&delete_data;
+=cut
 
 1;

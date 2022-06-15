@@ -196,17 +196,10 @@ __END__
 
 Contentity::Database::Extractor - quick hack to extra table metadata direct from database
 
-=head1 SYNOPSIS
-
-# TODO
-
 =head1 DESCRIPTION
 
-# TODO
-
-=head1 METHODS
-
-# TODO
+This module examines the scheme of an SQL database and extracts the
+metadata required to go into database config files.
 
 =head1 AUTHOR
 
@@ -214,14 +207,7 @@ Andy Wardley E<lt>abw@wardley.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2014 Andy Wardley.  All Rights Reserved.
+Copyright (C) 2014-2022 Andy Wardley.  All Rights Reserved.
 
 =cut
 
-# Local Variables:
-# mode: Perl
-# perl-indent-level: 4
-# indent-tabs-mode: nil
-# End:
-#
-# vim: expandtab shiftwidth=4:

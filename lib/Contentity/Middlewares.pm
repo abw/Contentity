@@ -23,10 +23,6 @@ TODO
 This is a factory module for loading and instantiating middleware modules. It
 is a subclass of L<Badger::Factory> which provides most of the functionality.
 
-=head1 METHODS
-
-TODO
-
 =head1 AUTHOR
 
 Andy Wardley L<http://wardley.org/>
@@ -40,6 +36,6 @@ under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<Badger::Factory>, L<Contentity::Middleware>
+L<Badger::Factory>
 
 =cut

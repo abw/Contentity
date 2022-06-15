@@ -195,3 +195,30 @@ sub list_has_value {
 
 
 1;
+
+=head1 NAME
+
+Cog::Component::Lists - component for fetching list definitions
+
+=head1 DESCRIPTION
+
+This module implements a central resource for fetching list data.
+Lists can be defined in config files, loaded from the database,
+or some other source.
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2006-2022 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+L<Contentity::Component::Asset>
+
+=cut

@@ -486,5 +486,31 @@ sub debug_dump {
     $self->debug($self->dump);
 }
 
-
 1;
+
+
+=head1 NAME
+
+Cog::Database::Results - database results component
+
+=head1 DESCRIPTION
+
+This module implement a wrapper for a set of database results
+that can be used for paging.
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2006-2022 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+L<Contentity::Database>
+
+=cut

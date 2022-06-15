@@ -16,3 +16,31 @@ use Contentity::Class
     };
 
 1;
+
+=head1 NAME
+
+Contentity::Component::Apps - factory module for loading apps
+
+=head1 DESCRIPTION
+
+This module defines a factory component for loading apps.
+
+=head1 AUTHOR
+
+Andy Wardley L<http://wardley.org/>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2014 Andy Wardley.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+L<Contentity::Component>,
+L<Badger::Factory>.
+
+=cut
+
+1;
