@@ -111,7 +111,7 @@ sub post_init_workspace {
 }
 
 sub init_data_files {
-    my ($self, $config) = shift;
+    my ($self, $config) = @_;
     my $file = $self->WORKSPACE_FILE || $self->type;
 
     # import any data file corresponding to the workspace type, e.g. project,
