@@ -50,6 +50,8 @@ sub init_mailer {
 sub send {
     my ($self, $params) = self_params(@_);
 
+    $self->debug_data( params => $params ) if DEBUG;
+
     # set the config items as defaults
     extend($params, $self->config);
 
@@ -57,8 +59,9 @@ sub send {
 
     # the force_send_to option is used for testing to avoid sending mail
     # to real customer
-    my $force = $self->config('force_send_to');
+    my $force = $params->{ force_send_to };
     if ($force) {
+        $self->debug("force_send_to: $force") if DEBUG;
         $self->force_send_to($params, $force);
     }
 
