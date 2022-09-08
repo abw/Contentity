@@ -296,19 +296,19 @@ sub render {
 }
 
 sub process {
-    my $self   = shift;
-    my $name   = shift;
-    my $params = $self->template_data(shift);
-    my $engine = $self->engine;
+    my $self    = shift;
+    my $name    = shift;
+    my $params  = $self->template_data(shift);
+    my $output  = shift;
+    my $options = params(@_);
+    my $binmode = $self->config('output_binmode');
+    my $engine  = $self->engine;
 
-    #$engine->watch_templates_used;
+    if ($binmode) {
+        $options->{ binmode } = $binmode;
+    }
 
-    my $result = $engine->process($name, $params, @_);
-
-    #my $used   = $self->{ templates_used } = $engine->templates_used;
-    # $self->debug_data( templates_used => $used ) if DEBUG;
-
-    return $result
+    return $engine->process($name, $params, $output, $options)
         || $self->error_msg( engine_render => $name, $engine->error );
 }
 
