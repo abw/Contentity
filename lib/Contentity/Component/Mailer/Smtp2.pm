@@ -130,14 +130,12 @@ sub _send_email {
 
 sub generate_email {
     my ($self, $args) = self_params(@_);
-
+    my $header = $self->generate_header(
+        $args,
+        "Content-Type" => $args->{ ctype } || "text/plain; charset=UTF-8",
+    );
     return $self->MESSAGE->create(
-        header => [
-            To      => $args->{ to },
-            From    => $args->{ from },
-            Subject => $args->{ subject },
-            "Content-Type" => $args->{ ctype } || "text/plain; charset=UTF-8",
-        ],
+        header => $header,
         body => $args->{ message },
     );
 }
@@ -159,13 +157,11 @@ sub _send_multipart {
 
     $self->debug_data( send => $args ) if DEBUG;
 
+    my $header = $self->generate_header($args);
+
     eval {
         my $email = $self->MULTIPART->create_html(
-            header => [
-                To      => $args->{ to },
-                From    => $args->{ from },
-                Subject => $args->{ subject },
-            ],
+            header => $header,
             body        => $args->{ html_message },
             text_body   => $args->{ text_message },
             attributes  => {
@@ -183,6 +179,21 @@ sub _send_multipart {
         : "Mail sent to $args->{ to }";
 }
 
+sub generate_header {
+    my ($self, $args, @more) = @_;
+    my $header = [
+        To      => $args->{ to },
+        From    => $args->{ from },
+        Subject => $args->{ subject },
+        @more,
+    ];
+
+    if ($args->{ reply_to }) {
+        push(@$header, "Reply-to", $args->{ reply_to });
+    }
+    $self->debug_data( header => $header ) if DEBUG;
+    return $header;
+}
 
 sub prepare_params {
     my ($self, $params) = @_;
