@@ -2,11 +2,12 @@
 # which uses Email::Sender instead of Mail::Sender
 package Contentity::Component::Mailer::Smtp2;
 
+use utf8;
+use Encode;
 use Email::Sender::Simple qw( sendmail );
 use Email::Sender::Transport::SMTP;
 use Email::Simple;
 use Email::MIME;
-use Email::MIME::CreateHTML;
 use Contentity::Class
     version    => 0.02,
     debug      => 0,
@@ -28,10 +29,6 @@ use Contentity::Class
 our $DEFAULTS = {
     encoding => 'quoted-printable',
 };
-
-# Stop Mail::Sender from adding its own X-Mailer
-#*Mail::Sender::SITE_HEADERS = \"X-Sender: Completely Group Mail Server";
-#$Mail::Sender::NO_X_MAILER = 1;
 
 
 #-----------------------------------------------------------------------------
@@ -158,16 +155,34 @@ sub _send_multipart {
     $self->debug_data( send => $args ) if DEBUG;
 
     my $header = $self->generate_header($args);
+    my $html   = encode('utf8', $args->{ html_message });
+    my $text   = encode('utf8', $args->{ text_message });
 
     eval {
-        my $email = $self->MULTIPART->create_html(
-            header => $header,
-            body        => $args->{ html_message },
-            text_body   => $args->{ text_message },
-            attributes  => {
-                charset  => 'UTF-8',
-                encoding => 'quoted-printable',
-            }
+        my @parts = (
+            Email::MIME->create(
+                attributes => {
+                    content_type => "text/html",
+                    encoding     => "quoted-printable",
+                    charset      => "UTF-8",
+                },
+                body => $html,
+            ),
+            Email::MIME->create(
+                attributes => {
+                    content_type => "text/plain",
+                    encoding     => "quoted-printable",
+                    charset      => "UTF-8",
+                },
+                body => $text,
+            ),
+        );
+        my $email = Email::MIME->create(
+            header_str => $header,
+            attributes => {
+                content_type => 'multipart/alternative'
+            },
+            parts      => [ @parts ],
         );
         $self->debug("EMAIL: $email") if DEBUG;
 

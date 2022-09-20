@@ -13,7 +13,6 @@ my %opts = (
         'Email::Sender' => 1.3,
         'Email::Simple' => 2.216,
         'Email::MIME'   => 1.946,
-        'Email::MIME::CreateHTML'      => 1.042,
         'Plack::Request::WithEncoding' => 0.12,
         # 'IPC::Run' => 0,
     },
