@@ -8,7 +8,7 @@ use Contentity::Class
     import     => 'class',
     autolook   => 'autoload_hub';
 
-our $VERSION = 0.14;
+our $VERSION = 0.15;
 our $HUB = 'Contentity::Hub' unless defined $HUB;
 
 
