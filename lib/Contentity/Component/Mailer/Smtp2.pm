@@ -6,6 +6,7 @@ use Email::Sender::Simple qw( sendmail );
 use Email::Sender::Transport::SMTP;
 use Email::Simple;
 use Email::MIME;
+use Email::MIME::CreateHTML;
 use Contentity::Class
     version    => 0.02,
     debug      => 0,
@@ -144,7 +145,7 @@ sub generate_email {
 sub _send_multipart {
     my ($self, $args) = self_params(@_);
 
-    $self->debug_data("sending multipart", $args) if DEBUG or 1;
+    $self->debug_data("sending multipart", $args) if DEBUG;
 
     my $parts = $args->{ multipart }
         || return $self->error_msg( missing => 'multipart' );
@@ -159,20 +160,20 @@ sub _send_multipart {
     $self->debug_data( send => $args ) if DEBUG;
 
     eval {
-        my $email = $self->MULTIPART->create(
-            header_str => [
+        my $email = $self->MULTIPART->create_html(
+            header => [
                 To      => $args->{ to },
                 From    => $args->{ from },
                 Subject => $args->{ subject },
             ],
-            # TODO: this is wrong
-            body_str => $args->{ multipart }->[0]->{ message },
-            attributes => {
+            body        => $args->{ html_message },
+            text_body   => $args->{ text_message },
+            attributes  => {
                 charset  => 'UTF-8',
                 encoding => 'quoted-printable',
             }
         );
-        $self->debug("EMAIL: $email") if DEBUG or 1;
+        $self->debug("EMAIL: $email") if DEBUG;
 
         sendmail($email, { transport => $self->transport });
     };
