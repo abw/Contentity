@@ -137,9 +137,9 @@ sub analyse_table {
                 $column->{ type } = 'boolean';
                 last TYPE;
             }
-            elsif ($type =~ /^(?:big|medium|small|tiny)?int\((\d+)\)(\s+unsigned)?$/) {
+            elsif ($type =~ /^(?:big|medium|small|tiny)?int(?:\((\d+)\))?(\s+unsigned)?$/) {
                 $column->{ type       } = 'integer';
-                $column->{ max_length } = $1;
+                $column->{ max_length } = $1 if $1;
                 $column->{ unsigned   } = defined $2;
                 last TYPE;
             }
