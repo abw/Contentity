@@ -231,6 +231,13 @@ sub validation_data {
         }
         elsif (! length $value) {
             return $data if $self->{ ignore_unset };
+            # undef unset converts an unset value to undef, e.g. for nulling
+            # out an existing database field
+            if ($self->{ undef_unset }) {
+                $data->{ values }->{ $self->name } = undef;
+                $self->debug("set ", $self->name, " to undef (undef_unset)") if DEBUG;
+                return $data;
+            }
         }
 
         my @values = $self->field_values;
