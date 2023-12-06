@@ -207,7 +207,7 @@ sub generate_header {
         From    => $args->{ from },
         Subject => $args->{ subject },
         @more,
-        %$headers,
+        %$cfg,
     ];
 
     if ($args->{ reply_to }) {
