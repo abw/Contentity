@@ -117,6 +117,7 @@ sub _send_email {
 
     eval {
         my $email = $self->generate_email($args);
+        $self->debug_data( message => $email ) if DEBUG;
         sendmail($email, { transport => $self->transport });
     };
 
@@ -131,6 +132,8 @@ sub generate_email {
         $args,
         "Content-Type" => $args->{ ctype } || "text/plain; charset=UTF-8",
     );
+    $self->debug_data( header => $header ) if DEBUG;
+
     return $self->MESSAGE->create(
         header => $header,
         body => $args->{ message },
@@ -196,7 +199,9 @@ sub _send_multipart {
 
 sub generate_header {
     my ($self, $args, @more) = @_;
+    $self->debug_data( generate_header => $args ) if DEBUG;
     my $cfg = $self->{ config }->{ headers } || { };
+    $self->debug_data( config_headers => $cfg ) if DEBUG;
     my $header = [
         To      => $args->{ to },
         From    => $args->{ from },
