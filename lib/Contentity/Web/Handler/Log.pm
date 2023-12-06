@@ -5,8 +5,6 @@ use Contentity::Class
     debug     => 1,
     base      => 'Contentity::Web::Handler';
 
-
-
 sub handle {
     my $self = shift;
 

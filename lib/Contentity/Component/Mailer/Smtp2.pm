@@ -196,17 +196,19 @@ sub _send_multipart {
 
 sub generate_header {
     my ($self, $args, @more) = @_;
+    my $cfg = $self->{ config }->{ headers } || { };
     my $header = [
         To      => $args->{ to },
         From    => $args->{ from },
         Subject => $args->{ subject },
         @more,
+        %$headers,
     ];
 
     if ($args->{ reply_to }) {
         push(@$header, "Reply-to", $args->{ reply_to });
     }
-    $self->debug_data( header => $header ) if DEBUG;
+    $self->debug_data( header => $header ) if DEBUG || $self->{ config }->{ debug };
     return $header;
 }
 
