@@ -172,14 +172,14 @@ they were going to in the session and once they login we redirect then
 to that URL.
 
 If they don't have a pending URL then we look for a C<login_redirect>
-configuration option (in C<config/apps/auth.yaml).  If it exists
+configuration option (in C<config/apps/auth.yaml>).  If it exists
 then the user is redirected to that URL.  Otherwise we render the
 C<logged_in> webapp template.
 
 =head2 just_logged_out()
 
 Looks for a C<logout_redirect> configuration option
-(in C<config/apps/auth.yaml).  If it exists then the user is redirected
+(in C<config/apps/auth.yaml>).  If it exists then the user is redirected
 to that URL.  Otherwise it render the C<logged_out> webapp template.
 
 =head1 AUTHOR

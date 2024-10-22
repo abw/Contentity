@@ -132,7 +132,7 @@ or town).
 
 In some cases there isn't a simple mapping to an C<autocomplete()> method.  For
 examples, the autocomplete for agents and owners requires the C<autocomplete_agents()>
-and <Cautocomplete_owners()> methods to be called on the C<companies> table
+and C<autocomplete_owners()> methods to be called on the C<companies> table
 (C<Contentity::Database::Table::Companies>), respectively.  The C<mapping> section
 allows you to specify these exceptions.
 
