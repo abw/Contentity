@@ -276,7 +276,7 @@ Contentity::Component::Mailer - base class messenger module for sending email
 
 This module is a base class for other modules used to send Email.
 
-See L<Contentity::Component::Mailer::SMTP> for an example of a concrete
+See L<Contentity::Component::Mailer::Smtp> for an example of a concrete
 subclass.
 
 =head1 METHODS
@@ -297,7 +297,7 @@ Copyright (C) 2009-2016 Andy Wardley.  All Rights Reserved.
 
 =head1 SEE ALSO
 
-L<Contentity::Component::Mailer::SMTP>,
+L<Contentity::Component::Mailer::Smtp>,
 L<Contentity::Component>, L<Badger::Base>;
 
 =cut
