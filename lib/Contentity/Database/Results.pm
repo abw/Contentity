@@ -147,7 +147,7 @@ sub table_records {
 sub records {
     my $self = shift;
     return $self->{ records }
-       ||= $self->table_records;
+        ||= $self->table_records;
 }
 
 
