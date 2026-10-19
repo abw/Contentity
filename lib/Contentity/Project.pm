@@ -186,6 +186,8 @@ sub workspace_dir_configs {
         my $name   = $kid->name;
         my $kdir   = join_uri($dir, $name);
         my $kuri   = join_uri($uri, $name);
+        # print "KID: $kid\n";
+        next if $kid =~ /\/.git/;
 
         if ($kid->dir($cfgdir)->exists) {
             # If the sub-directories has a config directory then we assume
