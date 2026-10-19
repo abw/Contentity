@@ -32,6 +32,16 @@ sub update {
 
 sub session_login_user {
     my ($self, $cookie) = self_key( cookie => @_ );
+    # There's a subtle bug in this code... it will return a
+    # my $row   = $self->row( session_login_user => $cookie ) || return;
+    my $row = $self->row( session_login_user => $cookie );
+    if ($row && $row->{ id }) {
+        $self->debug_data( session_row => $row ) if DEBUG;
+    }
+    else {
+        $self->debug("No session row for cookie: $cookie") if DEBUG;
+        return undef;
+    }
     my $row   = $self->row( session_login_user => $cookie ) || return;
     my $data  = $self->demux( 'user login' => $row );
     my $login = $data->{ login };
