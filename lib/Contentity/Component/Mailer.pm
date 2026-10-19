@@ -154,12 +154,9 @@ sub force_send_to {
 
     $self->debug("force_send_to: $force (originally: $to)") if DEBUG;
 
-    for my $w (@$wlist) {
-        if ($to eq $w) {
-            $self->debug("matched address on whitelist: $to") if DEBUG;
-            $params->{ force_send_to } = 0;
-            return;
-        }
+    if ($self->whitelisted_address($to)) {
+        $params->{ force_send_to } = 0;
+        return;
     }
 
     # templates can use these to add test header indicating redirection
@@ -171,6 +168,29 @@ sub force_send_to {
     $params->{ subject } = sprintf($titfmt, $params->{ subject } || '(no subject)');
 
     return $params;
+}
+
+sub whitelisted_address {
+    my ($self, $to) = @_;
+    my $wlist  = $self->config('whitelist') || [ ];
+
+    for my $w (@$wlist) {
+        if ($w =~ /^\*@(.*)$/) {
+            my $domain = $1;
+            my $domqm  = quotemeta($domain);
+            my $domre  = qr/\w.*?\@$domqm/;
+            $self->debug("whitelist wildcard $w: $domre") if DEBUG;
+            if ($to =~ $domre) {
+                $self->debug("matched domain wildcard on whitelist: $to ($w)") if DEBUG;
+                return 1;
+            }
+        }
+        elsif ($to eq $w) {
+            $self->debug("matched address on whitelist: $to") if DEBUG;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 sub format {
